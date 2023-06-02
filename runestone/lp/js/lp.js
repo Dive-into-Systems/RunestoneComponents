@@ -38,7 +38,7 @@ import "codemirror/lib/codemirror.css";
 // Object containing all instances of LP problems. (I assume there is just one per page.)
 window.LPList = {};
 
-// Numconv constructor
+// FITB constructor
 class LP extends RunestoneBase {
     constructor(opts) {
         super(opts);

@@ -50,7 +50,7 @@ def test_2():
 
 ## Helpers
 ## =======
-# Load the web page, then return the DIV containing a Numconv question.
+# Load the web page, then return the DIV containing a FITB question.
 def find_fitb(selenium_utils, div_id):
     selenium_utils.wait_until_ready(div_id)
     return selenium_utils.driver.find_element_by_id(div_id)
