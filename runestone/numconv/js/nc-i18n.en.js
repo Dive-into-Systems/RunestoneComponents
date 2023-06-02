@@ -5,6 +5,7 @@ $.i18n().load({
         msg_NC_compare_me: "Compare me",
         msg_NC_generate_a_number: "Generate a number",
         msg_NC_incorrect: "Incorrect. Please think again.",
-        msg_NC_correct: "Correct. Good job!"
+        msg_NC_correct: "Correct. Good job!",
+        msg_NC_same_exp: "There's no point to convert between two same type. Please choose two different expressions."
     },
 });
