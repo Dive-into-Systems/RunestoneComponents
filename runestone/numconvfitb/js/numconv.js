@@ -20,13 +20,14 @@ export default class Numconv extends RunestoneBase {
         this.origElem = orig;
         this.divid = orig.id;
         this.correct = null;
+        this.numbits = 8;
+        this.range = Math.pow(2, this.numbits);
         // See comments in fitb.py for the format of ``feedbackArray`` (which is identical in both files).
         //
         // Find the script tag containing JSON and parse it. See `SO <https://stackoverflow.com/questions/9320427/best-practice-for-embedding-arbitrary-json-in-the-dom>`_. If this parses to ``false``, then no feedback is available; server-side grading will be performed.
         this.feedbackArray = JSON.parse(
             this.scriptSelector(this.origElem).html()
         );
-        // this.randomAns = Math.floor(Math.random() * 256);
         this.createFITBElement();
         this.caption = "Fill in the Blank";
         this.addCaption("runestone");
@@ -470,7 +471,7 @@ export default class Numconv extends RunestoneBase {
         this.menuNode2.setAttribute("class", "form form-control selectwidthauto");
         this.menuNode2.addEventListener("change",
             function () {
-                this.renderprompt();
+                this.changeAns();
             }.bind(this),
             false);
 
@@ -483,8 +484,6 @@ export default class Numconv extends RunestoneBase {
 
         this.containerDiv.appendChild(this.newStatement);
         this.containerDiv.appendChild(document.createElement("br"));
-
-        this.randomAns = Math.floor(Math.random() * 256);
 
         this.fromType = this.menuNode1.value;
         this.toType = this.menuNode2.value;
@@ -508,7 +507,7 @@ export default class Numconv extends RunestoneBase {
     }
 
     renderprompt() {
-        this.randomAns = Math.floor(Math.random() * 256);
+        this.randomAns = Math.floor(Math.random() * this.range);
 
         this.fromType = this.menuNode1.value;
         this.toType = this.menuNode2.value;
@@ -536,11 +535,21 @@ export default class Numconv extends RunestoneBase {
         // this.renderFeedback();
 
         // document.getElementById(this.divid + "_input").display = "inline";
-        this.fromIsTo = false;
-        this.two02dec = false;
-
+        // this.fromIsTo = false;
+        // this.two02dec = false;
+        this.binaryType = false;
         if (this.fromType.valueOf() == "binary (unsigned)".valueOf()) {
             this.fromPrompt = "0b" + this.randomAns.toString(2);
+        } else if (this.fromType.valueOf() == "binary (signed)".valueOf()) {
+            this.fromPrompt = "0b" + this.randomAns.toString(2);
+            if (this.randomAns < 128) {
+                this.toAns = this.randomAns.toString();
+                this.toPrompt = "";
+            } else {
+                this.toAns = (this.randomAns - this.range).toString();
+                this.toPrompt = "";
+            }
+            this.binaryType = true;
         } else if (this.fromType.valueOf() == "octal".valueOf()) {
             this.fromPrompt = "0" + this.randomAns.toString(8);
         } else if (this.fromType.valueOf() == "hexadecimal".valueOf()) {
@@ -552,6 +561,10 @@ export default class Numconv extends RunestoneBase {
         if (this.toType.valueOf() == "binary (unsigned)".valueOf()) {
             this.toPrompt = "0b";
             this.toAns = this.randomAns.toString(2);
+        } else if (this.toType.valueOf() == "binary (signed)".valueOf()) {
+            this.toPrompt = "0b";
+            this.fromPrompt = (this.randomAns - this.range).toString();
+            this.toAns = this.randomAns.toString(2);
         } else if (this.toType.valueOf() == "octal".valueOf()) {
             this.toPrompt = "0";
             this.toAns = this.randomAns.toString(8);
@@ -559,12 +572,87 @@ export default class Numconv extends RunestoneBase {
             this.toPrompt = "0x";
             this.toAns = this.randomAns.toString(16);
         } else {
-            this.toPrompt = "";
-            this.toAns = this.randomAns.toString();
+            if (!this.binaryType) {
+                this.toPrompt = "";
+                this.toAns = this.randomAns.toString();
+            }
         }
 
         this.newPromptTextNode.data = this.fromPrompt + " = " + this.toPrompt;
 
+    }
+
+    changeAns () {
+        this.fromType = this.menuNode1.value;
+        this.toType = this.menuNode2.value;
+
+        if (this.fromType.valueOf() == this.toType.valueOf()) {
+            this.correct = false;
+            this.displayFeed = [];
+            this.displayFeed.push($.i18n("msg_fitb_fromIsTo"));
+            this.renderFeedback();
+            this.newPromptTextNode.data = "";
+            this.newInputNode.style.visibility = 'hidden';
+            return;
+        } else if ((this.fromType.valueOf() == "binary (signed)".valueOf() && this.toType.valueOf() != "decimal".valueOf()) || (this.toType.valueOf() == "binary (signed)".valueOf() && this.fromType.valueOf() != "decimal".valueOf())) {
+            this.correct = false;
+            this.displayFeed = [];
+            this.displayFeed.push($.i18n("msg_fitb_two02dec"));
+            this.renderFeedback();
+            this.newPromptTextNode.data = "";
+            this.newInputNode.style.visibility = 'hidden';
+            return;
+        }
+        this.feedBackDiv.style.visibility = 'hidden';
+        this.newInputNode.style.visibility = 'visible';
+        this.displayFeed = [];
+        // this.renderFeedback();
+
+        // document.getElementById(this.divid + "_input").display = "inline";
+        // this.fromIsTo = false;
+        // this.two02dec = false;
+        this.binaryType = false;
+        if (this.fromType.valueOf() == "binary (unsigned)".valueOf()) {
+            this.fromPrompt = "0b" + this.randomAns.toString(2);
+        } else if (this.fromType.valueOf() == "binary (signed)".valueOf()) {
+            this.fromPrompt = "0b" + this.randomAns.toString(2);
+            if (this.randomAns < 128) {
+                this.toAns = this.randomAns.toString();
+                this.toPrompt = "";
+            } else {
+                this.toAns = (this.randomAns - this.range).toString();
+                this.toPrompt = "";
+            }
+            this.binaryType = true;
+        } else if (this.fromType.valueOf() == "octal".valueOf()) {
+            this.fromPrompt = "0" + this.randomAns.toString(8);
+        } else if (this.fromType.valueOf() == "hexadecimal".valueOf()) {
+            this.fromPrompt = "0x" + this.randomAns.toString(16);
+        } else {
+            this.fromPrompt = this.randomAns.toString();
+        }
+
+        if (this.toType.valueOf() == "binary (unsigned)".valueOf()) {
+            this.toPrompt = "0b";
+            this.toAns = this.randomAns.toString(2);
+        } else if (this.toType.valueOf() == "binary (signed)".valueOf()) {
+            this.toPrompt = "0b";
+            this.fromPrompt = (this.randomAns - this.range).toString();
+            this.toAns = this.randomAns.toString(2);
+        } else if (this.toType.valueOf() == "octal".valueOf()) {
+            this.toPrompt = "0";
+            this.toAns = this.randomAns.toString(8);
+        } else if (this.toType.valueOf() == "hexadecimal".valueOf()) {
+            this.toPrompt = "0x";
+            this.toAns = this.randomAns.toString(16);
+        } else {
+            if (!this.binaryType) {
+                this.toPrompt = "";
+                this.toAns = this.randomAns.toString();
+            }
+        }
+
+        this.newPromptTextNode.data = this.fromPrompt + " = " + this.toPrompt;
     }
 }
 
