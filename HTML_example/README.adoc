@@ -14,7 +14,10 @@ To try this out, you need to:
 
 . Edit the code in `runestone/fitb/js` to add the behavior you're interested in testing.
 
-. Build runestone with `npm run build` (this requires your environment to be properly configured).
+. Build runestone with `npm run build`. NOTE: this requires your environment to
+be properly configured.  See the `BUILDING_RUNESTONE_JS.adoc` file in the root
+of the repository for instructions on setting up the node/npm build
+environment.
 
 . Run the `link-runestone-js.py` script on the HTML file of your choice:
 +
