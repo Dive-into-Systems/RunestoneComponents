@@ -22,6 +22,7 @@ export default class NC extends RunestoneBase {
         this.divid = orig.id;
         this.correct = null;
         this.num_digits = 8;
+        this.is_signed = true;
         // See comments in NC.py for the format of ``feedbackArray`` (which is identical in both files).
         //
         // Find the script tag containing JSON and parse it. See `SO <https://stackoverflow.com/questions/9320427/best-practice-for-embedding-arbitrary-json-in-the-dom>`_. If this parses to ``false``, then no feedback is available; server-side grading will be performed.
