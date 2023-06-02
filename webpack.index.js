@@ -66,6 +66,7 @@ const module_map = {
     datafile: () => import("./runestone/datafile/js/datafile.js"),
     dragndrop: () => import("./runestone/dragndrop/js/timeddnd.js"),
     fillintheblank: () => import("./runestone/fitb/js/timedfitb.js"),
+    numconversion: () => import("./runestone/numconvfitb/js/timednumconv.js"),
     groupsub: () => import("./runestone/groupsub/js/groupsub.js"),
     khanex: () => import("./runestone/khanex/js/khanex.js"),
     lp_build: () => import("./runestone/lp/js/lp.js"),
