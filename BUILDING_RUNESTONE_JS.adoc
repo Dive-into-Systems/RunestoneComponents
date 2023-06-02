@@ -1,0 +1,67 @@
+= Building Runestone (Javascript version)
+
+Runestone uses webpack to bundle all of the runestone web content (JS and CSS)
+into several dynamically-loadable files.  To build it, you'll need an
+environment with node/npm installed.  There are several ways to do that, but I
+would strongly suggest a virtual environment.  There's a python packages called
+`nodeenv` that allows you to use a python virtual environment as node
+environment.
+
+== Initial environment set up
+
+You should only need to complete these steps once.  After that, as long as
+you're in the correct virtual environment, you can rebuild runestone all you
+want.
+
+. To set this up, first create a new python virtual environment (or enter your
+existing one if you already have one).
+
+. Install the `nodeenv` package:
+
++
+
+----
+pip install nodeenv
+----
+
+. Tell `nodeenv` to use your current python virtual environment for node:
+
++
+
+----
+nodeenv -p
+----
+
+. In the root of the RunestoneComponents repository, run `npm install`.  This
+will locally (in the `node_modules` directory) install all the JS/CSS
+dependencies for the runestone project.
+
+== Building Runestone
+
+If you're inside a virtual environment that has been set up according to the
+steps above, you should be able to build runestone by executing (from the root
+of the repo):
+
+----
+npm run build
+----
+
+This command will tell webpack to bundle all of runestone's files into the
+`runestone/dist/` directory.
+
+Among the many `.js` and `.css` files you'll find there, there will also be a
+`webpack_static_imports.json` file, which contains the set of files a web page
+would need to include to use runestone.  I (KCW) have written a script to help
+make that easier, along with an example, in the `HTML_example` directory of
+this repo.
+
+== Configuring Webpack and what it builds...
+
+Webpack's configuration lives in `webpack.config.js`, but I don't think we're likely to be changing it.  At least, we would need help from Brad to make sure that our changes weren't incompatible with something he's doing.
+
+What we _will_ probably want to change is to tell webpack to build new files
+(e.g., for a component of our own design).  For that, we can edit
+`webpack.index.js`, which tells webpack which files to build.  According to
+Brad, that's what we'll need to adjust when we're ready to try adding our own
+component.  This should be in the section that lists all the modules (e.g.,
+`fillintheblank`, `multiplechoice`, etc.).
