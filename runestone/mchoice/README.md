@@ -55,7 +55,7 @@ The <code>data-blank</code><code>span</code>Holds the question text.
 The <code>data-answer</code><code>span</code>Holds the correct regular expression.
 Each regex,text <code>span</code> pair represents a point of feedback for incorrect answers.
 
-Multiple blanks can also be put into the same FITB question as shown here.
+Multiple blanks can also be put into the same Numconv question as shown here.
 
 		<p data-component="fillintheblank" data-casei="false" id="fill1412" >
 
