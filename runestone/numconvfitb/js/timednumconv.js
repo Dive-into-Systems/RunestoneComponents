@@ -1,5 +1,5 @@
-import FITB from "./fitb.js";
-export default class TimedFITB extends FITB {
+import Numconv from "./numconv.js";
+export default class Timednumconv extends Numconv {
     constructor(opts) {
         super(opts);
         this.renderTimedIcon(this.inputDiv);
@@ -52,9 +52,9 @@ export default class TimedFITB extends FITB {
 if (typeof window.component_factory === "undefined") {
     window.component_factory = {};
 }
-window.component_factory.fillintheblank = function (opts) {
+window.component_factory.numconversion = function (opts) {
     if (opts.timed) {
-        return new TimedFITB(opts);
+        return new Timednumconv(opts);
     }
-    return new FITB(opts);
+    return new Numconv(opts);
 };

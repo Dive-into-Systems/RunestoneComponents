@@ -9,10 +9,10 @@ import "./fitb-i18n.en.js";
 import "./fitb-i18n.pt-br.js";
 import "../css/fitb.css";
 
-export var FITBList = {}; // Object containing all instances of FITB that aren't a child of a timed assessment.
+export var FITBList = {}; // Object containing all instances of Numconv that aren't a child of a timed assessment.
 
-// FITB constructor
-export default class FITB extends RunestoneBase {
+// Numconv constructor
+export default class Numconv extends RunestoneBase {
     constructor(opts) {
         super(opts);
         var orig = opts.orig; // entire <p> element
@@ -26,6 +26,7 @@ export default class FITB extends RunestoneBase {
         this.feedbackArray = JSON.parse(
             this.scriptSelector(this.origElem).html()
         );
+        // this.randomAns = Math.floor(Math.random() * 256);
         this.createFITBElement();
         this.caption = "Fill in the Blank";
         this.addCaption("runestone");
@@ -33,6 +34,8 @@ export default class FITB extends RunestoneBase {
         if (typeof Prism !== "undefined") {
             Prism.highlightAllUnder(this.containerDiv);
         }
+
+
     }
     // Find the script tag containing JSON in a given root DOM node.
     scriptSelector(root_node) {
@@ -43,8 +46,10 @@ export default class FITB extends RunestoneBase {
     ===========================================*/
     createFITBElement() {
         this.renderFITBInput();
+        this.renderstatement();
         this.renderFITBButtons();
         this.renderFITBFeedbackDiv();
+        this.renderprompt();
         // replaces the intermediate HTML for this component with the rendered HTML of this component
         $(this.origElem).replaceWith(this.containerDiv);
     }
@@ -92,9 +97,24 @@ export default class FITB extends RunestoneBase {
             }.bind(this),
             false
         );
+        this.genNewButton = document.createElement("button");
+        this.genNewButton.textContent = $.i18n("msg_fitb_gen_new");
+        $(this.genNewButton).attr({
+            class: "btn btn-success",
+            name: "do answer",
+            type: "button",
+        });
+        this.genNewButton.addEventListener(
+            "click",
+            function () {
+                this.renderprompt();
+            }.bind(this),
+            false
+        );
         this.containerDiv.appendChild(document.createElement("br"));
         this.containerDiv.appendChild(document.createElement("br"));
         this.containerDiv.appendChild(this.submitButton);
+        this.containerDiv.appendChild(this.genNewButton);
         if (this.useRunestoneServices) {
             this.compareButton = document.createElement("button");
             $(this.compareButton).attr({
@@ -193,19 +213,20 @@ export default class FITB extends RunestoneBase {
         this.given_arr = [];
         for (var i = 0; i < this.blankArray.length; i++)
             this.given_arr.push(this.blankArray[i].value);
-        if (this.useRunestoneServices) {
-            if (eBookConfig.enableCompareMe) {
-                this.enableCompareButton();
-            }
-        }
+        // if (this.useRunestoneServices) {
+        //     if (eBookConfig.enableCompareMe) {
+        //         this.enableCompareButton();
+        //     }
+        // }
         // Grade locally if we can't ask the server to grade.
-        if (this.feedbackArray) {
-            this.evaluateAnswers();
-            if (!this.isTimed) {
-                this.renderFeedback();
-            }
-        }
-        alert("Hey, this is numconvfitb");
+        // if (this.feedbackArray) {
+        //     this.evaluateAnswers();
+        //     if (!this.isTimed) {
+        //         this.renderFeedback();
+        //     }
+        // }
+        this.evaluateAnswers();
+        this.renderFeedback();
     }
 
     async logCurrentAnswer(sid) {
@@ -262,54 +283,65 @@ export default class FITB extends RunestoneBase {
     // - ``this.isCorrectArray`` is an array of true, false, or null (the question wasn't answered).
     // - ``this.correct`` is true, false, or null (the question wasn't answered).
     evaluateAnswers() {
-        // Keep track if all answers are correct or not.
-        this.correct = true;
-        for (var i = 0; i < this.blankArray.length; i++) {
-            var given = this.blankArray[i].value;
-            // If this blank is empty, provide no feedback for it.
-            if (given === "") {
-                this.isCorrectArray.push(null);
-                this.displayFeed.push($.i18n("msg_no_answer"));
-                this.correct = false;
-            } else {
-                // Look through all feedback for this blank. The last element in the array always matches. If no feedback for this blank exists, use an empty list.
-                var fbl = this.feedbackArray[i] || [];
-                for (var j = 0; j < fbl.length; j++) {
-                    // The last item of feedback always matches.
-                    if (j === fbl.length - 1) {
-                        this.displayFeed.push(fbl[j]["feedback"]);
-                        break;
-                    }
-                    // If this is a regexp...
-                    if ("regex" in fbl[j]) {
-                        var patt = RegExp(
-                            fbl[j]["regex"],
-                            fbl[j]["regexFlags"]
-                        );
-                        if (patt.test(given)) {
-                            this.displayFeed.push(fbl[j]["feedback"]);
-                            break;
-                        }
-                    } else {
-                        // This is a number.
-                        console.assert("number" in fbl[j]);
-                        var [min, max] = fbl[j]["number"];
-                        // Convert the given string to a number. While there are `lots of ways <https://coderwall.com/p/5tlhmw/converting-strings-to-number-in-javascript-pitfalls>`_ to do this; this version supports other bases (hex/binary/octal) as well as floats.
-                        var actual = +given;
-                        if (actual >= min && actual <= max) {
-                            this.displayFeed.push(fbl[j]["feedback"]);
-                            break;
-                        }
-                    }
-                }
-                // The answer is correct if it matched the first element in the array. A special case: if only one answer is provided, count it wrong; this is a misformed problem.
-                let is_correct = j === 0 && fbl.length > 1;
-                this.isCorrectArray.push(is_correct);
-                if (!is_correct) {
-                    this.correct = false;
-                }
-            }
+        this.filledAnswer = this.newInputNode.value;
+        if (this.filledAnswer.valueOf() == this.toAns.valueOf()) {
+            this.correct = true;
+            this.displayFeed.push($.i18n("msg_fitb_correct"));
+        } else if (this.filledAnswer.valueOf() == "".valueOf()) {
+            this.correct = false;
+            this.displayFeed.push($.i18n("msg_no_answer"));
+        } else {
+            this.correct = false;
+            this.displayFeed.push($.i18n("msg_fitb_incorrect") + " " + this.filledAnswer + " is not correct." + this.toAns);
         }
+        // Keep track if all answers are correct or not.
+        // this.correct = true;
+        // for (var i = 0; i < this.blankArray.length; i++) {
+        //     var given = this.blankArray[i].value;
+        //     // If this blank is empty, provide no feedback for it.
+        //     if (given === "") {
+        //         this.isCorrectArray.push(null);
+        //         this.displayFeed.push($.i18n("msg_no_answer"));
+        //         this.correct = false;
+        //     } else {
+        //         // Look through all feedback for this blank. The last element in the array always matches. If no feedback for this blank exists, use an empty list.
+        //         var fbl = this.feedbackArray[i] || [];
+        //         for (var j = 0; j < fbl.length; j++) {
+        //             // The last item of feedback always matches.
+        //             if (j === fbl.length - 1) {
+        //                 this.displayFeed.push(fbl[j]["feedback"]);
+        //                 break;
+        //             }
+        //             // If this is a regexp...
+        //             if ("regex" in fbl[j]) {
+        //                 var patt = RegExp(
+        //                     fbl[j]["regex"],
+        //                     fbl[j]["regexFlags"]
+        //                 );
+        //                 if (patt.test(given)) {
+        //                     this.displayFeed.push(fbl[j]["feedback"]);
+        //                     break;
+        //                 }
+        //             } else {
+        //                 // This is a number.
+        //                 console.assert("number" in fbl[j]);
+        //                 var [min, max] = fbl[j]["number"];
+        //                 // Convert the given string to a number. While there are `lots of ways <https://coderwall.com/p/5tlhmw/converting-strings-to-number-in-javascript-pitfalls>`_ to do this; this version supports other bases (hex/binary/octal) as well as floats.
+        //                 var actual = +given;
+        //                 if (actual >= min && actual <= max) {
+        //                     this.displayFeed.push(fbl[j]["feedback"]);
+        //                     break;
+        //                 }
+        //             }
+        //         }
+        //         // The answer is correct if it matched the first element in the array. A special case: if only one answer is provided, count it wrong; this is a misformed problem.
+        //         let is_correct = j === 0 && fbl.length > 1;
+        //         this.isCorrectArray.push(is_correct);
+        //         if (!is_correct) {
+        //             this.correct = false;
+        //         }
+        //     }
+        // }
         this.percent =
             this.isCorrectArray.filter(Boolean).length / this.blankArray.length;
     }
@@ -349,6 +381,7 @@ export default class FITB extends RunestoneBase {
         if (typeof MathJax !== "undefined") {
             this.queueMathJax(document.body);
         }
+        this.feedBackDiv.style.visibility = 'visible';
     }
 
     /*==================================
@@ -405,6 +438,134 @@ export default class FITB extends RunestoneBase {
             this.blankArray[i].disabled = true;
         }
     }
+
+    renderstatement() {
+
+        this.newStatement = document.createElement("div");
+
+        this.statementNode1 = document.createTextNode("Convert from ");
+        this.menuArray1 = ["binary (unsigned)", "binary (signed)", "octal", "decimal", "hexadecimal"];
+        this.menuNode1 = document.createElement("select");
+        for (var i = 0; i < this.menuArray1.length; i++) {
+            var option = document.createElement("option");
+            option.value = this.menuArray1[i];
+            option.text = this.menuArray1[i];
+            this.menuNode1.appendChild(option);
+        }
+        this.menuNode1.setAttribute("class", "form form-control selectwidthauto");
+        this.menuNode1.addEventListener("change",
+                function () {
+                this.renderprompt();
+            }.bind(this),
+            false);
+
+        this.statementNode2 = document.createTextNode(" to ");
+        this.menuNode2 = document.createElement("select");
+        for (var i = 0; i < this.menuArray1.length; i++) {
+            var option = document.createElement("option");
+            option.value = this.menuArray1[i];
+            option.text = this.menuArray1[i];
+            this.menuNode2.appendChild(option);
+        }
+        this.menuNode2.setAttribute("class", "form form-control selectwidthauto");
+        this.menuNode2.addEventListener("change",
+            function () {
+                this.renderprompt();
+            }.bind(this),
+            false);
+
+
+
+        this.newStatement.appendChild(this.statementNode1);
+        this.newStatement.appendChild(this.menuNode1);
+        this.newStatement.appendChild(this.statementNode2);
+        this.newStatement.appendChild(this.menuNode2);
+
+        this.containerDiv.appendChild(this.newStatement);
+        this.containerDiv.appendChild(document.createElement("br"));
+
+        this.randomAns = Math.floor(Math.random() * 256);
+
+        this.fromType = this.menuNode1.value;
+        this.toType = this.menuNode2.value;
+
+
+        this.newPrompt = document.createElement("div");
+
+        this.newPromptTextNode = document.createTextNode("");
+        this.newPrompt.appendChild(this.newPromptTextNode);
+
+        this.newInputNode = document.createElement("input");
+        this.newInputNode.setAttribute('type', 'text');
+        this.newInputNode.setAttribute("class", "form form-control selectwidthauto");
+        this.newInputNode.setAttribute("aria-label", "input area");
+        this.newInputNode.setAttribute("id", this.divid + "_input");
+
+
+        this.newPrompt.appendChild((this.newInputNode));
+        this.newPrompt.appendChild((this.newInputNode));
+        this.containerDiv.appendChild(this.newPrompt);
+    }
+
+    renderprompt() {
+        this.randomAns = Math.floor(Math.random() * 256);
+
+        this.fromType = this.menuNode1.value;
+        this.toType = this.menuNode2.value;
+
+        if (this.fromType.valueOf() == this.toType.valueOf()) {
+            this.correct = false;
+            this.displayFeed = [];
+            this.displayFeed.push($.i18n("msg_fitb_fromIsTo"));
+            this.renderFeedback();
+            this.newPromptTextNode.data = "";
+            this.newInputNode.style.visibility = 'hidden';
+            return;
+        } else if ((this.fromType.valueOf() == "binary (signed)".valueOf() && this.toType.valueOf() != "decimal".valueOf()) || (this.toType.valueOf() == "binary (signed)".valueOf() && this.fromType.valueOf() != "decimal".valueOf())) {
+            this.correct = false;
+            this.displayFeed = [];
+            this.displayFeed.push($.i18n("msg_fitb_two02dec"));
+            this.renderFeedback();
+            this.newPromptTextNode.data = "";
+            this.newInputNode.style.visibility = 'hidden';
+            return;
+        }
+        this.feedBackDiv.style.visibility = 'hidden';
+        this.newInputNode.style.visibility = 'visible';
+        this.displayFeed = [];
+        // this.renderFeedback();
+
+        // document.getElementById(this.divid + "_input").display = "inline";
+        this.fromIsTo = false;
+        this.two02dec = false;
+
+        if (this.fromType.valueOf() == "binary (unsigned)".valueOf()) {
+            this.fromPrompt = "0b" + this.randomAns.toString(2);
+        } else if (this.fromType.valueOf() == "octal".valueOf()) {
+            this.fromPrompt = "0" + this.randomAns.toString(8);
+        } else if (this.fromType.valueOf() == "hexadecimal".valueOf()) {
+            this.fromPrompt = "0x" + this.randomAns.toString(16);
+        } else {
+            this.fromPrompt = this.randomAns.toString();
+        }
+
+        if (this.toType.valueOf() == "binary (unsigned)".valueOf()) {
+            this.toPrompt = "0b";
+            this.toAns = this.randomAns.toString(2);
+        } else if (this.toType.valueOf() == "octal".valueOf()) {
+            this.toPrompt = "0";
+            this.toAns = this.randomAns.toString(8);
+        } else if (this.toType.valueOf() == "hexadecimal".valueOf()) {
+            this.toPrompt = "0x";
+            this.toAns = this.randomAns.toString(16);
+        } else {
+            this.toPrompt = "";
+            this.toAns = this.randomAns.toString();
+        }
+
+        this.newPromptTextNode.data = this.fromPrompt + " = " + this.toPrompt;
+
+    }
 }
 
 /*=================================
@@ -412,7 +573,7 @@ export default class FITB extends RunestoneBase {
 ==   execute our code on them    ==
 =================================*/
 $(document).on("runestone:login-complete", function () {
-    $("[data-component=fillintheblank]").each(function (index) {
+    $("[data-component=numconversion]").each(function (index) {
         var opts = {
             orig: this,
             useRunestoneServices: eBookConfig.useRunestoneServices,
@@ -420,7 +581,7 @@ $(document).on("runestone:login-complete", function () {
         if ($(this).closest("[data-component=timedAssessment]").length == 0) {
             // If this element exists within a timed component, don't render it here
             try {
-                FITBList[this.id] = new FITB(opts);
+                FITBList[this.id] = new Numconv(opts);
             } catch (err) {
                 console.log(
                     `Error rendering Fill in the Blank Problem ${this.id}
