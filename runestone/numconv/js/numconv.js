@@ -100,10 +100,10 @@ export default class NC extends RunestoneBase {
         this.menuNode1.setAttribute("class", "form form-control selectwidthauto");
         this.menuNode1.addEventListener("change",
             function () {
+                this.clearAnswer();
+                this.generateNumber();
                 this.checkValidConversion();
                 if ( this.valid_conversion ) {
-                    this.clearAnswer();
-                    this.generateNumber();
                     this.generateAnswer();
                 }
             }.bind(this),
@@ -133,11 +133,13 @@ export default class NC extends RunestoneBase {
             false);
 
         // this.optList.remove();
+        this.statementNode3 = document.createTextNode(" (" + this.num_bits.toString() + "bits)");
 
         this.newStatement.appendChild(this.statementNode1);
         this.newStatement.appendChild(this.menuNode1);
         this.newStatement.appendChild(this.statementNode2);
         this.newStatement.appendChild(this.menuNode2);
+        this.newStatement.appendChild(this.statementNode3);
 
         this.containerDiv.appendChild(this.newStatement);
         this.containerDiv.appendChild(document.createElement("br"));
@@ -152,7 +154,7 @@ export default class NC extends RunestoneBase {
         this.newInputNode = document.createElement("input");
         this.newInputNode.setAttribute('type', 'text');
         this.newInputNode.setAttribute("class", "form form-control selectwidthauto");
-        this.newInputNode.setAttribute("size", "8");
+        this.newInputNode.setAttribute("size", "20");
         this.newInputNode.setAttribute("placeholder", "your answer");
         this.newInputNode.setAttribute("aria-label", "input area");
         this.newInputNode.setAttribute("id", this.divid + "_input");
@@ -273,6 +275,9 @@ export default class NC extends RunestoneBase {
     generateNumber() {
 
         this.target_num = Math.floor(Math.random() * (1 << this.num_bits) ) ;
+        if (this.target_num === (1 << this.num_bits)) {
+            this.target_num --;
+        }
         switch (this.menuNode1.value) {
             case "binary" : 
                 this.displayed_num_string = this.toBinary(this.target_num);
@@ -296,6 +301,9 @@ export default class NC extends RunestoneBase {
 
     // generate the answer as a string based on the randomly generated number
     generateAnswer() {
+        this.feedBackDiv.style.visibility = 'hidden';
+        this.newInputNode.style.visibility = 'visible';
+        this.displayFeed = [];
         // qwerty
         switch (this.menuNode2.value) {
             case "binary" : 
@@ -320,7 +328,11 @@ export default class NC extends RunestoneBase {
 
     // update the prompt to display
     generatePrompt() {
-        this.feedBackDiv.style.visibility = "hidden";
+
+        this.feedBackDiv.style.visibility = 'hidden';
+        this.newInputNode.style.visibility = 'visible';
+        this.displayFeed = [];
+
         switch(this.menuNode1.value) {
             case "binary" : 
                 this.newPromptTextNode.textContent = "0b" + this.displayed_num_string + " = ";
@@ -335,30 +347,46 @@ export default class NC extends RunestoneBase {
                 this.newPromptTextNode.textContent = "0x" + this.displayed_num_string + " = ";
                 break;           
         }
+        var placeholder;
         switch(this.menuNode2.value) {
             case "binary" : 
                 this.newPromptTextNode.append("0b");
+                placeholder = "your answer (" + this.num_bits.toString() + "digits of binary number)";
                 break;
             case "decimal-unsigned" : 
+                placeholder = "your answer (unsigend decimal)";
                 break;
             case "decimal-signed" : 
+                placeholder = "your answer (signed decimal)";
                 break;
             case "hexadecimal" : 
                 this.newPromptTextNode.append("0x");
+                placeholder = "your answer (" + this.num_bits.toString() + "digits of hexadecimal number)";
                 break;           
         }
+        this.newInputNode.setAttribute("placeholder", placeholder);
+        this.newInputNode.setAttribute("size", placeholder.length);
     }
 
-    // check if the conversion is valid
+    // check if the conversion is valid  
     checkValidConversion() {
         this.valid_conversion = true;
         // a conversion is valid when two types are different
         if (this.menuNode1.value === this.menuNode2.value) {
             this.valid_conversion = false;
-            this.is_correct = false;
+            this.correct = false;
             this.feedback_msg = ($.i18n("msg_NC_same_exp"));
             this.renderFeedback();
-            this.newPrompt.style.visibility = "hidden";
+            this.newInputNode.style.visibility = "hidden";
+            this.newPromptTextNode.textContent = "";
+        } else if ((this.menuNode1.value.valueOf() == "decimal-signed".valueOf() && this.menuNode2.value.valueOf() != "binary".valueOf()) || (this.menuNode2.value.valueOf() == "decimal-signed".valueOf() && this.menuNode1.value.valueOf() != "binary".valueOf())) {
+            this.valid_conversion = false;
+            this.correct = false;
+            this.feedback_msg = ($.i18n("msg_fitb_two02dec"));
+            this.renderFeedback();
+            this.newInputNode.style.visibility = 'hidden';
+            this.newPromptTextNode.textContent = "";
+            return;
         } else {
             this.newPrompt.style.visibility = "visible";
         }
