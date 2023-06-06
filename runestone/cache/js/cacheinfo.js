@@ -22,7 +22,7 @@ export default class cacheinfo extends RunestoneBase {
         this.divid = orig.id;
         this.correct = null;
         // default number of bits
-        this.num_bits = 8;
+        this.num_bits = 4;
         
         this.createCacheInfoElement();
         this.caption = "Cache System";
@@ -63,7 +63,6 @@ export default class cacheinfo extends RunestoneBase {
         this.prompt1.append("Cache organization : ");
 
         this.cacheOrgArray = ["Direct-Mapped", "2-Way Set Associative", "4-Way Set Associative"];
-        this.cache_org = this.cacheOrgArray;
         
         // get input from user
         // var currOption = JSON.parse(
@@ -78,11 +77,16 @@ export default class cacheinfo extends RunestoneBase {
             this.orgMenuNode.appendChild(option);
         }
         this.orgMenuNode.setAttribute("class", "form form-control selectwidthauto");
-
+        this.orgMenuNode.addEventListener("change",
+            function () {
+                // this.num_bits = this.addrMenuNode.value;
+                this.clearInput();
+                this.generateAnswer();
+            }.bind(this),
+            false);
 
         // Generate the drop-down menu for address length
         this.bitsLengthArray = ["4 bits", "8 bits", "16 bits"];
-        this.num_bits = this.bitsLengthArray;
         
         this.addrMenuNode = document.createElement("select");
         for (var i = 0; i < this.bitsLengthArray.length; i++) {
@@ -94,13 +98,14 @@ export default class cacheinfo extends RunestoneBase {
         this.addrMenuNode.setAttribute("class", "form form-control selectwidthauto");
         this.addrMenuNode.addEventListener("change",
             function () {
+                // this.num_bits = this.addrMenuNode.value;
+                this.updateNumBits();
                 this.generateAddress();
-                this.clearAnswer();
+                this.clearInput();
                 this.generateAnswer();
             }.bind(this),
             false);
         
-        this.generateAddress();
         this.addressNode = document.createElement("div");
         this.addressNodeText = document.createTextNode("address: ");
         this.addressNodeAddress = document.createElement("code");
@@ -120,7 +125,7 @@ export default class cacheinfo extends RunestoneBase {
         this.offsetNodeOffset.textContent = this.offset_bits;
         this.partitionNode.appendChild(this.tagNodeText);
         this.partitionNode.appendChild(this.tagNodeTag);
-        this.partitionNode.appendChild(this.indexNodeIndex);
+        this.partitionNode.appendChild(this.indexNodeText);
         this.partitionNode.appendChild(this.indexNodeIndex);
         this.partitionNode.appendChild(this.offsetNodeText);
         this.partitionNode.appendChild(this.offsetNodeOffset);
@@ -136,7 +141,7 @@ export default class cacheinfo extends RunestoneBase {
 
         this.containerDiv.appendChild(this.newStatement);
         this.containerDiv.appendChild(document.createElement("br"));
-
+        
         // generate question prompts and input fields
         this.question1 = document.createElement("div");
         this.question1Prompt = document.createTextNode($.i18n("block_size") + "\t=\t");
@@ -167,14 +172,16 @@ export default class cacheinfo extends RunestoneBase {
 
         this.inputNodes = [this.inputNode1, this.inputNode2, this.inputNode3];
         this.questionPart.appendChild(this.question1);
-        this.questionPart.appendChild(this.question2);
         this.questionPart.appendChild(this.question3);
+        this.questionPart.appendChild(this.question2);
         this.containerDiv.appendChild(this.questionPart);
         this.containerDiv.appendChild(document.createElement("br"));
 
         // Copy the original elements to the container holding what the user will see.
         $(this.origElem).children().clone().appendTo(this.containerDiv);
         
+        this.generateAddress();
+        this.generateAnswer();
 
         // Remove the script tag.
         this.scriptSelector(this.containerDiv).remove();
@@ -217,14 +224,14 @@ export default class cacheinfo extends RunestoneBase {
         this.generateButton.textContent = $.i18n("msg_cacheinfo_generate_a_number");
         $(this.generateButton).attr({
             class: "btn btn-success",
-            name: "generate a number",
+            name: "Generate an Address",
             type: "button",
         });
         this.generateButton.addEventListener(
             "click",
             function () {
                 this.generateAddress();
-                this.clearAnswer();
+                this.clearInput();
                 this.generateAnswer();
             }.bind(this),
             false)
@@ -242,30 +249,61 @@ export default class cacheinfo extends RunestoneBase {
     }
 
     // clear the input field
-    clearAnswer() {
-        // qwerty
+    clearInput() {
         for ( var i = 0 ; i < 3; i ++ ) {
             this.inputNodes[i].value = "";
+            this.inputNodes[i].setAttribute("class", "form form-control selectwidthauto");
         }
     }
 
+    updateNumBits() {
+        switch (this.addrMenuNode.value) {
+            case "4 bits":
+                this.num_bits = 4;
+                break;
+            case "8 bits":
+                this.num_bits = 8;
+                break;
+            case "16 bits":
+                this.num_bits = 16;
+                break;
+        }
+    }
     // generate a memory address
     generateAddress() {
-        this.len_address = 1 << this.num_bits;
-        this.address_eg = Math.floor(Math.random() * (this.len_address) ).toString(2);
-        var rand_num1 = Math.floor(Math.random() * (this.len_address - 4) );
-        var rand_num2 = Math.floor(Math.random() * (this.len_address - 4 - rand_num1) );
-        this.offset_bits = rand_num1 + 1;
-        this.index_bits = rand_num2 + 2;
+        // this.num_bits = this.addrMenuNode.value;
+        this.len_address = (1 << this.num_bits)
+        this.address_eg = "";
+        for (let i = 0; i < this.num_bits; i++) {
+            let curr_rand = Math.random();
+            if (curr_rand < 0.5) {
+                this.address_eg += "0";
+            } else {
+                this.address_eg += "1";
+            }
+        }
+        var rand_list = [1,2,1];
+        for (let i = 0; i < (this.num_bits - 4); i++){
+            let curr_rand = Math.random();
+            if (curr_rand < 0.34) {
+                rand_list[0] += 1;
+            } else if (curr_rand < 0.67) {
+                rand_list[1] += 1;
+            } else {
+                rand_list[2] += 1;
+            }
+        }
+        this.tag_bits = rand_list[0];
+        this.index_bits = rand_list[1];
+        this.offset_bits = rand_list[2];
         
         this.block_size = 1 << this.offset_bits;
         this.num_entry = 1 << this.index_bits;  
-        
-        this.generateAnswer()
     }
 
     // generate the answer as a string based on the randomly generated number
     generateAnswer() {
+        this.cache_org = this.orgMenuNode.value;
         this.feedbackDiv.style.visibility = 'hidden';
         // this.newInputNode.style.visibility = 'visible';
         this.questionPart.style.visibility = "visible";
@@ -274,18 +312,22 @@ export default class cacheinfo extends RunestoneBase {
         this.block_size_ans = this.block_size;
         this.entries_ans = this.num_entry;
 
-        switch (this.cache_org.value) {
-            case "Direct Mapping" : 
+        switch (this.cache_org) {
+            case "Direct-Mapped" : 
                 this.num_line_ans = 1<<(this.index_bits);
+                this.question2.style.visibility = "hidden";
                 break;
             case "2-Way Set Associative" : 
-                this.num_line_ans = (this.entries_ans)*(this.num_entry);
+                this.num_line_ans = (this.entries_ans)*2;
+                this.question2.style.visibility = "visible";
                 break;
             case "4-Way Set Associative" : 
-                this.num_line_ans = (this.entries_ans)*(this.num_entry);
+                this.num_line_ans = (this.entries_ans)*4;
+                this.question2.style.visibility = "visible";
                 break;
         }
         this.answers = [this.block_size_ans, this.entries_ans, this.num_line_ans];
+        this.regeneratePrompt();
     }
 
     /*===================================
@@ -343,18 +385,21 @@ export default class cacheinfo extends RunestoneBase {
         this.correct = true;
         this.feedback_msg = [];
         for (var i = 0; i < 3; i ++ ) {
-            if ( this.cache_org.value === "Direct Mapping" && i === 1) {
+            if ( this.orgMenuNode.value === "Direct-Mapped" && i === 1) {
                 continue;
             }
             var input_value = this.inputNodes[i].value;
             if ( input_value === "" ) {
                 this.feedback_msg.push($.i18n("msg_no_answer"));
                 this.correct = false;
+                this.inputNodes[i].setAttribute("class", "alert alert-danger");
             } else if ( input_value != this.answers[i] ) {
-                this.feedback_msg.push($.i18n("msg_cacheinfo_incorrect")[i]);
-                this.correct = false;            
+                this.feedback_msg.push($.i18n("msg_cacheinfo_incorrect_"+i.toString()));
+                this.correct = false;
+                this.inputNodes[i].setAttribute("class", "alert alert-danger");            
             } else {
                 this.feedback_msg.push($.i18n("msg_cacheinfo_correct"));
+                this.inputNodes[i].setAttribute("class", "alert alert-info");
             }
         }
     }
@@ -399,6 +444,13 @@ export default class cacheinfo extends RunestoneBase {
         // return detail;
         this.renderfeedback();
         return data;
+    }
+
+    regeneratePrompt() {
+        this.addressNodeAddress.textContent = this.address_eg;
+        this.tagNodeTag.textContent = this.tag_bits;
+        this.indexNodeIndex.textContent = this.index_bits;
+        this.offsetNodeOffset.textContent = this.offset_bits;
     }
 
     /*==============================
@@ -473,12 +525,24 @@ export default class cacheinfo extends RunestoneBase {
     }
 
     renderfeedback() {
-        this.feedbackDiv.style.visibility = "visible";
         // only the feedback message needs to display
         var feedback_html = "";
-        for ( var i = 0; i < 3; i ++ ) {
-            feedback_html += "<dev>" + this.feedback_msg[i] + "</dev>";
+        if ( this.orgMenuNode.value === "Direct-Mapped" ) {
+            for ( var i = 0; i < 2; i ++ ) {
+                feedback_html += "<dev>" + this.feedback_msg[i] + "</dev>";
+                if ( i < 1 ) {
+                    feedback_html += "<br/>";
+                }
+            }
+        } else {
+            for ( var i = 0; i < 3; i ++ ) {
+                feedback_html += "<dev>" + this.feedback_msg[i] + "</dev>";
+                if ( i < 2 ) {
+                    feedback_html += "<br/>";
+                }
+            }
         }
+
         if (this.correct) {
             $(this.feedbackDiv).attr("class", "alert alert-info");
         } else {
