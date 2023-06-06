@@ -77,7 +77,14 @@ export default class NC extends RunestoneBase {
             this.num_bits = eval(currOption["bits"]);
             // alert("change proceeded to "+currOption["bits"]);
         }
-
+        if ( this.num_bits % 4 != 0 ){
+            alert($.i18n("msg_NC_not_divisible_by_4"));
+            return;
+        }
+        if ( this.num_bits > 64 ){
+            alert($.i18n("msg_NC_too_many_bits"));
+            return;
+        }
         if (currOption["from-options"] === undefined) {
             this.fromOpt = this.menuArray1;
         } else {
@@ -366,6 +373,7 @@ export default class NC extends RunestoneBase {
         }
         this.newInputNode.setAttribute("placeholder", placeholder);
         this.newInputNode.setAttribute("size", placeholder.length);
+        this.newInputNode.setAttribute("maxlength", 1+this.num_bits);
     }
 
     // check if the conversion is valid  
