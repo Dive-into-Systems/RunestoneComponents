@@ -8,5 +8,7 @@ $.i18n().load({
         msg_NC_correct: "Correct. Good job!",
         msg_NC_same_exp: "There's no point to convert between two same type. Please choose two different expressions.",
         msg_fitb_two02dec: "Signed binary can only convert with decimal.",
+        msg_NC_not_divisible_by_4: "Error: number of bits should be multiple of 4",
+        msg_NC_too_many_bits: "Error: too many number of bits",
     },
 });
