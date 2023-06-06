@@ -273,7 +273,7 @@ export default class cacheinfo extends RunestoneBase {
     generateAddress() {
         // this.num_bits = this.addrMenuNode.value;
         this.len_address = (1 << this.num_bits)
-        this.address_eg = "";
+        this.address_eg = "0b";
         for (let i = 0; i < this.num_bits; i++) {
             let curr_rand = Math.random();
             if (curr_rand < 0.5) {
