@@ -1,16 +1,15 @@
 // *********
-// |docname|
+// cacheinfo.js
 // *********
-// This file contains the JS for the Runestone cacheinfo component. It was created By Isaiah Mayerchak and Kirby Olson, 6/4/15 then revised by Brad Miller, 2/7/20.
+// This file contains the JS for the Runestone cacheinfo component. It was created By Luyuan Fan, Zhengfei Li, and Yue Zhang, 06/06/2023. 
 "use strict";
 
 import RunestoneBase from "../../common/js/runestonebase.js";
 import "./cache-i18n.en.js";
-// import "./cacheinfo-i18n.pt-br.js";
 import "../css/cache.css";
 import { Pass } from "codemirror";
 
-export var cacheinfoList = {}; // Object containing all instacacheinfoes of cacheinfo that aren't a child of a timed assessment.
+export var cacheinfoList = {}; // Object containing all instances of cacheinfo that aren't a child of a timed assessment.
 
 // cacheinfo constructor
 export default class cacheinfo extends RunestoneBase {
@@ -21,9 +20,12 @@ export default class cacheinfo extends RunestoneBase {
         this.origElem = orig;
         this.divid = orig.id;
         this.correct = null;
-        // default number of bits
+        // default number of bits = 4
         this.num_bits = 4;
-        
+        // keep track of the last generated cache combination and ensure
+        // each time it generates a different combination
+        this.last_rand_choice = [0,0,0];
+
         this.createCacheInfoElement();
         this.caption = "Cache System";
         this.addCaption("runestone");
@@ -36,9 +38,6 @@ export default class cacheinfo extends RunestoneBase {
     scriptSelector(root_node) {
         return $(root_node).find(`script[type="application/json"]`);
     }
-    // optionSelector(root_node) {
-    //     return $(root_node).find(`div[id="conv_options"]`);
-    // }
     /*===========================================
     ====   functions generating final HTML   ====
     ===========================================*/
@@ -49,26 +48,21 @@ export default class cacheinfo extends RunestoneBase {
         this.renderCacheInfofeedbackDiv();
         // replaces the intermediate HTML for this component with the rendered HTML of this component
         $(this.origElem).replaceWith(this.containerDiv);
-
-        // alert(this.num_bits);
+        
     }
     renderCacheInfoInput() {
-        // qwerty
         // Generate the drop-down menu for cache organization
         this.containerDiv = document.createElement("div");
-        this.questionPart = document.createElement("div");
+        this.questionDiv = document.createElement("div");
         this.containerDiv.id = this.divid;
         
         this.prompt1 = document.createElement("div");
         this.prompt1.append("Cache organization : ");
 
+        // list of cache organization opitons
         this.cacheOrgArray = ["Direct-Mapped", "2-Way Set Associative", "4-Way Set Associative"];
-        
-        // get input from user
-        // var currOption = JSON.parse(
-        //     this.scriptSelector(this.origElem).html()
-        // );
-    
+
+        // create the cache organization dropdown menu
         this.orgMenuNode = document.createElement("select");
         for (var i = 0; i < this.cacheOrgArray.length; i++) {
             var option = document.createElement("option");
@@ -79,7 +73,6 @@ export default class cacheinfo extends RunestoneBase {
         this.orgMenuNode.setAttribute("class", "form form-control selectwidthauto");
         this.orgMenuNode.addEventListener("change",
             function () {
-                // this.num_bits = this.addrMenuNode.value;
                 this.clearInput();
                 this.generateAnswer();
             }.bind(this),
@@ -88,6 +81,7 @@ export default class cacheinfo extends RunestoneBase {
         // Generate the drop-down menu for address length
         this.bitsLengthArray = ["4 bits", "8 bits", "16 bits"];
         
+        // create the menu node for address length
         this.addrMenuNode = document.createElement("select");
         for (var i = 0; i < this.bitsLengthArray.length; i++) {
             var option = document.createElement("option");
@@ -96,15 +90,16 @@ export default class cacheinfo extends RunestoneBase {
             this.addrMenuNode.appendChild(option);
         }
         this.addrMenuNode.setAttribute("class", "form form-control selectwidthauto");
+        // When the option fo addrMenuNode is changed, 
         this.addrMenuNode.addEventListener("change",
             function () {
-                // this.num_bits = this.addrMenuNode.value;
                 this.updateNumBits();
                 this.generateAddress();
                 this.clearInput();
                 this.generateAnswer();
             }.bind(this),
             false);
+        
         
         this.addressNode = document.createElement("div");
         this.addressNodeText = document.createTextNode("address: ");
@@ -130,51 +125,45 @@ export default class cacheinfo extends RunestoneBase {
         this.partitionNode.appendChild(this.offsetNodeText);
         this.partitionNode.appendChild(this.offsetNodeOffset);
         
-        this.newStatement = document.createElement("div");
-        this.newStatement.appendChild(this.orgMenuNode);
-        this.newStatement.appendChild(this.addrMenuNode);
-        this.newStatement.appendChild(document.createElement("br"));
-        this.newStatement.appendChild(this.addressNode);
-        this.newStatement.appendChild(document.createElement("br"));
-        this.newStatement.appendChild(this.partitionNode);
-        this.newStatement.appendChild(document.createElement("br"));
+        this.statementDiv = document.createElement("div");
+        this.statementDiv.append("Cache Organization: ");
+        this.statementDiv.appendChild(this.orgMenuNode);
+        this.statementDiv.append("\tAddress Length: ");
+        this.statementDiv.appendChild(this.addrMenuNode);
+        this.statementDiv.appendChild(document.createElement("br"));
+        this.statementDiv.appendChild(this.addressNode);
+        this.statementDiv.appendChild(document.createElement("br"));
+        this.statementDiv.appendChild(this.partitionNode);
+        this.statementDiv.appendChild(document.createElement("br"));
 
-        this.containerDiv.appendChild(this.newStatement);
+        this.containerDiv.appendChild(this.statementDiv);
         this.containerDiv.appendChild(document.createElement("br"));
         
         // generate question prompts and input fields
         this.question1 = document.createElement("div");
         this.question1Prompt = document.createTextNode($.i18n("block_size") + "\t=\t");
         this.inputNode1 = document.createElement("input");
-        this.inputNode1.setAttribute('type', 'text');
-        this.inputNode1.setAttribute("size", "10");
-        this.inputNode1.setAttribute("placeholder", "your answer");
         this.question1.appendChild(this.question1Prompt);
         this.question1.appendChild(this.inputNode1);
+        this.question1.append("(in bytes)");
 
         this.question2 = document.createElement("div");
         this.question2Prompt = document.createTextNode($.i18n("num_rows") + "\t=\t");
         this.inputNode2 = document.createElement("input");
-        this.inputNode2.setAttribute('type', 'text');
-        this.inputNode2.setAttribute("size", "10");
-        this.inputNode2.setAttribute("placeholder", "your answer");
         this.question2.appendChild(this.question2Prompt);
         this.question2.appendChild(this.inputNode2);
 
         this.question3 = document.createElement("div");
         this.question3Prompt = document.createTextNode($.i18n("num_lines") + "\t=\t");
         this.inputNode3 = document.createElement("input");
-        this.inputNode3.setAttribute('type', 'text');
-        this.inputNode3.setAttribute("size", "10");
-        this.inputNode3.setAttribute("placeholder", "your answer");
         this.question3.appendChild(this.question3Prompt);
         this.question3.appendChild(this.inputNode3);
 
         this.inputNodes = [this.inputNode1, this.inputNode2, this.inputNode3];
-        this.questionPart.appendChild(this.question1);
-        this.questionPart.appendChild(this.question3);
-        this.questionPart.appendChild(this.question2);
-        this.containerDiv.appendChild(this.questionPart);
+        this.questionDiv.appendChild(this.question1);
+        this.questionDiv.appendChild(this.question3);
+        this.questionDiv.appendChild(this.question2);
+        this.containerDiv.appendChild(this.questionDiv);
         this.containerDiv.appendChild(document.createElement("br"));
 
         // Copy the original elements to the container holding what the user will see.
@@ -185,10 +174,15 @@ export default class cacheinfo extends RunestoneBase {
 
         // Remove the script tag.
         this.scriptSelector(this.containerDiv).remove();
-        // Set the class for the text inputs, then store referecacheinfoes to them.
+        // Set the class for the text inputs, then store references to them.
         let ba = $(this.containerDiv).find(":input");
         ba.attr("class", "form form-control selectwidthauto");
         ba.attr("aria-label", "input area");
+        ba.attr("type", "number");
+        ba.attr("size", "8");
+        ba.attr("maxlength", "10");
+        ba.attr("placeholder", "your answer");
+        
         this.blankArray = ba.toArray();
         // When a blank is changed mark this component as interacted with.
         // And set a class on the component in case we want to render components that have been used
@@ -282,8 +276,39 @@ export default class cacheinfo extends RunestoneBase {
                 this.address_eg += "1";
             }
         }
-        var rand_list = [1,2,1];
+        
+        this.rand_list = [];
+        this.rand_list = this.genRandList();
+        while (this.checkSameRandList()) {
+            this.rand_list = this.genRandList();
+        }
+
+        this.tag_bits = rand_list[0];
+        this.index_bits = rand_list[1];
+        this.offset_bits = rand_list[2];
+        
+        this.block_size = 1 << this.offset_bits;
+        this.num_entry = 1 << this.index_bits;  
+
+        this.last_rand_choice = this.rand_list;
+    }
+
+    checkSameRandList() {
+        for (let i = 0; i < this.num_bits; i++) {
+            if (this.rand_list[i] != this.last_rand_choice[i]) {
+                return false;
+            }
+        }
+        return true;
+    }
+    
+    genRandList() {
+        var rand_list = [1,1,1];
         for (let i = 0; i < (this.num_bits - 4); i++){
+            if ((this.num_bits > 4) && i == 0) {
+                rand_list[1] += 1;
+                continue;
+            }
             let curr_rand = Math.random();
             if (curr_rand < 0.34) {
                 rand_list[0] += 1;
@@ -293,12 +318,6 @@ export default class cacheinfo extends RunestoneBase {
                 rand_list[2] += 1;
             }
         }
-        this.tag_bits = rand_list[0];
-        this.index_bits = rand_list[1];
-        this.offset_bits = rand_list[2];
-        
-        this.block_size = 1 << this.offset_bits;
-        this.num_entry = 1 << this.index_bits;  
     }
 
     // generate the answer as a string based on the randomly generated number
@@ -306,7 +325,7 @@ export default class cacheinfo extends RunestoneBase {
         this.cache_org = this.orgMenuNode.value;
         this.feedbackDiv.style.visibility = 'hidden';
         // this.newInputNode.style.visibility = 'visible';
-        this.questionPart.style.visibility = "visible";
+        this.questionDiv.style.visibility = "visible";
         this.displayFeed = [];
         
         this.block_size_ans = this.block_size;
@@ -413,7 +432,7 @@ export default class cacheinfo extends RunestoneBase {
             timestamp: new Date(),
         });
         let data = {
-            event: "numconv",
+            event: "cacheinfo",
             act: answer || "",
             answer: answer || "",
             correct: this.correct ? "T" : "F",
@@ -527,6 +546,7 @@ export default class cacheinfo extends RunestoneBase {
     renderfeedback() {
         // only the feedback message needs to display
         var feedback_html = "";
+        // only two lines of feedback for direct-mapped
         if ( this.orgMenuNode.value === "Direct-Mapped" ) {
             for ( var i = 0; i < 2; i ++ ) {
                 feedback_html += "<dev>" + this.feedback_msg[i] + "</dev>";
@@ -553,61 +573,6 @@ export default class cacheinfo extends RunestoneBase {
         this.feedbackDiv.style.visibility = "visible";
         if (typeof MathJax !== "undefined") {
             this.queueMathJax(document.body);
-        }
-    }
-
-    /*==================================
-    === functions for compare button ===
-    ==================================*/
-    enableCompareButton() {
-        this.compareButton.disabled = false;
-    }
-    // _`comparecacheinfoAnswers`
-    compareCacheInfoAnswers() {
-        var data = {};
-        data.div_id = this.divid;
-        data.course = eBookConfig.course;
-        jQuery.get(
-            `${eBookConfig.new_server_prefix}/assessment/gettop10Answers`,
-            data,
-            this.comparecacheinfo
-        );
-    }
-    compareCacheInfo(data, status, whatever) {
-        var answers = data.detail.res;
-        var misc = data.detail.miscdata;
-        var body = "<table>";
-        body += "<tr><th>Answer</th><th>Count</th></tr>";
-        for (var row in answers) {
-            body +=
-                "<tr><td>" +
-                answers[row].answer +
-                "</td><td>" +
-                answers[row].count +
-                " times</td></tr>";
-        }
-        body += "</table>";
-        var html =
-            "<div class='modal fade'>" +
-            "    <div class='modal-dialog compare-modal'>" +
-            "        <div class='modal-content'>" +
-            "            <div class='modal-header'>" +
-            "                <button type='button' class='close' data-dismiss='modal' aria-hidden='true'>&times;</button>" +
-            "                <h4 class='modal-title'>Top Answers</h4>" +
-            "            </div>" +
-            "            <div class='modal-body'>" +
-            body +
-            "            </div>" +
-            "        </div>" +
-            "    </div>" +
-            "</div>";
-        var el = $(html);
-        el.modal();
-    }
-
-    disableInteraction() {
-        for (var i = 0; i < this.blankArray.length; i++) {
-            this.blankArray[i].disabled = true;
         }
     }
 }

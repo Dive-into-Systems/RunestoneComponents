@@ -1,7 +1,7 @@
 // *********
-// |docname|
+// numconv.js
 // *********
-// This file contains the JS for the Runestone numberconversion component. It was created By Isaiah Mayerchak and Kirby Olson, 6/4/15 then revised by Brad Miller, 2/7/20.
+// This file contains the JS for the Runestone numberconversion component. It was created By Luyuan Fan, Zhengfei Li, and Yue Zhang, 06/01/2023
 "use strict";
 
 import RunestoneBase from "../../common/js/runestonebase.js";
@@ -21,7 +21,7 @@ export default class NC extends RunestoneBase {
         this.origElem = orig;
         this.divid = orig.id;
         this.correct = null;
-        // default number of bits
+        // default number of bits = 8
         this.num_bits = 8;
         
         this.createNCElement();
@@ -36,14 +36,12 @@ export default class NC extends RunestoneBase {
     scriptSelector(root_node) {
         return $(root_node).find(`script[type="application/json"]`);
     }
-    // optionSelector(root_node) {
-    //     return $(root_node).find(`div[id="conv_options"]`);
-    // }
     /*===========================================
     ====   Functions generating final HTML   ====
     ===========================================*/
+    // Create the NC Element
     createNCElement() {
-        this.renderNCInput();
+        this.renderNCPromptAndInput();
         this.renderNCButtons();
         this.renderNCFeedbackDiv();
         // replaces the intermediate HTML for this component with the rendered HTML of this component
@@ -51,52 +49,52 @@ export default class NC extends RunestoneBase {
 
         // alert(this.num_bits);
     }
-    renderNCInput() {
-        // qwerty
+
+    renderNCPromptAndInput() {
         // Generate the two dropdown menus for number conversion
         this.containerDiv = document.createElement("div");
         this.containerDiv.id = this.divid;
-        
-        // new from here
 
-        this.newStatement = document.createElement("div");
+        this.statementDiv = document.createElement("div");
 
         this.statementNode1 = document.createTextNode("Convert from ");
+        // default menu options
         this.menuArray1 = ["binary", "decimal-unsigned", "decimal-signed", "hexadecimal"];
 
         this.fromOpt = this.menuArray1;
         this.toOpt = this.menuArray1;
         
+        // parse options from the JSON script inside
         var currOption = JSON.parse(
             this.scriptSelector(this.origElem).html()
         );
-        // var currOption = $(document).getElementById("conv_options");
-
-        // alert("start" + currOption);
+        // read number of bits 
         if (currOption["bits"] != undefined) {
             this.num_bits = eval(currOption["bits"]);
-            // alert("change proceeded to "+currOption["bits"]);
         }
+        // ensure number of bits is a multiple of 4
         if ( this.num_bits % 4 != 0 ){
             alert($.i18n("msg_NC_not_divisible_by_4"));
             return;
         }
+        // ensure number of bits is not too large
         if ( this.num_bits > 64 ){
             alert($.i18n("msg_NC_too_many_bits"));
             return;
         }
+        // read from-options as an array
         if (currOption["from-options"] === undefined) {
             this.fromOpt = this.menuArray1;
         } else {
             this.fromOpt = currOption["from-options"];
         }
-        
+        // read to-options as an array
         if (currOption["to-options"] === undefined) {
             this.toOpt = this.menuArray1;
         } else {
             this.toOpt = currOption["to-options"];
         }
-
+        // convert from-options to html option elements of menuNode1
         this.menuNode1 = document.createElement("select");
         for (var i = 0; i < this.fromOpt.length; i++) {
             var option = document.createElement("option");
@@ -105,6 +103,9 @@ export default class NC extends RunestoneBase {
             this.menuNode1.appendChild(option);
         }
         this.menuNode1.setAttribute("class", "form form-control selectwidthauto");
+        // When the value of menuNode1 is changed, generate a new number as the 
+        // prompt. If the conversion is valid, then generate the corresponding 
+        // answer. 
         this.menuNode1.addEventListener("change",
             function () {
                 this.clearAnswer();
@@ -118,6 +119,7 @@ export default class NC extends RunestoneBase {
 
         this.statementNode2 = document.createTextNode(" to ");
         
+         // convert to-options to html option elements of menuNode2
         this.menuNode2 = document.createElement("select");
         for (var i = 0; i < this.toOpt.length; i++) {
             var option = document.createElement("option");
@@ -126,6 +128,8 @@ export default class NC extends RunestoneBase {
             this.menuNode2.appendChild(option);
         }
         this.menuNode2.setAttribute("class", "form form-control selectwidthauto");
+        // When the value of menuNode2 is changed and the conversion is valid,
+        // generate a new answer. 
         this.menuNode2.addEventListener("change",
             function () {
                 this.checkValidConversion();
@@ -138,40 +142,36 @@ export default class NC extends RunestoneBase {
                 }
             }.bind(this),
             false);
-
-        // this.optList.remove();
+        
+        // specify the number of bits in the statement
         this.statementNode3 = document.createTextNode(" (" + this.num_bits.toString() + "bits)");
 
-        this.newStatement.appendChild(this.statementNode1);
-        this.newStatement.appendChild(this.menuNode1);
-        this.newStatement.appendChild(this.statementNode2);
-        this.newStatement.appendChild(this.menuNode2);
-        this.newStatement.appendChild(this.statementNode3);
-
-        this.containerDiv.appendChild(this.newStatement);
+        // render the statement
+        this.statementDiv.appendChild(this.statementNode1);
+        this.statementDiv.appendChild(this.menuNode1);
+        this.statementDiv.appendChild(this.statementNode2);
+        this.statementDiv.appendChild(this.menuNode2);
+        this.statementDiv.appendChild(this.statementNode3);
+        this.containerDiv.appendChild(this.statementDiv);
         this.containerDiv.appendChild(document.createElement("br"));
-        // this.fromType = this.menuNode1.value;
-        // this.toType = this.menuNode2.value;
 
-        this.newPrompt = document.createElement("div");
+        // create the node for the prompt
+        this.promptDiv = document.createElement("div");
 
-        this.newPromptTextNode = document.createElement("code");
-        this.newPrompt.appendChild(this.newPromptTextNode);
+        // create the node for the number being displayed (conversion from)
+        this.promptDivTextNode = document.createElement("code");
+        this.promptDiv.appendChild(this.promptDivTextNode);
+        
+        // render the input field
+        this.inputNode = document.createElement("input");
+        this.inputNode.setAttribute('type', 'text');
+        this.inputNode.setAttribute("size", "20");
+        this.inputNode.setAttribute("id", this.divid + "_input");
+        this.promptDiv.appendChild((this.inputNode));
+        this.containerDiv.appendChild(this.promptDiv);
 
-        this.newInputNode = document.createElement("input");
-        this.newInputNode.setAttribute('type', 'text');
-        this.newInputNode.setAttribute("class", "form form-control selectwidthauto");
-        this.newInputNode.setAttribute("size", "20");
-        this.newInputNode.setAttribute("placeholder", "your answer");
-        this.newInputNode.setAttribute("aria-label", "input area");
-        this.newInputNode.setAttribute("id", this.divid + "_input");
-
-
-        this.newPrompt.appendChild((this.newInputNode));
-        // this.newPrompt.appendChild((this.newInputNode));
-        this.containerDiv.appendChild(this.newPrompt);
-        this.newPrompt.style.visibility = "hidden"; 
-    // new till here
+        // prompt is invisible by default
+        this.promptDiv.style.visibility = "hidden"; 
 
         // Copy the original elements to the container holding what the user will see.
         $(this.origElem).children().clone().appendTo(this.containerDiv);
@@ -183,6 +183,8 @@ export default class NC extends RunestoneBase {
         ba.attr("class", "form form-control selectwidthauto");
         ba.attr("aria-label", "input area");
         this.blankArray = ba.toArray();
+        // Set the style of code
+        $(this.containerDiv).find("code").attr("class","code-inline tex2jax_ignore");
         // When a blank is changed mark this component as interacted with.
         // And set a class on the component in case we want to render components that have been used
         // differently
@@ -204,6 +206,7 @@ export default class NC extends RunestoneBase {
             name: "do answer",
             type: "button",
         });
+        // check the answer when the conversion is valid
         this.submitButton.addEventListener(
             "click",
             function () {
@@ -223,6 +226,7 @@ export default class NC extends RunestoneBase {
             name: "generate a number",
             type: "button",
         });
+        // generate a new number for conversion 
         this.generateButton.addEventListener(
             "click",
             function () {
@@ -250,10 +254,11 @@ export default class NC extends RunestoneBase {
 
     // clear the input field
     clearAnswer() {
-        // qwerty
-        this.newInputNode.value = "";
+        this.inputNode.value = "";
     }
 
+    // Convert an integer to its binary expression with leading zeros as a string.
+    // The string always has length of this.num_bits
     toBinary(num) {
         var str = num.toString(2);
         if (str.length < this.num_bits) {
@@ -265,6 +270,8 @@ export default class NC extends RunestoneBase {
         }
         return str;
     }
+    // Convert an integer to its hexadecimal expression with leading zeros as a string.
+    // The string always has length of this.num_bits / 4
     toHexadecimal(num) {
         var str = num.toString(16);
         var target_len = Math.ceil(this.num_bits / 4);
@@ -278,10 +285,10 @@ export default class NC extends RunestoneBase {
         return str;
     }
 
-    // generate a random number from 0 to 2^(num_bits) and set the number to display
+    // generate a random number from 0 to 2^(this.num_bits)-1 and set the number to display
     generateNumber() {
-
         this.target_num = Math.floor(Math.random() * (1 << this.num_bits) ) ;
+        // ensure the number is not 2^(this.num_bits)
         if (this.target_num === (1 << this.num_bits)) {
             this.target_num --;
         }
@@ -308,10 +315,8 @@ export default class NC extends RunestoneBase {
 
     // generate the answer as a string based on the randomly generated number
     generateAnswer() {
-        this.feedBackDiv.style.visibility = 'hidden';
-        this.newInputNode.style.visibility = 'visible';
-        this.displayFeed = [];
-        // qwerty
+
+        this.inputNode.style.visibility = 'visible';
         switch (this.menuNode2.value) {
             case "binary" : 
                 this.target_num_string = this.toBinary(this.target_num);
@@ -330,34 +335,35 @@ export default class NC extends RunestoneBase {
                 this.target_num_string = this.toHexadecimal(this.target_num);
                 break;
         }
+        // update the prompt
         this.generatePrompt();
     }
 
-    // update the prompt to display
+    // Update the prompt to display
+    // It is in the format of "xxxxx = ______"
     generatePrompt() {
 
-        this.feedBackDiv.style.visibility = 'hidden';
-        this.newInputNode.style.visibility = 'visible';
-        this.displayFeed = [];
-
+        this.inputNode.style.visibility = 'visible';
         switch(this.menuNode1.value) {
             case "binary" : 
-                this.newPromptTextNode.textContent = "0b" + this.displayed_num_string + " = ";
+                this.promptDivTextNode.textContent = "0b" + this.displayed_num_string + " = ";
                 break;
             case "decimal-unsigned" : 
-                this.newPromptTextNode.textContent = this.displayed_num_string + " = ";
+                this.promptDivTextNode.textContent = this.displayed_num_string + " = ";
                 break;
             case "decimal-signed" : 
-                this.newPromptTextNode.textContent = this.displayed_num_string + " = ";
+                this.promptDivTextNode.textContent = this.displayed_num_string + " = ";
                 break;
             case "hexadecimal" : 
-                this.newPromptTextNode.textContent = "0x" + this.displayed_num_string + " = ";
+                this.promptDivTextNode.textContent = "0x" + this.displayed_num_string + " = ";
                 break;           
         }
+
+        // the placeholder tells what the desired input should be like
         var placeholder;
         switch(this.menuNode2.value) {
             case "binary" : 
-                this.newPromptTextNode.append("0b");
+                this.promptDivTextNode.append("0b");
                 placeholder = "your answer (" + this.num_bits.toString() + "digits of binary number)";
                 break;
             case "decimal-unsigned" : 
@@ -367,13 +373,14 @@ export default class NC extends RunestoneBase {
                 placeholder = "your answer (signed decimal)";
                 break;
             case "hexadecimal" : 
-                this.newPromptTextNode.append("0x");
+                this.promptDivTextNode.append("0x");
                 placeholder = "your answer (" + this.num_bits.toString() + "digits of hexadecimal number)";
                 break;           
         }
-        this.newInputNode.setAttribute("placeholder", placeholder);
-        this.newInputNode.setAttribute("size", placeholder.length);
-        this.newInputNode.setAttribute("maxlength", 1+this.num_bits);
+        this.inputNode.setAttribute("placeholder", placeholder);
+        this.inputNode.setAttribute("size", placeholder.length);
+        this.inputNode.setAttribute("maxlength", 1+this.num_bits);
+        this.hideFeedback();
     }
 
     // check if the conversion is valid  
@@ -385,89 +392,31 @@ export default class NC extends RunestoneBase {
             this.correct = false;
             this.feedback_msg = ($.i18n("msg_NC_same_exp"));
             this.renderFeedback();
-            this.newInputNode.style.visibility = "hidden";
-            this.newPromptTextNode.textContent = "";
-        } else if ((this.menuNode1.value.valueOf() == "decimal-signed".valueOf() && this.menuNode2.value.valueOf() != "binary".valueOf()) || (this.menuNode2.value.valueOf() == "decimal-signed".valueOf() && this.menuNode1.value.valueOf() != "binary".valueOf())) {
+            this.inputNode.style.visibility = "hidden";
+            this.promptDivTextNode.textContent = "";
+        // if one of the option is signed decimal, then the other
+        // option must be binary
+        } else if ((this.menuNode1.value === "decimal-signed" 
+                && this.menuNode2.value != "binary") 
+                || (this.menuNode2.value === "decimal-signed" 
+                && this.menuNode1.value != "binary")) 
+            {
             this.valid_conversion = false;
             this.correct = false;
-            this.feedback_msg = ($.i18n("msg_fitb_two02dec"));
+            this.feedback_msg = ($.i18n("msg_NC_two02dec"));
             this.renderFeedback();
-            this.newInputNode.style.visibility = 'hidden';
-            this.newPromptTextNode.textContent = "";
+            this.inputNode.style.visibility = 'hidden';
+            this.promptDivTextNode.textContent = "";
             return;
         } else {
-            this.newPrompt.style.visibility = "visible";
+            this.promptDiv.style.visibility = "visible";
         }
-    }
-    /*===================================
-    === Checking/loading from storage ===
-    ===================================*/
-    restoreAnswers(data) {
-        var arr;
-        // Restore answers from storage retrieval done in RunestoneBase.
-        try {
-            // The newer format encodes data as a JSON object.
-            arr = JSON.parse(data.answer);
-            // The result should be an array. If not, try comma parsing instead.
-            if (!Array.isArray(arr)) {
-                throw new Error();
-            }
-        } catch (err) {
-            // The old format didn't.
-            arr = data.answer.split(",");
-        }
-        for (var i = 0; i < this.blankArray.length; i++) {
-            $(this.blankArray[i]).attr("value", arr[i]);
-        }
-        // Use the feedback from the server, or recompute it locally.
-        // if (!this.feedbackArray) {
-        //     this.displayFeed = data.displayFeed;
-        //     this.correct = data.correct;
-        //     this.isCorrectArray = data.isCorrectArray;
-        //     // Only render if all the data is present; local storage might have old data missing some of these items.
-        //     if (
-        //         typeof this.displayFeed !== "undefined" &&
-        //         typeof this.correct !== "undefined" &&
-        //         typeof this.isCorrectArray !== "undefined"
-        //     ) {
-        //         this.renderFeedback();
-        //     }
-        // } else {
-        //     this.checkCurrentAnswer();
-        // }
-    }
-    checkLocalStorage() {
-        // Loads previous answers from local storage if they exist
-        var storedData;
-        if (this.graderactive) {
-            return;
-        }
-        var len = localStorage.length;
-        if (len > 0) {
-            var ex = localStorage.getItem(this.localStorageKey());
-            if (ex !== null) {
-                try {
-                    storedData = JSON.parse(ex);
-                    var arr = storedData.answer;
-                } catch (err) {
-                    // error while parsing; likely due to bad value stored in storage
-                    console.log(err.message);
-                    localStorage.removeItem(this.localStorageKey());
-                    return;
-                }
-                // this.restoreAnswers(storedData);
-            }
-        }
-    }
-    setLocalStorage(data) {
-        let key = this.localStorageKey();
-        localStorage.setItem(key, JSON.stringify(data));
     }
     
     // check if the answer is correct
     checkCurrentAnswer() {
         // the answer is correct if it is the same as the string this.target_num_string
-        var input_value = this.newInputNode.value.toLowerCase();
+        var input_value = this.inputNode.value.toLowerCase();
         if ( input_value === "" ) {
             this.feedback_msg = ($.i18n("msg_no_answer"));
             this.correct = false;
@@ -480,10 +429,10 @@ export default class NC extends RunestoneBase {
         }
     }
 
+    // log the answer and other info to the server (in the future)
     async logCurrentAnswer(sid) {
         let answer = JSON.stringify(this.given_arr);
         // Save the answer locally.
-        let feedback = true;
         this.setLocalStorage({
             answer: answer,
             timestamp: new Date(),
@@ -499,102 +448,34 @@ export default class NC extends RunestoneBase {
             data.sid = sid;
             feedback = false;
         }
-        
-        // Per `logBookEvent <logBookEvent>`, the result is undefined if there's no server. Otherwise, the server provides the endpoint-specific results in ``data.details``; see `make_json_response`.
-        // data = await this.logBookEvent(data);
-        // let detail = data && data.detail;
-        // if (!feedback) return;
-        // if (!this.feedbackArray) {
-        //     // On success, update the feedback from the server's grade.
-        //     this.setLocalStorage({
-        //         answer: answer,
-        //         timestamp: detail.timestamp,
-        //     });
-        //     this.correct = detail.correct;
-        //     this.displayFeed = detail.displayFeed;
-        //     this.isCorrectArray = detail.isCorrectArray;
-        //     if (!this.isTimed) {
-        //         this.renderFeedback();
-        //     }
-        // }
-        // return detail;
+        // render the feedback
         this.renderFeedback();
         return data;
     }
 
-    /*==============================
-    === Evaluation of answer and ===
-    ===     display feedback     ===
-    ==============================*/
-    // Inputs:
-    //
-    // - Strings entered by the student in ``this.blankArray[i].value``.
-    // - Feedback in ``this.feedbackArray``.
-    //
-    // Outputs:
-    //
-    // - ``this.displayFeed`` is an array of HTML feedback.
-    // - ``this.isCorrectArray`` is an array of true, false, or null (the question wasn't answered).
-    // - ``this.correct`` is true, false, or null (the question wasn't answered).
-    evaluateAnswers() {
-        // Keep track if all answers are correct or not.
-        this.correct = true;
-        for (var i = 0; i < this.blankArray.length; i++) {
-            var given = this.blankArray[i].value;
-            // If this blank is empty, provide no feedback for it.
-            if (given === "") {
-                this.isCorrectArray.push(null);
-                this.displayFeed.push($.i18n("msg_no_answer"));
-                this.correct = false;
-            } else {
-                // Look through all feedback for this blank. The last element in the array always matches. If no feedback for this blank exists, use an empty list.
-                var fbl = this.feedbackArray[i] || [];
-                for (var j = 0; j < fbl.length; j++) {
-                    // The last item of feedback always matches.
-                    if (j === fbl.length - 1) {
-                        this.displayFeed.push(fbl[j]["feedback"]);
-                        break;
-                    }
-                    // If this is a regexp...
-                    if ("regex" in fbl[j]) {
-                        var patt = RegExp(
-                            fbl[j]["regex"],
-                            fbl[j]["regexFlags"]
-                        );
-                        if (patt.test(given)) {
-                            this.displayFeed.push(fbl[j]["feedback"]);
-                            break;
-                        }
-                    } else {
-                        // This is a number.
-                        console.assert("number" in fbl[j]);
-                        var [min, max] = fbl[j]["number"];
-                        // Convert the given string to a number. While there are `lots of ways <https://coderwall.com/p/5tlhmw/converting-strings-to-number-in-javascript-pitfalls>`_ to do this; this version supports other bases (hex/binary/octal) as well as floats.
-                        var actual = +given;
-                        if (actual >= min && actual <= max) {
-                            this.displayFeed.push(fbl[j]["feedback"]);
-                            break;
-                        }
-                    }
-                }
-                // The answer is correct if it matched the first element in the array. A special case: if only one answer is provided, count it wrong; this is a misformed problem.
-                let is_correct = j === 0 && fbl.length > 1;
-                this.isCorrectArray.push(is_correct);
-                if (!is_correct) {
-                    this.correct = false;
-                }
-            }
-        }
-        this.percent =
-            this.isCorrectArray.filter(Boolean).length / this.blankArray.length;
+    /*===================================
+    === Checking/loading from storage ===
+    ===================================*/
+    // Note: they are not needed here
+    restoreAnswers(data) {
+        // pass
+    }
+    checkLocalStorage() {
+        // pass
+    }
+    setLocalStorage(data) {
+        // pass
     }
     
     hideFeedback() {
         this.feedBackDiv.style.visibility = "hidden";
     }
 
-    renderFeedback() {
+    displayFeedback() {
         this.feedBackDiv.style.visibility = "visible";
+    }
+
+    renderFeedback() {
         // only the feedback message needs to display
         var feedback_html = "<dev>" + this.feedback_msg + "</dev>";
         if (this.correct) {
@@ -604,64 +485,9 @@ export default class NC extends RunestoneBase {
         }
         
         this.feedBackDiv.innerHTML = feedback_html;
-        this.feedBackDiv.style.visibility = "visible";
+        this.displayFeedback();
         if (typeof MathJax !== "undefined") {
             this.queueMathJax(document.body);
-        }
-    }
-
-    /*==================================
-    === Functions for compare button ===
-    ==================================*/
-    enableCompareButton() {
-        this.compareButton.disabled = false;
-    }
-    // _`compareNCAnswers`
-    compareNCAnswers() {
-        var data = {};
-        data.div_id = this.divid;
-        data.course = eBookConfig.course;
-        jQuery.get(
-            `${eBookConfig.new_server_prefix}/assessment/gettop10Answers`,
-            data,
-            this.compareNC
-        );
-    }
-    compareNC(data, status, whatever) {
-        var answers = data.detail.res;
-        var misc = data.detail.miscdata;
-        var body = "<table>";
-        body += "<tr><th>Answer</th><th>Count</th></tr>";
-        for (var row in answers) {
-            body +=
-                "<tr><td>" +
-                answers[row].answer +
-                "</td><td>" +
-                answers[row].count +
-                " times</td></tr>";
-        }
-        body += "</table>";
-        var html =
-            "<div class='modal fade'>" +
-            "    <div class='modal-dialog compare-modal'>" +
-            "        <div class='modal-content'>" +
-            "            <div class='modal-header'>" +
-            "                <button type='button' class='close' data-dismiss='modal' aria-hidden='true'>&times;</button>" +
-            "                <h4 class='modal-title'>Top Answers</h4>" +
-            "            </div>" +
-            "            <div class='modal-body'>" +
-            body +
-            "            </div>" +
-            "        </div>" +
-            "    </div>" +
-            "</div>";
-        var el = $(html);
-        el.modal();
-    }
-
-    disableInteraction() {
-        for (var i = 0; i < this.blankArray.length; i++) {
-            this.blankArray[i].disabled = true;
         }
     }
 }
