@@ -55,9 +55,6 @@ export default class cacheinfo extends RunestoneBase {
         this.containerDiv = document.createElement("div");
         this.questionDiv = document.createElement("div");
         this.containerDiv.id = this.divid;
-        
-        this.prompt1 = document.createElement("div");
-        this.prompt1.append("Cache organization : ");
 
         // list of cache organization opitons
         this.cacheOrgArray = ["Direct-Mapped", "2-Way Set Associative", "4-Way Set Associative"];
@@ -100,22 +97,25 @@ export default class cacheinfo extends RunestoneBase {
             }.bind(this),
             false);
         
-        
+        // create the section that prompts question
+        // create question prompt (address)
         this.addressNode = document.createElement("div");
         this.addressNodeText = document.createTextNode("address: ");
         this.addressNodeAddress = document.createElement("code");
         this.addressNodeAddress.textContent = this.address_eg;
         this.addressNode.appendChild(this.addressNodeText);
         this.addressNode.appendChild(this.addressNodeAddress);
-
+        this.addressNode.style.textAlign = "center";
+        
+        // create question prompt (tag, index, offset)
         this.partitionNode = document.createElement("div");
         this.tagNodeText = document.createTextNode("tag: ");
         this.tagNodeTag = document.createElement("code");
         this.tagNodeTag.textContent = this.tag_bits;
-        this.indexNodeText = document.createTextNode(" index: ");
+        this.indexNodeText = document.createTextNode("\tindex: ");
         this.indexNodeIndex = document.createElement("code");
         this.indexNodeIndex.textContent = this.index_bits;
-        this.offsetNodeText = document.createTextNode(" offset: ");
+        this.offsetNodeText = document.createTextNode("\toffset: ");
         this.offsetNodeOffset = document.createElement("code");
         this.offsetNodeOffset.textContent = this.offset_bits;
         this.partitionNode.appendChild(this.tagNodeText);
@@ -124,17 +124,26 @@ export default class cacheinfo extends RunestoneBase {
         this.partitionNode.appendChild(this.indexNodeIndex);
         this.partitionNode.appendChild(this.offsetNodeText);
         this.partitionNode.appendChild(this.offsetNodeOffset);
+        this.partitionNode.style.textAlign = "center";
         
+        // put all question prompt segements together
         this.statementDiv = document.createElement("div");
-        this.statementDiv.append("Cache Organization: ");
+        this.statementDiv.append("   Cache Organization: ");
         this.statementDiv.appendChild(this.orgMenuNode);
-        this.statementDiv.append("\tAddress Length: ");
+        this.statementDiv.append("   Address Length: ");
         this.statementDiv.appendChild(this.addrMenuNode);
+        this.statementDiv.appendChild(document.createElement("br"));
         this.statementDiv.appendChild(document.createElement("br"));
         this.statementDiv.appendChild(this.addressNode);
         this.statementDiv.appendChild(document.createElement("br"));
         this.statementDiv.appendChild(this.partitionNode);
         this.statementDiv.appendChild(document.createElement("br"));
+
+        this.statementDiv.style.borderWidth = "1px";
+        this.statementDiv.style.borderRadius = "5px";
+        this.statementDiv.style.borderBlockStyle = "solid";
+        this.statementDiv.style.borderBlockColor = "grey";
+        this.statementDiv.style.backgroundColor = "white";
 
         this.containerDiv.appendChild(this.statementDiv);
         this.containerDiv.appendChild(document.createElement("br"));
@@ -145,7 +154,6 @@ export default class cacheinfo extends RunestoneBase {
         this.inputNode1 = document.createElement("input");
         this.question1.appendChild(this.question1Prompt);
         this.question1.appendChild(this.inputNode1);
-        this.question1.append("(in bytes)");
 
         this.question2 = document.createElement("div");
         this.question2Prompt = document.createTextNode($.i18n("num_rows") + "\t=\t");
@@ -166,6 +174,7 @@ export default class cacheinfo extends RunestoneBase {
         this.containerDiv.appendChild(this.questionDiv);
         this.containerDiv.appendChild(document.createElement("br"));
 
+
         // Copy the original elements to the container holding what the user will see.
         $(this.origElem).children().clone().appendTo(this.containerDiv);
         
@@ -175,11 +184,11 @@ export default class cacheinfo extends RunestoneBase {
         // Remove the script tag.
         this.scriptSelector(this.containerDiv).remove();
         // Set the class for the text inputs, then store references to them.
-        let ba = $(this.containerDiv).find(":input");
+        let ba = $(this.containerDiv).find("input");
         ba.attr("class", "form form-control selectwidthauto");
         ba.attr("aria-label", "input area");
-        ba.attr("type", "number");
-        ba.attr("size", "8");
+        ba.attr("type", "text");
+        ba.attr("size", "10");
         ba.attr("maxlength", "10");
         ba.attr("placeholder", "your answer");
         
@@ -213,7 +222,7 @@ export default class cacheinfo extends RunestoneBase {
             }.bind(this),
             false
         );
-
+        
         this.generateButton = document.createElement("button");
         this.generateButton.textContent = $.i18n("msg_cacheinfo_generate_a_number");
         $(this.generateButton).attr({
@@ -235,21 +244,23 @@ export default class cacheinfo extends RunestoneBase {
         this.containerDiv.appendChild(this.generateButton);
         this.containerDiv.appendChild(this.submitButton);
     }
-
+    
     renderCacheInfofeedbackDiv() {
         this.feedbackDiv.id = this.divid + "_feedback";
         this.containerDiv.appendChild(document.createElement("br"));
         this.containerDiv.appendChild(this.feedbackDiv);
     }
 
-    // clear the input field
+    // clear the input fields
     clearInput() {
         for ( var i = 0 ; i < 3; i ++ ) {
             this.inputNodes[i].value = "";
+            // reset the style of each input field
             this.inputNodes[i].setAttribute("class", "form form-control selectwidthauto");
         }
     }
 
+    // update this.num_bits based on this.addrMenuNode
     updateNumBits() {
         switch (this.addrMenuNode.value) {
             case "4 bits":
@@ -263,6 +274,7 @@ export default class cacheinfo extends RunestoneBase {
                 break;
         }
     }
+    
     // generate a memory address
     generateAddress() {
         // this.num_bits = this.addrMenuNode.value;
@@ -277,24 +289,23 @@ export default class cacheinfo extends RunestoneBase {
             }
         }
         
-        this.rand_list = [];
-        this.rand_list = this.genRandList();
+        this.genRandList();
         while (this.checkSameRandList()) {
-            this.rand_list = this.genRandList();
+            this.genRandList();
         }
 
-        this.tag_bits = rand_list[0];
-        this.index_bits = rand_list[1];
-        this.offset_bits = rand_list[2];
+        this.tag_bits = this.rand_list[0];
+        this.index_bits = this.rand_list[1];
+        this.offset_bits = this.rand_list[2];
         
         this.block_size = 1 << this.offset_bits;
         this.num_entry = 1 << this.index_bits;  
-
         this.last_rand_choice = this.rand_list;
     }
-
+    
+    // check if the newly generated list is the same as the old one
     checkSameRandList() {
-        for (let i = 0; i < this.num_bits; i++) {
+        for (let i = 0; i < 3; i++) {
             if (this.rand_list[i] != this.last_rand_choice[i]) {
                 return false;
             }
@@ -303,37 +314,37 @@ export default class cacheinfo extends RunestoneBase {
     }
     
     genRandList() {
-        var rand_list = [1,1,1];
-        for (let i = 0; i < (this.num_bits - 4); i++){
+        this.rand_list = [1,1,1];
+        for (let i = 0; i < this.num_bits-3; i++) {
             if ((this.num_bits > 4) && i == 0) {
-                rand_list[1] += 1;
+                this.rand_list[1] += 1;
                 continue;
             }
             let curr_rand = Math.random();
             if (curr_rand < 0.34) {
-                rand_list[0] += 1;
+                this.rand_list[0] += 1;
             } else if (curr_rand < 0.67) {
-                rand_list[1] += 1;
+                this.rand_list[1] += 1;
             } else {
-                rand_list[2] += 1;
-            }
+                this.rand_list[2] += 1;
+            }            
         }
     }
 
     // generate the answer as a string based on the randomly generated number
     generateAnswer() {
-        this.cache_org = this.orgMenuNode.value;
-        this.feedbackDiv.style.visibility = 'hidden';
+        this.hidefeedback();
         // this.newInputNode.style.visibility = 'visible';
         this.questionDiv.style.visibility = "visible";
         this.displayFeed = [];
         
         this.block_size_ans = this.block_size;
         this.entries_ans = this.num_entry;
-
-        switch (this.cache_org) {
+        
+        // number of lines have something to do with the set associatives
+        switch (this.orgMenuNode.value) {
             case "Direct-Mapped" : 
-                this.num_line_ans = 1<<(this.index_bits);
+                this.num_line_ans = this.entries_ans;
                 this.question2.style.visibility = "hidden";
                 break;
             case "2-Way Set Associative" : 
@@ -346,64 +357,29 @@ export default class cacheinfo extends RunestoneBase {
                 break;
         }
         this.answers = [this.block_size_ans, this.entries_ans, this.num_line_ans];
-        this.regeneratePrompt();
+        this.generatePrompt();
     }
 
     /*===================================
     === Checking/loading from storage ===
     ===================================*/
     restoreAnswers(data) {
-        var arr;
-        // Restore answers from storage retrieval done in RunestoneBase.
-        try {
-            // The newer format CacheInfoNodes data as a JSON object.
-            arr = JSON.parse(data.answer);
-            // The result should be an array. If not, try comma parsing instead.
-            if (!Array.isArray(arr)) {
-                throw new Error();
-            }
-        } catch (err) {
-            // The old format didn't.
-            arr = data.answer.split(",");
-        }
-        for (var i = 0; i < this.blankArray.length; i++) {
-            $(this.blankArray[i]).attr("value", arr[i]);
-        }
+        // pass
     }
     checkLocalStorage() {
-        // Loads previous answers from local storage if they exist
-        var storedData;
-        if (this.graderactive) {
-            return;
-        }
-        var len = localStorage.length;
-        if (len > 0) {
-            var ex = localStorage.getItem(this.localStorageKey());
-            if (ex !== null) {
-                try {
-                    storedData = JSON.parse(ex);
-                    var arr = storedData.answer;
-                } catch (err) {
-                    // error while parsing; likely due to bad value stored in storage
-                    console.log(err.message);
-                    localStorage.removeItem(this.localStorageKey());
-                    return;
-                }
-                // this.restoreAnswers(storedData);
-            }
-        }
+        // pass
     }
     setLocalStorage(data) {
-        let key = this.localStorageKey();
-        localStorage.setItem(key, JSON.stringify(data));
+        // pass
     }
     
     // check if the answer is correct
     checkCurrentAnswer() {
-        // the answer is correct if each of the input field is the same as its corresponding target value
+        // the answer is correct if each of the input field is the same as its corresponding value in this.answers
         this.correct = true;
         this.feedback_msg = [];
         for (var i = 0; i < 3; i ++ ) {
+            // skip the question for number of sets when in direct-mapped
             if ( this.orgMenuNode.value === "Direct-Mapped" && i === 1) {
                 continue;
             }
@@ -411,20 +387,23 @@ export default class cacheinfo extends RunestoneBase {
             if ( input_value === "" ) {
                 this.feedback_msg.push($.i18n("msg_no_answer"));
                 this.correct = false;
+                // change the style of input field to alert-danger when no answer provided
                 this.inputNodes[i].setAttribute("class", "alert alert-danger");
             } else if ( input_value != this.answers[i] ) {
                 this.feedback_msg.push($.i18n("msg_cacheinfo_incorrect_"+i.toString()));
                 this.correct = false;
+                // change the style of input field to alert-danger when the answer is wrong
                 this.inputNodes[i].setAttribute("class", "alert alert-danger");            
             } else {
                 this.feedback_msg.push($.i18n("msg_cacheinfo_correct"));
+                // 
                 this.inputNodes[i].setAttribute("class", "alert alert-info");
             }
         }
     }
 
     async logCurrentAnswer(sid) {
-        let answer = JSON.stringify(this.given_arr);
+        let answer = JSON.stringify(this.inputNodes);
         // Save the answer locally.
         let feedback = true;
         this.setLocalStorage({
@@ -443,104 +422,24 @@ export default class cacheinfo extends RunestoneBase {
             feedback = false;
         }
         
-        // Per `logBookEvent <logBookEvent>`, the result is undefined if there's no server. Otherwise, the server provides the endpoint-specific results in ``data.details``; see `make_json_response`.
-        // data = await this.logBookEvent(data);
-        // let detail = data && data.detail;
-        // if (!feedback) return;
-        // if (!this.feedbackArray) {
-        //     // On success, update the feedback from the server's grade.
-        //     this.setLocalStorage({
-        //         answer: answer,
-        //         timestamp: detail.timestamp,
-        //     });
-        //     this.correct = detail.correct;
-        //     this.displayFeed = detail.displayFeed;
-        //     this.isCorrectArray = detail.isCorrectArray;
-        //     if (!this.isTimed) {
-        //         this.renderfeedback();
-        //     }
-        // }
-        // return detail;
         this.renderfeedback();
         return data;
     }
 
-    regeneratePrompt() {
+    // update the prompt
+    generatePrompt() {
         this.addressNodeAddress.textContent = this.address_eg;
         this.tagNodeTag.textContent = this.tag_bits;
         this.indexNodeIndex.textContent = this.index_bits;
         this.offsetNodeOffset.textContent = this.offset_bits;
     }
 
-    /*==============================
-    === Evaluation of answer and ===
-    ===     display feedback     ===
-    ==============================*/
-    // Inputs:
-    //
-    // - Strings entered by the student in ``this.blankArray[i].value``.
-    // - feedback in ``this.feedbackArray``.
-    //
-    // Outputs:
-    //
-    // - ``this.displayFeed`` is an array of HTML feedback.
-    // - ``this.isCorrectArray`` is an array of true, false, or null (the question wasn't answered).
-    // - ``this.correct`` is true, false, or null (the question wasn't answered).
-    evaluateAnswers() {
-        // Keep track if all answers are correct or not.
-        this.correct = true;
-        for (var i = 0; i < this.blankArray.length; i++) {
-            var given = this.blankArray[i].value;
-            // If this blank is empty, provide no feedback for it.
-            if (given === "") {
-                this.isCorrectArray.push(null);
-                this.displayFeed.push($.i18n("msg_no_answer"));
-                this.correct = false;
-            } else {
-                // Look through all feedback for this blank. The last element in the array always matches. If no feedback for this blank exists, use an empty list.
-                var fbl = this.feedbackArray[i] || [];
-                for (var j = 0; j < fbl.length; j++) {
-                    // The last item of feedback always matches.
-                    if (j === fbl.length - 1) {
-                        this.displayFeed.push(fbl[j]["feedback"]);
-                        break;
-                    }
-                    // If this is a regexp...
-                    if ("regex" in fbl[j]) {
-                        var patt = RegExp(
-                            fbl[j]["regex"],
-                            fbl[j]["regexFlags"]
-                        );
-                        if (patt.test(given)) {
-                            this.displayFeed.push(fbl[j]["feedback"]);
-                            break;
-                        }
-                    } else {
-                        // This is a number.
-                        console.assert("number" in fbl[j]);
-                        var [min, max] = fbl[j]["number"];
-                        // Convert the given string to a number. While there are `lots of ways <https://coderwall.com/p/5tlhmw/converting-strings-to-number-in-javascript-pitfalls>`_ to do this; this version supports other bases (hex/binary/octal) as well as floats.
-                        var actual = +given;
-                        if (actual >= min && actual <= max) {
-                            this.displayFeed.push(fbl[j]["feedback"]);
-                            break;
-                        }
-                    }
-                }
-                // The answer is correct if it matched the first element in the array. A special case: if only one answer is provided, count it wrong; this is a misformed problem.
-                let is_correct = j === 0 && fbl.length > 1;
-                this.isCorrectArray.push(is_correct);
-                if (!is_correct) {
-                    this.correct = false;
-                }
-            }
-        }
-        this.percent =
-            this.isCorrectArray.filter(Boolean).length / this.blankArray.length;
-    }
-    
     hidefeedback() {
         this.feedbackDiv.style.visibility = "hidden";
+    }
+
+    displayfeedback() {
+        this.feedbackDiv.style.visibility = "visible";
     }
 
     renderfeedback() {
@@ -554,6 +453,7 @@ export default class cacheinfo extends RunestoneBase {
                     feedback_html += "<br/>";
                 }
             }
+        // otherwise, display 3 lines of feedback
         } else {
             for ( var i = 0; i < 3; i ++ ) {
                 feedback_html += "<dev>" + this.feedback_msg[i] + "</dev>";
@@ -570,7 +470,7 @@ export default class cacheinfo extends RunestoneBase {
         }
         
         this.feedbackDiv.innerHTML = feedback_html;
-        this.feedbackDiv.style.visibility = "visible";
+        this.displayfeedback();
         if (typeof MathJax !== "undefined") {
             this.queueMathJax(document.body);
         }

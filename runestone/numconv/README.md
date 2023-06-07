@@ -40,7 +40,7 @@ Notice: Currently only works in ```.html```. It hasn't implemented in ```.rst```
 
     <!-- creation of the exercise -->
     <div class="runestone ">
-    <div data-component="numberconversion" data-question_label="1" id="test_number_conversion"  style="visibility: hidden;">
+    <div data-component="numberconversion" data-question_label="2" id="test_number_conversion"  style="visibility: hidden;">
         <!-- parameter setting of the exercise -->
         <script type="application/json">
             {}
