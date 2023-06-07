@@ -8,3 +8,42 @@ input.input-validation-error {
     border: 1px solid #e80c4d;
 }
 
+.tagclass {
+    color: MistyRose;
+    background-color: indianred;
+}
+
+.indexclass {
+    color: ghostwhite;
+    background-color: CornflowerBlue; 
+}
+
+.offsetclass {
+    color: Azure; 
+    background-color: SeaGreen;
+}
+
+.notselected {
+    color: DimGray;
+    background-color: Gainsboro;
+}
+
+.button {
+    color: "DimGray";
+    border-radius: 3px;
+    background-color: "Gainsboro";
+    border: none;
+    padding: 10px 24px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 16px;
+    margin: 4px 2px;
+    cursor: pointer;
+    margin-left: 10px;
+  }
+
+
+.tagbutton {color: "MistyRose"; background-color: "indianred";}
+.indexbutton {color: "ghostwhite"; background-color: "CornflowerBlue";}
+.offsetbutton {color: "Azure"; background-color: "SeaGreen";}

@@ -431,7 +431,7 @@ export default class NC extends RunestoneBase {
 
     // log the answer and other info to the server (in the future)
     async logCurrentAnswer(sid) {
-        let answer = JSON.stringify(this.given_arr);
+        let answer = JSON.stringify(this.inputNode.value);
         // Save the answer locally.
         this.setLocalStorage({
             answer: answer,

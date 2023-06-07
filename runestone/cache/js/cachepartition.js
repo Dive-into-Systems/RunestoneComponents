@@ -53,7 +53,7 @@ export default class cachepartition extends RunestoneBase {
     renderCachePartitionInput() {
         // Generate the drop-down menu for cache organization
         this.containerDiv = document.createElement("div");
-        this.questionDiv = document.createElement("div");
+        // this.questionDiv = document.createElement("div");
         this.containerDiv.id = this.divid;
 
         // list of cache organization opitons
@@ -70,8 +70,10 @@ export default class cachepartition extends RunestoneBase {
         this.orgMenuNode.setAttribute("class", "form form-control selectwidthauto");
         this.orgMenuNode.addEventListener("change",
             function () {
-                this.clearInput();
+                this.updateNumBits();
+                this.generateAddress();
                 this.generateAnswer();
+                this.resetHighlight();
             }.bind(this),
             false);
 
@@ -92,8 +94,8 @@ export default class cachepartition extends RunestoneBase {
             function () {
                 this.updateNumBits();
                 this.generateAddress();
-                this.clearInput();
                 this.generateAnswer();
+                this.resetHighlight();
             }.bind(this),
             false);
         
@@ -108,23 +110,18 @@ export default class cachepartition extends RunestoneBase {
         this.addressNode.style.textAlign = "center";
         
         // create question prompt (tag, index, offset)
-        this.partitionNode = document.createElement("div");
-        this.tagNodeText = document.createTextNode("tag: ");
-        this.tagNodeTag = document.createElement("code");
-        this.tagNodeTag.textContent = this.tag_bits;
-        this.indexNodeText = document.createTextNode("\tindex: ");
-        this.indexNodeIndex = document.createElement("code");
-        this.indexNodeIndex.textContent = this.index_bits;
-        this.offsetNodeText = document.createTextNode("\toffset: ");
-        this.offsetNodeOffset = document.createElement("code");
-        this.offsetNodeOffset.textContent = this.offset_bits;
-        this.partitionNode.appendChild(this.tagNodeText);
-        this.partitionNode.appendChild(this.tagNodeTag);
-        this.partitionNode.appendChild(this.indexNodeText);
-        this.partitionNode.appendChild(this.indexNodeIndex);
-        this.partitionNode.appendChild(this.offsetNodeText);
-        this.partitionNode.appendChild(this.offsetNodeOffset);
-        this.partitionNode.style.textAlign = "center";
+        this.promptNode = document.createElement("div");
+        this.blockNodeText = document.createTextNode("block size: ");
+        this.blockNodeBlock = document.createElement("code");
+        this.blockNodeBlock.textContent = this.block_size_ans;
+        this.lineNodeText = document.createTextNode("\ttotal number of lines: ");
+        this.lineNodeLine = document.createElement("code");
+        this.lineNodeLine.textContent = this.num_line_ans;
+        this.promptNode.appendChild(this.blockNodeText);
+        this.promptNode.appendChild(this.blockNodeBlock);
+        this.promptNode.appendChild(this.lineNodeText);
+        this.promptNode.appendChild(this.lineNodeLine);
+        this.promptNode.style.textAlign = "center";
         
         // put all question prompt segements together
         this.statementDiv = document.createElement("div");
@@ -134,45 +131,18 @@ export default class cachepartition extends RunestoneBase {
         this.statementDiv.appendChild(this.addrMenuNode);
         this.statementDiv.appendChild(document.createElement("br"));
         this.statementDiv.appendChild(document.createElement("br"));
-        this.statementDiv.appendChild(this.addressNode);
+        this.statementDiv.appendChild(this.promptNode);
         this.statementDiv.appendChild(document.createElement("br"));
-        this.statementDiv.appendChild(this.partitionNode);
+        this.statementDiv.appendChild(this.addressNode);
         this.statementDiv.appendChild(document.createElement("br"));
 
         this.statementDiv.style.borderWidth = "1px";
         this.statementDiv.style.borderRadius = "5px";
         this.statementDiv.style.borderBlockStyle = "solid";
-        this.statementDiv.style.borderBlockColor = "grey";
-        this.statementDiv.style.backgroundColor = "white";
+        this.statementDiv.style.borderBlockColor = "White";
+        this.statementDiv.style.backgroundColor = "White";
 
         this.containerDiv.appendChild(this.statementDiv);
-        this.containerDiv.appendChild(document.createElement("br"));
-
-        
-        // generate question prompts
-        this.question1 = document.createElement("div");
-        this.question1Prompt = document.createTextNode($.i18n("block_size") + "\t=\t");
-        this.inputNode1 = document.createElement("input");
-        this.question1.appendChild(this.question1Prompt);
-        this.question1.appendChild(this.inputNode1);
-
-        this.question2 = document.createElement("div");
-        this.question2Prompt = document.createTextNode($.i18n("num_rows") + "\t=\t");
-        this.inputNode2 = document.createElement("input");
-        this.question2.appendChild(this.question2Prompt);
-        this.question2.appendChild(this.inputNode2);
-
-        this.question3 = document.createElement("div");
-        this.question3Prompt = document.createTextNode($.i18n("num_lines") + "\t=\t");
-        this.inputNode3 = document.createElement("input");
-        this.question3.appendChild(this.question3Prompt);
-        this.question3.appendChild(this.inputNode3);
-
-        this.inputNodes = [this.inputNode1, this.inputNode2, this.inputNode3];
-        this.questionDiv.appendChild(this.question1);
-        this.questionDiv.appendChild(this.question3);
-        this.questionDiv.appendChild(this.question2);
-        this.containerDiv.appendChild(this.questionDiv);
         this.containerDiv.appendChild(document.createElement("br"));
 
 
@@ -234,9 +204,10 @@ export default class cachepartition extends RunestoneBase {
         this.generateButton.addEventListener(
             "click",
             function () {
+                this.updateNumBits();
                 this.generateAddress();
-                this.clearInput();
                 this.generateAnswer();
+                this.resetHighlight();
             }.bind(this),
             false)
         ;
@@ -244,14 +215,15 @@ export default class cachepartition extends RunestoneBase {
         this.tagButton = document.createElement("button");
         this.tagButton.textContent = "Set to Tag";
         $(this.tagButton).attr({
-            class: "btn btn-success",
             name: "Select Tag",
             type: "button",
+            color: "MistyRose",
+            backgroundColor: "indianred",
         });
         this.tagButton.addEventListener(
             "click",
             function () {
-                this.highlightSelected();
+                this.highlightSelectedTag();
             }.bind(this),
             false)
         ;
@@ -259,14 +231,16 @@ export default class cachepartition extends RunestoneBase {
         this.indexButton = document.createElement("button");
         this.indexButton.textContent = "Set to Index";
         $(this.indexButton).attr({
-            class: "btn btn-success",
+            class: "button",
             name: "Select Index",
             type: "button",
+            color: "ghostwhite",
+            backgroundColor: "CornflowerBlue",
         });
         this.indexButton.addEventListener(
             "click",
             function () {
-                this.highlightSelected();
+                this.highlightSelectedIndex();
             }.bind(this),
             false)
         ;
@@ -274,25 +248,44 @@ export default class cachepartition extends RunestoneBase {
         this.offsetButton = document.createElement("button");
         this.offsetButton.textContent = $.i18n("Set to Offset");
         $(this.offsetButton).attr({
-            class: "btn btn-success",
-            name: "Generate Another",
+            class: "button",
+            name: "Select Offset",
             type: "button",
+            color: "Azure", 
+            backgroundColor: "SeaGreen",
         });
         this.offsetButton.addEventListener(
             "click",
             function () {
-                this.highlightSelected();
+                this.highlightSelectedOffset();
             }.bind(this),
-            false)
-        ;
+            false);
+        
+        this.resetButton = document.createElement("button");
+        this.resetButton.textContent = $.i18n("Reset selection");
+        $(this.resetButton).attr({
+            class: "button",
+            name: "reset selection",
+            type: "button",
+            color: "DimGray",
+            backgroundColor: "Gainsboro",
+        });
+        this.resetButton.addEventListener(
+            "click",
+            function () {
+                this.resetHighlight();
+            }.bind(this),
+            false);
 
         this.containerDiv.appendChild(document.createElement("br"));
-        this.containerDiv.appendChild(this.generateButton);
-        this.containerDiv.appendChild(this.submitButton);
         this.containerDiv.appendChild(this.tagButton);
         this.containerDiv.appendChild(this.indexButton);
         this.containerDiv.appendChild(this.offsetButton);
-        
+        this.containerDiv.appendChild(this.resetButton);
+        this.containerDiv.appendChild(document.createElement("br"));
+        this.containerDiv.appendChild(this.generateButton);
+        this.containerDiv.appendChild(this.submitButton);
+   
     }
     
     renderCachePartitionfeedbackDiv() {
@@ -330,13 +323,19 @@ export default class cachepartition extends RunestoneBase {
         // this.num_bits = this.addrMenuNode.value;
         this.len_address = (1 << this.num_bits)
         this.address_node_list = [];
+        var codeNode = null;
         for (let i = 0; i < this.num_bits; i++) {
             let curr_rand = Math.random();
             if (curr_rand < 0.5) {
-                this.address_node_list.push(document.createTextNode("0"));
-                this.address
+                codeNode = document.createElement("code");
+                codeNode.textContent = "0";
+                codeNode.className = "notselected";
+                this.address_node_list.push(codeNode);
             } else {
-                this.address_node_list.push(document.createTextNode("1"));
+                codeNode = document.createElement("code");
+                codeNode.textContent = "1";
+                codeNode.className = "notselected";
+                this.address_node_list.push(codeNode);
             }
         }
         
@@ -382,19 +381,43 @@ export default class cachepartition extends RunestoneBase {
         }
     }
 
-    highlightSelected() {
+    highlightSelectedTag() {
         let selection = window.getSelection();
         for ( var i = 0 ; i < this.num_bits; i ++ ) {
-            if (selection.containsNode( this.address_node_list[ i ] ) ) {
-                this.address_node_list[ i ].style.backgroundColor = "yellow";
+            if (selection.containsNode( this.address_node_list[ i ], true ) ) {
+                (this.address_node_list[ i ]).className = "tagclass";
             }
         }
+    }
+
+    highlightSelectedIndex() {
+        let selection = window.getSelection();
+        for ( var i = 0 ; i < this.num_bits; i ++ ) {
+            if (selection.containsNode( this.address_node_list[ i ], true ) ) {
+                (this.address_node_list[ i ]).className = "indexclass";
+            }
+        }
+    }
+
+    highlightSelectedOffset() {
+        let selection = window.getSelection();
+        for ( var i = 0 ; i < this.num_bits; i ++ ) {
+            if (selection.containsNode( this.address_node_list[ i ], true ) ) {
+                (this.address_node_list[ i ]).className = "offsetclass";
+            }
+        }
+    }
+
+    resetHighlight() {
+        this.address_node_list.forEach(
+            element => element.className = "notselected"
+        );
     }
     // generate the answer as a string based on the randomly generated number
     generateAnswer() {
         this.hidefeedback();
         // this.newInputNode.style.visibility = 'visible';
-        this.questionDiv.style.visibility = "visible";
+        // this.questionDiv.style.visibility = "visible";
         this.displayFeed = [];
         
         this.block_size_ans = this.block_size;
@@ -404,19 +427,19 @@ export default class cachepartition extends RunestoneBase {
         switch (this.orgMenuNode.value) {
             case "Direct-Mapped" : 
                 this.num_line_ans = this.entries_ans;
-                this.question2.style.visibility = "hidden";
                 break;
             case "2-Way Set Associative" : 
                 this.num_line_ans = (this.entries_ans)*2;
-                this.question2.style.visibility = "visible";
                 break;
             case "4-Way Set Associative" : 
                 this.num_line_ans = (this.entries_ans)*4;
-                this.question2.style.visibility = "visible";
                 break;
         }
         this.answers = [this.block_size_ans, this.entries_ans, this.num_line_ans];
         this.generatePrompt();
+
+        this.blockNodeBlock.textContent = this.block_size_ans.toString();
+        this.lineNodeLine.textContent = this.num_line_ans.toString();
     }
 
     /*===================================
@@ -436,29 +459,22 @@ export default class cachepartition extends RunestoneBase {
     checkCurrentAnswer() {
         // the answer is correct if each of the input field is the same as its corresponding value in this.answers
         this.correct = true;
-        this.feedback_msg = [];
-        for (var i = 0; i < 3; i ++ ) {
-            // skip the question for number of sets when in direct-mapped
-            if ( this.orgMenuNode.value === "Direct-Mapped" && i === 1) {
-                continue;
-            }
-            var input_value = this.inputNodes[i].value;
-            if ( input_value === "" ) {
-                this.feedback_msg.push($.i18n("msg_no_answer"));
+        for (let i = 0; i < this.tag_bits; i++) {
+            if (this.address_node_list[i].className != "tagclass") {
                 this.correct = false;
-                // change the style of input field to alert-danger when no answer provided
-                this.inputNodes[i].setAttribute("class", "alert alert-danger");
-            } else if ( input_value != this.answers[i] ) {
-                this.feedback_msg.push($.i18n("msg_cachepartition_incorrect_"+i.toString()));
-                this.correct = false;
-                // change the style of input field to alert-danger when the answer is wrong
-                this.inputNodes[i].setAttribute("class", "alert alert-danger");            
-            } else {
-                this.feedback_msg.push($.i18n("msg_cachepartition_correct"));
-                // 
-                this.inputNodes[i].setAttribute("class", "alert alert-info");
             }
         }
+        for (let i = this.tag_bits; i < (this.tag_bits + this.index_bits); i++) {
+            if (this.address_node_list[i].className != "indexclass") {
+                this.correct = false;
+            }
+        }
+        for (let i = (this.tag_bits + this.index_bits); i < this.num_bits; i++) {
+            if (this.address_node_list[i].className != "offsetclass") {
+                this.correct = false;
+            }
+        }
+        // return true;
     }
 
     async logCurrentAnswer(sid) {
@@ -488,15 +504,15 @@ export default class cachepartition extends RunestoneBase {
     updateDisplayedAddress() {
         this.addressNodeAddress.innerHTML = "";
         for ( var i = 0 ; i < this.num_bits ; i ++ ) {
-            this.addressNodeAddress.append(this.address_node_list[ i ])
+            this.addressNodeAddress.appendChild(this.address_node_list[ i ]);
+            this.addressNodeAddress.append(" ");
         }
     }
     // update the prompt
     generatePrompt() {
         this.updateDisplayedAddress();
-        this.tagNodeTag.textContent = this.tag_bits;
-        this.indexNodeIndex.textContent = this.index_bits;
-        this.offsetNodeOffset.textContent = this.offset_bits;
+        this.blockNodeBlock.textContent = this.block_size_ans;
+        this.lineNodeLine.textContent = this.num_line_ans;
     }
 
     hidefeedback() {

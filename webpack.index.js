@@ -68,6 +68,7 @@ const module_map = {
     fillintheblank: () => import("./runestone/fitb/js/timedfitb.js"),
     numberconversion: () => import("./runestone/numconv/js/numconv.js"),
     cacheinfo: () => import("./runestone/cache/js/cacheinfo.js"),
+    cachepartition: () => import("./runestone/cache/js/cachepartition.js"),
     numconv: () => import("./runestone/numconvfitb/js/timednumconv"),
     groupsub: () => import("./runestone/groupsub/js/groupsub.js"),
     khanex: () => import("./runestone/khanex/js/khanex.js"),
