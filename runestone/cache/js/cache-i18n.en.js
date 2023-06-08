@@ -13,7 +13,12 @@ $.i18n().load({
         msg_cacheinfo_incorrect_1: "Number of sets is incorrect. Hint: number of sets has something to do with the index bits",
         msg_cacheinfo_incorrect_2: "Number of lines is incorrect. Hint: number of lines has something to do with the index bits and set associatives",
         msg_cacheinfo_correct: "Correct. Good job!",
+        msg_cachepartition_correct: "Correct. Good job!",
+        msg_cachepartition_incorrect: "Emm...please think more about it?",
         msg_cacheinfo_not_divisible_by_4: "Error: number of bits should be multiple of 4",
         msg_cacheinfo_too_many_bits: "Error: too many number of bits",
+        msg_cachepartition_tag_incorrect: "Think more about what tag is?",
+        msg_cachepartition_index_incorrect: "Think more about what index is?",
+        msg_cachepartition_offset_incorrect: "Think more about what offset is?",
     },
 });

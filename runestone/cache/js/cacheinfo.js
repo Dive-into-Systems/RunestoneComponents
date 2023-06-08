@@ -29,7 +29,7 @@ export default class cacheinfo extends RunestoneBase {
         this.createCacheInfoElement();
         this.caption = "Cache System";
         this.addCaption("runestone");
-        this.checkServer("cacheinfo", true);
+        // this.checkServer("cacheinfo", true);
         if (typeof Prism !== "undefined") {
             Prism.highlightAllUnder(this.containerDiv);
         }
@@ -142,7 +142,7 @@ export default class cacheinfo extends RunestoneBase {
         this.statementDiv.style.borderWidth = "1px";
         this.statementDiv.style.borderRadius = "5px";
         this.statementDiv.style.borderBlockStyle = "solid";
-        this.statementDiv.style.borderBlockColor = "grey";
+        this.statementDiv.style.borderBlockColor = "white";
         this.statementDiv.style.backgroundColor = "white";
 
         this.containerDiv.appendChild(this.statementDiv);
@@ -168,6 +168,14 @@ export default class cacheinfo extends RunestoneBase {
         this.question3.appendChild(this.inputNode3);
 
         this.inputNodes = [this.inputNode1, this.inputNode2, this.inputNode3];
+        for (var i = 0; i<3; i++) {
+            this.inputNodes[i].addEventListener("keypress", function(e) {
+                if (e.key === "Enter") {
+                    e.preventDefault();
+                    this.submitButton.click();
+                }
+            }.bind(this), false);
+        }
         this.questionDiv.appendChild(this.question1);
         this.questionDiv.appendChild(this.question3);
         this.questionDiv.appendChild(this.question2);

@@ -1,49 +1,63 @@
 .selectwidthauto {
-     width:auto !important;
-     display: inline-block !important;
-     margin: 5px;
+    width:auto !important;
+    display: inline-block !important;
+    margin: 5px;
 }
 
 input.input-validation-error {
-    border: 1px solid #e80c4d;
+   border: 1px solid #e80c4d;
 }
 
 .tagclass {
-    color: MistyRose;
-    background-color: indianred;
+   color: MistyRose;
+   background-color: Tomato;
 }
 
 .indexclass {
-    color: ghostwhite;
-    background-color: CornflowerBlue; 
+   color: ghostwhite;
+   background-color: CornflowerBlue; 
 }
 
 .offsetclass {
-    color: Azure; 
-    background-color: SeaGreen;
+   color: Grey; 
+   background-color: #ffef96;
 }
 
 .notselected {
-    color: DimGray;
-    background-color: Gainsboro;
+   color: DimGray;
+   background-color: Gainsboro;
 }
 
 .button {
-    color: "DimGray";
-    border-radius: 3px;
-    background-color: "Gainsboro";
-    border: none;
-    padding: 10px 24px;
-    text-align: center;
-    text-decoration: none;
-    display: inline-block;
-    font-size: 16px;
-    margin: 4px 2px;
-    cursor: pointer;
-    margin-left: 10px;
-  }
+   /* background-color: Gainsboro; */
+   border: none;
+   /* color: Dimgray; */
+   padding: 15px 32px;
+   text-align: center;
+   text-decoration: none;
+   display: inline-block;
+   font-size: 16px;
+   margin: 4px 2px;
+   cursor: pointer;
+ }
 
+ .prevent-select {
+   -webkit-user-select: none; /* Safari */
+   -ms-user-select: none; /* IE 10 and IE 11 */
+   user-select: none; /* Standard syntax */
+ }
 
-.tagbutton {color: "MistyRose"; background-color: "indianred";}
-.indexbutton {color: "ghostwhite"; background-color: "CornflowerBlue";}
-.offsetbutton {color: "Azure"; background-color: "SeaGreen";}
+.tagbutton {
+   color: "MistyRose" !important; 
+   background-color: "indianred" !important;
+}
+
+.indexbutton {
+   color: "ghostwhite" !important; 
+   background-color: "CornflowerBlue" !important;
+}
+
+.offsetbutton {
+   color: "Azure" !important; 
+   background-color: "Bisque" !important;
+}

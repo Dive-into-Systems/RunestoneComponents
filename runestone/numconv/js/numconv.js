@@ -25,6 +25,7 @@ export default class NC extends RunestoneBase {
         this.num_bits = 8;
         
         this.createNCElement();
+        this.generateButton.click();
         this.caption = "Number Conversion";
         this.addCaption("runestone");
         this.checkServer("nc", true);
@@ -116,15 +117,19 @@ export default class NC extends RunestoneBase {
                 }
             }.bind(this),
             false);
-
+    
+ 
         this.statementNode2 = document.createTextNode(" to ");
         
          // convert to-options to html option elements of menuNode2
         this.menuNode2 = document.createElement("select");
         for (var i = 0; i < this.toOpt.length; i++) {
             var option = document.createElement("option");
-            option.value = this.toOpt[i];
+            option.value = this.toOpt[i]; 
             option.text = this.toOpt[i];
+            if ( i === 1 ) {
+                option.selected = "selected";
+            }
             this.menuNode2.appendChild(option);
         }
         this.menuNode2.setAttribute("class", "form form-control selectwidthauto");
@@ -243,6 +248,15 @@ export default class NC extends RunestoneBase {
         this.containerDiv.appendChild(document.createElement("br"));
         this.containerDiv.appendChild(this.generateButton);
         this.containerDiv.appendChild(this.submitButton);
+
+        this.inputNode.addEventListener(
+            "keypress",
+            function(event) {
+            if (event.key === "Enter") {
+                    this.submitButton.click();
+                }
+            }.bind(this), false
+            );
     }
 
     renderNCFeedbackDiv() {
