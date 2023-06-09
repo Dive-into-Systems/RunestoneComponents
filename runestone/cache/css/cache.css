@@ -61,3 +61,11 @@ input.input-validation-error {
    color: "Azure" !important; 
    background-color: "Bisque" !important;
 }
+
+table, td, tr, th {
+   border: 1px solid;
+}
+
+table {
+   border-collapse: collapse;
+}
