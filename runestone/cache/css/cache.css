@@ -66,6 +66,19 @@ table, td, tr, th {
    border: 1px solid;
 }
 
+th, td {
+   height: 20px;
+}
+
 table {
    border-collapse: collapse;
+   word-wrap: break-word;
+   line-break: strict;
+}
+
+.aligned-tables {
+   height: auto;
+   display: flex;
+   flex-direction: row;
+   justify-content: space-between;
 }
