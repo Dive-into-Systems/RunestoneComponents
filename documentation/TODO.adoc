@@ -1,0 +1,74 @@
+= TODO list of our changes to RunestoneComponents
+
+Add entries for features/functionality to add to different parts of core
+code or to individual components.  When complete an item, check its box
+and move to end of the list (rather than delete, so we can remember what
+we have alread tested).  You could add a note to how tested or example
+test code locations where appropriate.  
+
+== Runestone Infrastructure
+
+This is for any TODO changes and testing to RunestoneComponents outside of
+the individual components, or that spans multiple components.  
+
+== Individual Components
+
+=== Number Converter
+
+TODO: add a short description of what this component is, and list its
+location in source code of where to find it.
+
+ * Features/Fuctionality to Add:
+   ** [ ] more context-specific feedback for wrong answers    
+
+ * Testing: 
+
+   ** correctness of converstions
+     *** [ ] binary to unsigned
+     *** [ ] binary to signed
+     *** [ ] add more here ...
+     *** [x] binary to hex 
+
+
+=== Cache Addressing 1
+
+TODO: add a short description of what this component is, and list its
+location in source code of where to find it.
+
+ * Features/Fuctionality to Add:
+   ** [ ] more context-specific feedback for wrong answers  (wrong number of bits,
+       incorrect address bits, ...)
+   ** [ ] other features to add ...
+
+
+ * Testing:
+   ** [x] works correctly for different size addresses
+   ** [ ] other things to test ...
+
+=== Cache Addressing 2
+
+TODO: add a short description of what this component is, and list its
+location in source code of where to find it.
+
+=== Cache Tracing
+
+TODO: add a short description of what this component is, and list its
+location in source code of where to find it.
+
+ * Features/Fuctionality to Add:
+   ** [ ] more context-specific feedback for wrong answers  (wrong number of bits,
+       incorrect address bits, ...)
+   ** [ ] other features to add ...
+
+ * Testing:
+   ** [ ] works correctly for different size addresses
+   ** [ ] other things to test ...
+
+==== Direct Mapped (add subsection if it makes sense to break it up in this way)
+
+TODO: add a short description of what this component is, and list its
+location in source code of where to find it.
+
+ * Features/Fuctionality to Add:
+
+ * Testing:
