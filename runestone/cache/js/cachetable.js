@@ -19,9 +19,7 @@ export default class cachetable extends RunestoneBase {
         this.useRunestoneServices = opts.useRunestoneServices;
         this.origElem = orig;
         this.divid = orig.id;
-        this.correct = null;
         // parameters by default
-        this.index_all = ["00", "01", "10", "11"];
 
         // keep track of the last generated cache combination and ensure
         // each time it generates a different combination
@@ -44,17 +42,24 @@ export default class cachetable extends RunestoneBase {
     ===========================================*/
     createCachetableElement() {
         this.feedbackDiv = document.createElement("div");
+
+        // initialize parameters
         this.setDefaultParams();
         this.loadParams();
+
         this.renderCacheTableInput();
+        this.resetGeneration();
         this.renderCacheTableButtons();
         this.renderCacheTableFeedbackDiv();
+
+        this.renderLayout();
         // replaces the intermediate HTML for this component with the rendered HTML of this component
         $(this.origElem).replaceWith(this.containerDiv);
     }
 
     setDefaultParams() {
-        this.cache_org = "Direct-Mapped";
+        this.cache_org = "Direct-Mapped"; 
+        //this.cache_org = "2-Way Set Associative"
         this.num_bits = 8;
         this.offset_bits = 2;
         this.block_size = 1 << this.offset_bits;
@@ -75,6 +80,9 @@ export default class cachetable extends RunestoneBase {
             }
             if (curr_options["cache-org"] != undefined) {
                 this.cache_org = curr_options["cache-org"];
+                if ( this.cache_org.tolower().search("2-way") != -1 ) {
+                    this.cache_org = "2-Way Set Associative";
+                }
             }
             if (curr_options["offset"] != undefined) {
                 this.offset_bits = eval(curr_options["offset"]);
@@ -90,11 +98,10 @@ export default class cachetable extends RunestoneBase {
             this.tag_bits = this.num_bits - this.index_bits - this.offset_bits;
         } catch (error) {
             // pass
-            console.log(this.scriptSelector(this.origElem));
-            console.log(error);
         }
     }
 
+    // create the table that displays the necessary information for the cache exercise
     createTableInfo() {
         this.tableInfo = document.createElement("table");
         this.tableInfoHead = document.createElement("thead");
@@ -130,7 +137,6 @@ export default class cachetable extends RunestoneBase {
         this.tableInfo.appendChild(this.tableInfoRow3);
         this.tableInfo.appendChild(this.tableInfoRow4);
         
-        // this.tableInfo.style.float = "left";
         this.tableInfo.setAttribute("width", "25%");
         this.promptDiv.appendChild(this.tableInfo);
     }
@@ -139,21 +145,16 @@ export default class cachetable extends RunestoneBase {
     createDisplayedTable() {
         
         this.displayedTable = document.createElement("table");
-        this.displayedTable.setAttribute("width", "42%"); 
         // create the head row for the cache table
         this.displayedTableHead = document.createElement("thead");
         this.displayedTableHeadRow = document.createElement("tr");
         this.displayedTableHeadRow0 = document.createElement("th");
-        this.displayedTableHeadRow0.style.width = "30%";
         this.displayedTableHeadRow0.textContent = "Index";
         this.displayedTableHeadRowV = document.createElement("th");
-        this.displayedTableHeadRowV.style.width = "10%";
         this.displayedTableHeadRowV.textContent = "V";
         this.displayedTableHeadRowD = document.createElement("th");
-        this.displayedTableHeadRowD.style.width = "10%";
         this.displayedTableHeadRowD.textContent = "D";
         this.displayedTableHeadRowTag = document.createElement("th");
-        this.displayedTableHeadRowTag.style.width = "50%"
         this.displayedTableHeadRowTag.textContent = "Tag";
         this.displayedTableHeadRow.appendChild(this.displayedTableHeadRow0);
         this.displayedTableHeadRow.appendChild(this.displayedTableHeadRowV);
@@ -164,45 +165,18 @@ export default class cachetable extends RunestoneBase {
         
         // create the body for the cache table
         this.displayedTableBody = document.createElement("tbody");
-        this.displayedTableBodyRows = [];
-        var tableRow, line, valid_bit, dirty_bit, tag_field;
-        for ( var i = 0 ; i < this.num_rows ; i ++ ) {
-            tableRow = document.createElement("tr");
-            line = document.createElement("td");
-            line.textContent = i.toString();
-            valid_bit = document.createElement("td");
-            valid_bit.textContent = "0"
-            dirty_bit = document.createElement("td");
-            dirty_bit.textContent = "0"
-            tag_field = document.createElement("td");
-            let currRand = Math.random();
-            if (currRand < 0.33) {
-                tag_field.textContent = this.generateTagIndex() + this.generateOffset();    
-            }
-            tableRow.appendChild(line);
-            tableRow.appendChild(valid_bit);
-            tableRow.appendChild(dirty_bit);
-            tableRow.appendChild(tag_field);
-            // let oneRow = [valid_bit, dirty_bit, tag_field]
-            // this.displayedTableBodyRows.push(tableRow);
-            tableRow.style.backgroundColor = "white";
-            this.displayedTableBody.appendChild(tableRow);
-        }
-        
         this.displayedTable.appendChild(this.displayedTableBody);
-        this.displayedTable.style.float = "right";
-        this.displayedTable.style.marginRight = "0px";   
         this.promptDiv.appendChild(this.displayedTable);
     }
 
     updateDisplayedTableBody() {
         const changed_line = this.answer_list[this.curr_ref-1][1];
         for (let i = 0; i < this.num_rows; i++) {
-            this.displayedTableBody.rows[i].cells[1].textContent = this.curr_tagIndex_table[i][0].toString();
-            this.displayedTableBody.rows[i].cells[2].textContent = this.curr_tagIndex_table[i][1].toString();
-            this.displayedTableBody.rows[i].cells[3].textContent = this.curr_tagIndex_table[i][2];
             if ( i === changed_line ) {
                 this.displayedTableBody.rows[i].style.backgroundColor = "yellow";
+                this.displayedTableBody.rows[i].cells[1].textContent = this.curr_tagIndex_table[i][0].toString();
+                this.displayedTableBody.rows[i].cells[2].textContent = this.curr_tagIndex_table[i][1].toString();
+                this.displayedTableBody.rows[i].cells[3].textContent = this.curr_tagIndex_table[i][2];
             } else {
                 this.displayedTableBody.rows[i].style.backgroundColor = "white";
             }
@@ -229,25 +203,85 @@ export default class cachetable extends RunestoneBase {
         this.createReferenceTable();
         this.createAnswerTable();
         this.containerDiv.appendChild(this.bodyTableDiv);
-
-        // initialize answer generation
-        this.generateAnswer_init();
-
-        // generate the first asnwer
-        this.generateAnswer_next();
-
-        this.updateReferenceTableAndAnswerTable();
         
         // Copy the original elements to the container holding what the user will see.
         $(this.origElem).children().clone().appendTo(this.containerDiv);
-        
-        // this.generateAddress();
-        // this.generateAnswer();
 
         // Remove the script tag.
         this.scriptSelector(this.containerDiv).remove();
     }
+
+    // render the layout for tables
+    renderLayout() {
+
+        if ( this.cache_org == "Direct-Mapped") {
+            this.tableInfo.setAttribute("width", "20%");
+            this.displayedTable.setAttribute("width", "42%");
+            this.referenceTable.setAttribute("width", "20%");
+            this.answerTable.setAttribute("width", "60%");
     
+            this.displayedTableHeadRow0.setAttribute("width", "25%");
+            this.displayedTableHeadRowV.setAttribute("width", "20%");
+            this.displayedTableHeadRowD.setAttribute("width", "20%");
+            this.displayedTableHeadRowTag.setAttribute("width", "35%");
+
+            this.answerTableHead.rows[0].cells[0].setAttribute("width", "15%");
+            this.answerTableHead.rows[0].cells[1].setAttribute("width", "15%");
+            this.answerTableHead.rows[0].cells[2].setAttribute("width", "17.5%");
+            this.answerTableHead.rows[0].cells[3].setAttribute("width", "14%");
+            this.answerTableHead.rows[0].cells[4].setAttribute("width", "14%");
+            this.answerTableHead.rows[0].cells[5].setAttribute("width", "24.5%");
+
+        } else {
+
+        }
+
+    }
+
+    resetGeneration() {
+        this.initDisplayedTable();
+        this.initReferenceTable();
+        this.initAnswerTable();
+        this.generateAnswer_init();
+        this.generateAnswer_next();
+        this.updateReferenceTableAndAnswerTable();
+    }
+    
+    initDisplayedTable() {
+        this.displayedTableBody.innerHTML = "";
+        var tableRow, line, valid_bit, dirty_bit, tag_field;
+        for ( var i = 0 ; i < this.num_rows ; i ++ ) {
+            tableRow = document.createElement("tr");
+            line = document.createElement("td");
+            line.textContent = i.toString();
+            valid_bit = document.createElement("td");
+            valid_bit.textContent = "0"
+            dirty_bit = document.createElement("td");
+            dirty_bit.textContent = "0"
+            tag_field = document.createElement("td");
+            let currRand = Math.random();
+            if (currRand < 0.33) {
+                tag_field.textContent = this.generateTag();    
+            }
+            tableRow.appendChild(line);
+            tableRow.appendChild(valid_bit);
+            tableRow.appendChild(dirty_bit);
+            tableRow.appendChild(tag_field);
+            // let oneRow = [valid_bit, dirty_bit, tag_field]
+            // this.displayedTableBodyRows.push(tableRow);
+            tableRow.style.backgroundColor = "white";
+            this.displayedTableBody.appendChild(tableRow);
+        }
+    }
+
+    initReferenceTable() {
+        this.referenceTableBody.innerHTML = "";
+    }
+
+    initAnswerTable() {
+        this.answerTableBody.innerHTML = "";
+    }
+
     createReferenceTable() {
         // 
         this.referenceTable = document.createElement("table");
@@ -266,25 +300,22 @@ export default class cachetable extends RunestoneBase {
         this.referenceTableBody = document.createElement("tbody");
         this.referenceTable.appendChild(this.referenceTableBody);
         
-        this.referenceTable.setAttribute("width", "20%");
         this.bodyTableDiv.appendChild(this.referenceTable);
 
     }
 
     createAnswerTable() {
         this.answerTable = document.createElement("table");
-        this.answerTable.style.float = "right";
-        this.answerTable.style.marginRight = "0px";
         // create the head row for the reference table
         this.answerTableHead = document.createElement("thead");   
         this.answerTableHead.innerHTML = 
         "<tr>" +
-        "<th title=\"Hit?\" width=\"15%\">Hit?</th>"+
-        "<th title=\"Miss?\" width=\"15%\">Miss?</th>"+
-        "<th title=\"Index\" width=\"21%\">Index</th>"+
-        "<th title=\"Valid Bit\" width=\"7%\">V</th>"+
-        "<th title=\"Dirty Bit\" width=\"7%\">D</th>"+
-        "<th title=\"Tag Bit\" width=\"35%\">Tag</th>"+
+        "<th title=\"Hit?\" >Hit?</th>"+
+        "<th title=\"Miss?\" >Miss?</th>"+
+        "<th title=\"Index\" >Index</th>"+
+        "<th title=\"Valid Bit\" >V</th>"+
+        "<th title=\"Dirty Bit\" >D</th>"+
+        "<th title=\"Tag Bit\" >Tag</th>"+
         "</tr> ";
         this.answerTable.appendChild(this.answerTableHead);  
         
@@ -292,7 +323,6 @@ export default class cachetable extends RunestoneBase {
         this.answerTableBody = document.createElement("tbody");
         this.answerTable.appendChild(this.answerTableBody);
         
-        this.answerTable.setAttribute("width", "60%");
         this.bodyTableDiv.appendChild(this.answerTable);
     }
 
@@ -365,8 +395,8 @@ export default class cachetable extends RunestoneBase {
 
         // generate normal input fields
         var cellInputIndexBox = document.createElement("input");
-        cellInputIndexBox.setAttribute("maxlength", "5");
-        cellInputIndexBox.setAttribute("size", "5");
+        cellInputIndexBox.setAttribute("maxlength", "2");
+        cellInputIndexBox.setAttribute("size", "2");
         cellInputIndexBox.setAttribute("type", "text");
         cellInputIndexBox.setAttribute("name", "Index" + curr_ref);
         var cellInputIndex = document.createElement("td");
@@ -392,7 +422,7 @@ export default class cachetable extends RunestoneBase {
         answerTableNewRow.appendChild(cellInputDirty);
 
         var cellInputTagBox = document.createElement("input");
-        cellInputTagBox.setAttribute("maxlength", "16");
+        cellInputTagBox.setAttribute("maxlength", "8");
         cellInputTagBox.setAttribute("size", "8");
         cellInputTagBox.setAttribute("type", "text");
         cellInputTagBox.setAttribute("name", "Tag" + curr_ref);
@@ -433,19 +463,20 @@ export default class cachetable extends RunestoneBase {
             function () {
                 if (this.curr_ref != this.num_refs ) {
                     this.checkCurrentAnswer();
-                    this.logCurrentAnswer();
                     if (this.correct) {
                         this.curr_ref += 1;
                         if (this.curr_ref < this.num_refs) {
-                            // TODO: call next
+                            // call next
                             this.updateDisplayedTableBody()
                             this.generateAnswer_next();
                             this.updateReferenceTableAndAnswerTable();
                         } else {
-                            // TODO: render feedback that congrats and this is all of the question
+                            // render feedback that congrats and this is all of the question
                             this.disableAnswerTableCurrentRow();
+                            this.completed = true;
                         }
                     }
+                    this.logCurrentAnswer();
                 }
             }.bind(this),
             false
@@ -461,8 +492,7 @@ export default class cachetable extends RunestoneBase {
         this.generateButton.addEventListener(
             "click",
             function () {
-                // TODO: reset the question
-                // TODO: redo the question
+                this.resetGeneration();
             }.bind(this),
             false)
         ;
@@ -470,7 +500,7 @@ export default class cachetable extends RunestoneBase {
         this.buttonDiv.appendChild(document.createElement("br"));
         this.buttonDiv.appendChild(this.generateButton);
         this.buttonDiv.appendChild(this.submitButton);
-        this.buttonDiv.setAttribute("width", "100%");
+        this.buttonDiv.setAttribute("class", "aligned-tables");
         this.containerDiv.appendChild(this.buttonDiv);
     }
     
@@ -481,6 +511,19 @@ export default class cachetable extends RunestoneBase {
     }
 
     // generate a random memory address
+    generateTag() {
+        var tag = "";
+        for (let i = 0; i < this.tag_bits; i++) {
+            let currRand = Math.random();
+            if (currRand < 0.5) {
+                tag += "0";
+            } else {
+                tag += "1";
+            }
+        }
+        return tag;
+    }
+
     generateTagIndex() {
         var tagIndex = "";
         for (let i = 0; i < (this.tag_bits + this.index_bits); i++) {
@@ -521,13 +564,40 @@ export default class cachetable extends RunestoneBase {
         // this table keeps track of [valid bit (int 0/1), dirty bit (int 0/1), tag (str)] with index meaning line number
         // Remark: this table size is fixed
         this.curr_tagIndex_table = [];
+        var valid_init;
+        var dirty_init;
+        var tag_init;
+        var currRand;
         for (let i = 0; i < this.num_rows; i++) {
-            this.curr_tagIndex_table.push([0,0,""]);
+            currRand = Math.random();
+            if (currRand < 0.5) {
+                valid_init = 1;
+                tag_init = this.generateTag();
+                currRand = Math.random();
+                if (currRand < 0.5) {
+                    dirty_init = 1;
+                }
+            }
+            // this.curr_tagIndex_table.push([valid_init, dirty_init, tag_init]);
+            this.curr_tagIndex_table.push([0,0, ""]);
         }
         
         // this list keeps track of the answer in terms of [line# (int), dirty bit (int 0/1), tag (str)]
         // Remark: this list size grows as there is growing number of steps
         this.answer_list = [];
+
+        // initialize the variable that traces whether a response is correct
+        this.correct = null;
+
+        // this is the flag that indicates whether one practice is completed 
+        this.completed = false;
+
+        // this.updateDisplayedTableBody();
+        // for (let i = 0; i < this.num_rows; i++) {
+        //     this.displayedTableBody.rows[i].cells[1].textContent = this.curr_tagIndex_table[i][0].toString();
+        //     this.displayedTableBody.rows[i].cells[2].textContent = this.curr_tagIndex_table[i][1].toString();
+        //     this.displayedTableBody.rows[i].cells[3].textContent = this.curr_tagIndex_table[i][2];
+        // }
     }
 
     generateAnswer_next() {
@@ -676,12 +746,6 @@ export default class cachetable extends RunestoneBase {
             const response_tag =
                 document.querySelector('input[name="Tag' + curr_ref.toString() + '"]').value;
             const curr_answers = this.answer_list[ curr_ref ];
-            // console.log(curr_answers);
-            // console.log(response_hit_miss);
-            // console.log(response_index);
-            // console.log(response_dirty);
-            // console.log(response_valid);
-            // console.log(response_tag);
             
             if ( this.hit_miss_list[ curr_ref ] != response_hit_miss  ) {
                 this.correct = false;
@@ -748,13 +812,6 @@ export default class cachetable extends RunestoneBase {
         this.input_offset_count.textContent = this.input_offset_bits.toString();
     }
 
-    // update the prompt
-    // generatePrompt() {
-    //     this.updateDisplayedAddress();
-    //     this.blockNodeBlock.textContent = this.block_size_ans;
-    //     this.lineNodeLine.textContent = this.num_line_ans;
-    // }
-
     hidefeedback() {
         this.feedbackDiv.style.visibility = "hidden";
     }
@@ -768,7 +825,11 @@ export default class cachetable extends RunestoneBase {
         var feedback_html = "";
 
         if (this.correct) {
-            feedback_html += "<div>" + $.i18n("msg_cachetable_correct") + "</div>";
+            if (this.completed) {
+                feedback_html += "<div>" + $.i18n("msg_cachetable_completed") + "</div>";
+            } else {
+                feedback_html += "<div>" + $.i18n("msg_cachetable_correct") + "</div>";                
+            }
             $(this.feedbackDiv).attr("class", "alert alert-info");
         } else {
             feedback_html += "<div>" + $.i18n("msg_cachetable_incorrect") + "</div>";
