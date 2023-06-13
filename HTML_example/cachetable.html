@@ -13,7 +13,7 @@
     <!-- BEGIN LINKED FILES -->
     <link rel="stylesheet" type="text/css" href="../runestone/dist/vendors-node_modules_bootstrap_dist_js_bootstrap_js-node_modules_jquery-ui_jquery-ui_js-node_-72cd89.cd688d1623c9932e.css" />
     <link rel="stylesheet" type="text/css" href="../runestone/dist/runestone.8cc3d7e65ac22823.css" />
-    <script src="../runestone/dist/runtime.503e221a5531834e.bundle.js"></script>
+    <script src="../runestone/dist/runtime.daeb2e3f9e0823d5.bundle.js"></script>
     <script src="../runestone/dist/vendors-node_modules_bootstrap_dist_js_bootstrap_js-node_modules_jquery-ui_jquery-ui_js-node_-72cd89.51d9dde4e5162190.bundle.js"></script>
     <script src="../runestone/dist/runestone.fdbd01aa802f0a22.bundle.js"></script>
     <!-- END LINKED FILES -->
@@ -103,7 +103,7 @@
             <p>Test 4 - test the cache table component.</p>
 
         <div class="runestone ">
-        <div data-component="cachetable" data-question_label="4" id="test_caching_table"  style="visibility: hidden;">
+        <div data-component="cachetable" data-question_label="4" id="test_caching_table_1"  style="visibility: hidden;">
         <script type="application/json">
             {"ref": 8, 
              "index": 3 }
@@ -111,6 +111,23 @@
         </div>
         </div>
 </section>
+
+<section id="cache table">
+  <h1>Cache Table<a class="headerlink" href="#cache-table" title="Permalink to this heading">¶</a></h1>
+            <p>Test 5 - test the cache table component (set associative).</p>
+
+        <div class="runestone ">
+        <div data-component="cachetable" data-question_label="5" id="test_caching_table_2"  style="visibility: hidden;">
+        <script type="application/json">
+            {
+              "cache-org": "2-Way Set Associative"
+            }
+        </script>       
+        </div>
+        </div>
+</section>
+
+
 
 <script>
   window.addEventListener('load', (event) => {
