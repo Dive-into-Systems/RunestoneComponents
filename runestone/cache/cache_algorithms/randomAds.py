@@ -31,28 +31,26 @@ def generateOffset(offset_bits):
             offset += "0"
     return offset
 
-def generateOneAddress(num_bits, tag_bits, index_bits, offset_bits):
+def generateOneAddress(tag_bits, index_bits, offset_bits):
     return (generateTag(tag_bits), generateIndex(index_bits), generateOffset(offset_bits))
 
 
-def main_random():
+def main_random(ads_num, offset_bits, index_bits, tag_bits):
 
     rand_Algo = RandAlgo()
-    ads_num = 8
-    num_bits = 8
-    offset_bits = 2
-    index_bits = 2
-    tag_bits = 4
+    rand_Algo.name = "rand"
+    
+    num_rows = 1 << index_bits
     
     for i in range(ads_num):
-        rand_Algo.addresses.append(generateOneAddress(num_bits, tag_bits, index_bits, offset_bits))
-    rand_Algo.num_rows = 4
+        rand_Algo.addresses.append(generateOneAddress(tag_bits, index_bits, offset_bits))
+    
+    rand_Algo.index_bits = index_bits
+    rand_Algo.num_rows = num_rows
     rand_Algo.num_refs = ads_num
+    rand_Algo.calcAll()
     return rand_Algo
 
 if __name__ == '__main__':
-    rand_Algo = main_random()
-    rand_Algo.updateHitMissList()
-    rand_Algo.calculateIndicesCoverage()
-    rand_Algo.calculateAddressVariety()
+    rand_Algo = main_random(8,2,2,4)
     print(rand_Algo)
