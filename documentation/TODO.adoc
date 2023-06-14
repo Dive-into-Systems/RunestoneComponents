@@ -13,10 +13,12 @@ the individual components, or that spans multiple components.
 
 == Individual Components
 
-=== Number Converter
+=== Number Conversion
 
-TODO: add a short description of what this component is, and list its
-location in source code of where to find it.
+This is the number conversion component. Student can practice number
+conversion among different bases. 
+Source code is in /runestone/numconv/js/numconv.js with /runestone/numconv/css/numconv.css and
+/runestone/numconv/js/numconv-i18n.en.js .
 
  * Features/Fuctionality to Add:
    ** [ ] more context-specific feedback for wrong answers    
@@ -30,10 +32,13 @@ location in source code of where to find it.
      *** [x] binary to hex 
 
 
-=== Cache Addressing 1
+=== Cache Info
 
-TODO: add a short description of what this component is, and list its
-location in source code of where to find it.
+This is the cache info component. Students can practice their understanding of cache information,
+through answering the size of cache data block (in bytes), the number of entries, and the number of lines 
+in a given cache structure.
+Source code is in /runestone/cache/js/cacheinfo.js with /runestone/cache/css/cache.css and
+/runestone/cache/js/cache-i18n.en.js .
 
  * Features/Fuctionality to Add:
    ** [ ] more context-specific feedback for wrong answers  (wrong number of bits,
@@ -45,15 +50,12 @@ location in source code of where to find it.
    ** [x] works correctly for different size addresses
    ** [ ] other things to test ...
 
-=== Cache Addressing 2
+=== Cache Partition
 
-TODO: add a short description of what this component is, and list its
-location in source code of where to find it.
-
-=== Cache Tracing
-
-TODO: add a short description of what this component is, and list its
-location in source code of where to find it.
+This is the cache partition component. Students can practice their understanding of how a cache
+system partitions a memory address into different parts.
+Source code is in /runestone/cache/js/cachepartition.js with /runestone/cache/css/cache.css and
+/runestone/cache/js/cache-i18n.en.js .
 
  * Features/Fuctionality to Add:
    ** [ ] more context-specific feedback for wrong answers  (wrong number of bits,
@@ -66,9 +68,39 @@ location in source code of where to find it.
 
 ==== Direct Mapped (add subsection if it makes sense to break it up in this way)
 
-TODO: add a short description of what this component is, and list its
-location in source code of where to find it.
+This is the direct mapped mode of cache table component. 
+Source code is in /runestone/cache/js/cachetable.js with /runestone/cache/css/cache.css and
+/runestone/cache/js/cache-i18n.en.js . 
+By default the mode of cache table is direct mapped. To specify, 
+add line "cache-org": "Direct-Mapped" to the option json scripts. 
 
  * Features/Fuctionality to Add:
+   ** [ ] more specific feedback
+   ** [ ] add more guidance
+   ** [ ] build a more user-friendly interface
 
  * Testing:
+   ** [ ] works correctly for different adress sizes
+   ** [ ] works correctly for evicting 
+   ** [ ] valid generation
+
+==== 2-Way Set Associative (add subsection if it makes sense to break it up in this way)
+
+This is the 2-way set associative mode of cache table component. 
+Source code is in /runestone/cache/js/cachetable.js with /runestone/cache/css/cache.css and
+/runestone/cache/js/cache-i18n.en.js . 
+By default the mode of cache table is direct mapped. To switch to 2-way set associative mode, 
+add line "cache-org": "2-Way Set Associative" to the option json scripts. 
+
+ * Features/Fuctionality to Add: 
+   ** [ ] more specific feedback
+   ** [ ] build a more user-friendly interface
+   ** [ ] try to reduce the number of input fields requires to fill
+   ** [ ] add more guidance
+   ** [ ] develop other random generation algorithms 
+
+ * Testing:
+   ** [ ] works correctly for different adress sizes
+   ** [ ] works correctly for evicting 
+   ** [ ] determines LRU correctly
+   ** [ ] valid generation
