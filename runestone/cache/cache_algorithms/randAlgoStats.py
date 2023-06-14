@@ -37,7 +37,9 @@ class RandAlgo:
         toString += ("There are in total " + str(len(self.addresses)) + " addresses: \n")
         for i in range(len(self.addresses)):
             toString += (str(self.addresses[i]) + "\n")
-        toString += ("Hit miss ratio " + str(self.hit_miss_list) + "\n")
+        toString += ("Hit miss ratio " + str(self.hit_miss_ratio) + "\n")
+        toString += ("Address variety" + str(self.address_variety) + "\n")
+        toString += ("Indices coverage" + str(self.indices_coverage) + "\n")
         return toString
     
     def updateHitMissList_missType(self):
@@ -81,6 +83,10 @@ class RandAlgo:
             if address[1] not in uniqueIndices:
                 uniqueIndices.add(address[1])
         self.indices_coverage = len(uniqueIndices)/self.num_rows
+        if self.address_variety > 1:
+            print(uniqueIndices)
+            print(self.addresses)
+            raise Exception("indice coverage cannot be larger than 1")
         # print("The coverage of indices (uniqueIndices / numRows) is " + str(self.indices_coverage))
     
     def calculateAddressVariety(self):
@@ -89,6 +95,10 @@ class RandAlgo:
             if (address[0] + address[1]) not in uniqueTagIndex:
                 uniqueTagIndex.add(address[0] + address[1])
         self.address_variety = len(uniqueTagIndex)/self.num_refs
+        if self.address_variety > 1:
+            print(uniqueTagIndex)
+            print(self.addresses)
+            raise Exception("address variety cannot be larger than 1")
         # print("The address variety ratio (uniqueTagIndex / numRefs) is " + str(self.address_variety))
     
     def calcAll(self):
@@ -96,7 +106,6 @@ class RandAlgo:
         self.calculateHitMissRatio()
         self.calculateAddressVariety()
         self.calculateIndicesCoverage()
-    # TODO: calculate conflict and cold start miss (done in update hit miss list)
 
     # TODO: keep track of the number of times where adding an entries would overwrite the orignal content
 

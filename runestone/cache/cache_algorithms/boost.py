@@ -6,57 +6,37 @@ the chance is reset to 1:2 when there is a hit
 '''
 import random
 from randAlgoStats import RandAlgo
-
+from randAlgoStats import toBinary
 random.seed()
 
-'''global variables'''
-
-binary_list = ["1", "0"]
-# create reference table, stores only hit/miss information
-hmRef = []
-tagIndexRef = []
-# the list of addresses to return
-ret = []
-
-
-# ads_num = 8
-# offset_bits = 2
-# index_bits = 2
-# tag_bits = 4
-
 def fullCoverage(tag_bits, index_bits, tagIndexRef):
-    allComb = pow(2, tag_bits)*pow(2, index_bits)
+    allCombination = pow(2, tag_bits)*pow(2, index_bits)
     coverage = len(set(tagIndexRef))
-    if (coverage >= allComb):
-        return True
-    else:
+    if (coverage < allCombination):
         return False
+    else:
+        return True
 
 def generateTag(tag_bits):
     tag = ""
     for i in range(tag_bits):
-        tag += random.choice(binary_list)
+        tag += random.choice(["1", "0"])
     return tag
 
 def generateIndex(index_bits):
     index = ""
     for i in range(index_bits):
-        index += random.choice(binary_list)
+        index += random.choice(["1", "0"])
     return index
 
 # offset is completely random
 def generateOffset(offset_bits):
     offset = ""
     for i in range(offset_bits):
-        offset += random.choice(binary_list)
+        offset += random.choice(["1", "0"])
     return offset
 
-def generateOneAddress(offset_bits):
-    offset = generateOffset(offset_bits)
-    curr_ads = tagIndexRef[-1] + (offset ,)
-    ret.append(curr_ads)
-
-def generateReference(curr_row, chance_hit, index_bits, tag_bits):
+def generateOneAddress(curr_row, num_rows, chance_hit, offset_bits, index_bits, tag_bits, tagIndexRef, hmRef):
     if curr_row == 0: # if current row is the first row, force first one to be a miss
         hmRef.append(False)
     else: # if current row is not the first row, determine hit/miss based on chance_hit
@@ -66,48 +46,62 @@ def generateReference(curr_row, chance_hit, index_bits, tag_bits):
             increment = (round(random.uniform(chance_hit, 1), 2))*(2/3)
             chance_hit = chance_hit + increment
         
-        # determine actual hit/miss based on the recalculated hit-miss ratio
-        curr_rand = random.random()
+        curr_rand = random.random() # determine hit/miss based on new ratio
         if (curr_rand < chance_hit): 
             hmRef.append(True)
         else:
             hmRef.append(False)
+    
+    validTagIndex = []
+    for x in range(num_rows):
+        if (tagIndexRef[x][1] == True):
+            validTagIndex.append(tagIndexRef[x][0] + toBinary(x, index_bits))
 
-    # print(chance_hit)
-    if curr_row == 0: # if current row is the first row, randomly generate a tag + index combination
-        tagIndexRef.append((generateTag(tag_bits), generateIndex(index_bits)))
+    if hmRef[-1] == False:
+        target = generateTag(tag_bits) + generateIndex(index_bits)
+        # print("When miss: @@@target: " + str(target))
+        # print("@@@tagIndexRef: " + str(tagIndexRef))
+        while (target in validTagIndex):
+            # if fullCoverage(tag_bits, index_bits, tagIndexRef):
+            #     target = random.choice(validTagIndex)
+            #     break
+            target = generateTag(tag_bits) + generateIndex(index_bits)
     else:
-        if hmRef[-1] == False:
-            tag = generateTag(tag_bits)
-            idx = generateIndex(index_bits)
-            target = (tag, idx)
-            # print("When miss: @@@target: " + str(target))
-            # print("@@@tagIndexRef: " + str(tagIndexRef))
-            while (target in tagIndexRef):
-                if fullCoverage(tag_bits, index_bits, tagIndexRef):
-                    target = random.choice(tagIndexRef)
-                    break
-                tag = generateTag(tag_bits)
-                idx = generateIndex(index_bits)
-                target = (tag, idx)
-            tagIndexRef.append(target)
-        else:
-            tag = generateTag(tag_bits)
-            idx = generateIndex(index_bits)
-            target = (tag, idx)
-            # print("When hit: @@@target: " + str(target))
-            # print("@@@tagIndexRef: " + str(tagIndexRef))
-            # when want to create a hit, choose a random, existing tag+index combination
-            target = random.choice(tagIndexRef)
-            tagIndexRef.append(target)
+        # print("When hit: @@@target: " + str(target))
+        # print("@@@tagIndexRef: " + str(tagIndexRef))
+        # when want to create a hit, choose from an existing tag+index combination
+        target = random.choice(validTagIndex)
+    
+    tagStr = target[0 : tag_bits]
+    idxStr = target[tag_bits:]
+
+    idxInt = int(idxStr, 2)
+
+    # print(tagIndexRef)
+    # print(idxInt)
+    tagIndexRef[idxInt][0] = tagStr
+    tagIndexRef[idxInt][1] = True
+
+    return (tagStr, idxStr, generateOffset(offset_bits))
+    
 
 def main_boost(ads_num, offset_bits, index_bits, tag_bits):
 
+    # create reference table, stores only hit/miss information
+    hmRef = []
+    tagIndexRef = []
+    # the list of addresses to return
+    ret = []
+
     chance_hit = 1/3 # init the chance of generating a hit, start at 1/3
 
+    num_rows = 1 << index_bits
+    # init tag+index reference map where boolean indicates whether the block is still on the table
+    for i in range(num_rows):
+        tagIndexRef.append(["", False])
     for i in range(ads_num):
-        generateReference(i, chance_hit, index_bits, tag_bits)
-        generateOneAddress(offset_bits)
+        oneAds = generateOneAddress(i, num_rows, chance_hit, offset_bits, index_bits, tag_bits, tagIndexRef, hmRef)
+        ret.append(oneAds)
 
     boost_Algo = RandAlgo()
     boost_Algo.name = 'boost'
