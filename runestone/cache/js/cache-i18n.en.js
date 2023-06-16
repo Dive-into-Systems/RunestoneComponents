@@ -24,6 +24,8 @@ $.i18n().load({
         msg_cachepartition_tag_incorrect: "Think more about what tag is?",
         msg_cachepartition_index_incorrect: "Think more about what index is?",
         msg_cachepartition_offset_incorrect: "Think more about what offset is?",
-        msg_cachetable_completed: "Congratulations! You've completed the cache table exercise!"
+        msg_cachetable_completed: "Congratulations! You've completed the cache table exercise!",
+        msg_cachetable_display_help: "Show Help",
+        msg_cachetable_hide_help: "Hide Help",
     },
 });

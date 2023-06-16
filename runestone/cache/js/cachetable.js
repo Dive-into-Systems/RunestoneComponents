@@ -50,8 +50,13 @@ export default class cachetable extends RunestoneBase {
 
         // render the layout for the tables
         this.renderLayout();
+
         // replaces the intermediate HTML for this component with the rendered HTML of this component
         $(this.origElem).replaceWith(this.containerDiv);
+
+        if (this.cache_org === two_way_set_associative ) {
+            this.displayNecessaryFields();
+        }
     }
 
     initParams() {
@@ -110,6 +115,7 @@ export default class cachetable extends RunestoneBase {
         this.containerDiv = document.createElement("div");
         this.containerDiv.id = this.divid;
 
+        this.createStatement1();
         // create the div for the info table and the displayed cache table
         this.promptDiv = document.createElement("div");
         this.promptDiv.setAttribute("class", "aligned-tables");
@@ -118,6 +124,7 @@ export default class cachetable extends RunestoneBase {
         this.containerDiv.appendChild(this.promptDiv);
         this.containerDiv.appendChild(document.createElement("br"));
         
+        this.createStatement2();
         // create the div for the reference table and the answer table
         this.bodyTableDiv = document.createElement("div");
         this.bodyTableDiv.setAttribute("class", "aligned-tables");
@@ -130,6 +137,55 @@ export default class cachetable extends RunestoneBase {
 
         // Remove the script tag.
         this.scriptSelector(this.containerDiv).remove();
+    }
+
+    // create the div with general instructions 
+    createStatement1() {
+        this.statementDiv1 = document.createElement("div");
+        this.statementDiv1.textContent = 
+            "Given the cache table and its information below, fill in the changes for each memory address.";
+        this.containerDiv.appendChild(this.statementDiv1);
+    }
+    
+    // create the div with detailed help
+    createStatement2() {
+        this.statementDiv2 = document.createElement("div");
+        this.helpStatement = document.createElement("div");
+        if ( this.cache_org == direct_mapped ) {
+            this.helpStatement.innerHTML = 
+                "<div>'H' stands for hit, and 'M' stands for miss. You should choose one from them. </div>" +
+                "<div>Index should be a decimal number. 'V' stands for Valid Bit. </div> " +
+                "<div>'D' stands for Dirty Bit. Tag should be a binary string. </div>" + 
+                "<div>Click 'check me' to check your response. Click 'Generate Another' to generate another exercise.</div>";
+        } else {
+            this.helpStatement.innerHTML = 
+                "<div>'H' stands for hit, and 'M' stands for miss. You should choose one from them. </div>" +
+                "<div>Index should be a decimal number. 'V' stands for Valid Bit. </div>" +
+                "<div>'D' stands for Dirty Bit. Tag should be a binary string. </div>" + 
+                "<div>'LRU' stands for Least Recent Used Bit. LRU=0 means the left line is the least recent used line, and vice versa. </div>" +
+                "<div>The corresponding input fields for V, D, and Tag will appear after you filled in the LRU.</div>" + 
+                "<div>Click 'check me' to check your response. Click 'Generate Another' to generate another exercise.</div>";
+        }
+        this.helpStatement.style.visibility = "hidden";
+        // create the button for display/hide help
+        this.helpButton = document.createElement("button");
+        this.helpButton.textContent = $.i18n("msg_cachetable_display_help");
+        this.helpButton.addEventListener(            
+            "click",
+            function() {
+                if (this.helpStatement.style.visibility == "hidden") {
+                    this.helpStatement.style.visibility = "visible";
+                    this.statementDiv2.appendChild(this.helpStatement);
+                    this.helpButton.textContent = $.i18n("msg_cachetable_hide_help");
+                } else {
+                    this.helpStatement.style.visibility = "hidden";
+                    this.statementDiv2.removeChild(this.helpStatement);
+                    this.helpButton.textContent = $.i18n("msg_cachetable_display_help");
+                }
+            }.bind(this),
+        false); 
+        this.statementDiv2.appendChild(this.helpButton);
+        this.containerDiv.appendChild(this.statementDiv2);
     }
 
     // create the table that displays the necessary information for the cache exercise
@@ -397,16 +453,15 @@ export default class cachetable extends RunestoneBase {
     // update the reference table and answer table
     updateReferenceTableAndAnswerTable() {
         if (this.curr_ref > 0) {
-            this.disableAnswerTableCurrentRow();
+            this.disableAnswerTableCurrentRow(this.curr_ref-1);
         }
         this.addReferenceTableNewRow();
         this.addAnswerTableNewRow();
     }
 
     // disable all the input fields of the previous row
-    disableAnswerTableCurrentRow() {
-        const last_ref = this.curr_ref - 1;
-        for ( var old_cell of this.answerTableBody.rows[ last_ref ].cells ) {
+    disableAnswerTableCurrentRow(ref) {
+        for ( var old_cell of this.answerTableBody.rows[ ref ].cells ) {
             for ( var field of old_cell.children ) {
                 field.setAttribute("readonly", "readonly");
                 field.setAttribute("disabled", "disabled");
@@ -414,17 +469,58 @@ export default class cachetable extends RunestoneBase {
         }
     } 
 
+    disableOneInputField(field) {
+        field.setAttribute("disabled", "disabled");
+        field.value = "";
+        field.style.visibility = "hidden";
+    }
+
+    disableCacheLineLeft() {
+        const curr_ref_str = this.getCurrRefStr();
+        this.disableOneInputField(document.querySelector('input[name="Tag' + curr_ref_str + '"]'));
+        this.disableOneInputField(document.querySelector('input[name="Dirty' + curr_ref_str + '"]'));
+        this.disableOneInputField(document.querySelector('input[name="Valid' + curr_ref_str + '"]'));
+    }
+
+    disableCacheLineRight() {
+        const curr_ref_str = this.getCurrRefStr();
+        this.disableOneInputField(document.querySelector('input[name="Tag2' + curr_ref_str + '"]'));
+        this.disableOneInputField(document.querySelector('input[name="Dirty2' + curr_ref_str + '"]'));
+        this.disableOneInputField(document.querySelector('input[name="Valid2' + curr_ref_str + '"]'));
+    }
+
+    activateOneInputField(field) {
+        field.removeAttribute("disabled");
+        field.style.visibility = "visible";
+    }
+
+    activateCacheLineLeft() {
+        const curr_ref_str = this.getCurrRefStr();
+        this.activateOneInputField(document.querySelector('input[name="Tag' + curr_ref_str + '"]'));
+        this.activateOneInputField(document.querySelector('input[name="Dirty' + curr_ref_str + '"]'));
+        this.activateOneInputField(document.querySelector('input[name="Valid' + curr_ref_str + '"]'));
+    }
+
+    activateCacheLineRight() {
+        const curr_ref_str = this.getCurrRefStr();
+        this.activateOneInputField(document.querySelector('input[name="Tag2' + curr_ref_str + '"]'));
+        this.activateOneInputField(document.querySelector('input[name="Dirty2' + curr_ref_str + '"]'));
+        this.activateOneInputField(document.querySelector('input[name="Valid2' + curr_ref_str + '"]'));
+    }
+
+    onlyBitAllowed(event) {
+        return event.charCode == 48 || event.charCode == 49;
+    }
     // update the body of the displayed cache table
     updateDisplayedTableBody() {
+        this.setCellsToDefault();
         const changed_line = this.answer_list[this.curr_ref-1][1];
         for (let i = 0; i < this.num_rows; i++) {
             if ( i === changed_line ) {
                 // only update the changed line
-                this.displayedTableBody.rows[i].style.backgroundColor = "yellow";
                 this.updateDisplayedTableBodyRow(i);
-            } else {
-                this.displayedTableBody.rows[i].style.backgroundColor = "white";
-            }
+                this.highlightChanges(i);
+            } 
         }
     }
 
@@ -444,6 +540,37 @@ export default class cachetable extends RunestoneBase {
             this.displayedTableBody.rows[index].cells[5].textContent = this.curr_tagIndex_table[index][4].toString();
             this.displayedTableBody.rows[index].cells[6].textContent = this.curr_tagIndex_table[index][5].toString();
             this.displayedTableBody.rows[index].cells[7].textContent = this.curr_tagIndex_table[index][6];
+        }
+    }
+
+    setCellsToDefault() {
+        for (var row of this.displayedTableBody.rows) {
+            for (var cell of row.cells) {
+                // console.log(cell);
+                cell.style.backgroundColor = "white";
+            }
+        }
+    }
+
+    highlightChanges(index) {
+        this.displayedTableBody.rows[index].cells[0].style.backgroundColor = "yellow";
+        if ( this.cache_org === direct_mapped ) {
+            // highlight the valid bit, dirty bit, tag bits
+            this.displayedTableBody.rows[index].cells[1].style.backgroundColor = "yellow";
+            this.displayedTableBody.rows[index].cells[2].style.backgroundColor = "yellow";
+            this.displayedTableBody.rows[index].cells[3].style.backgroundColor = "yellow";
+        } else {
+            this.displayedTableBody.rows[index].cells[1].style.backgroundColor = "yellow";
+            const curr_lru = this.displayedTableBody.rows[index].cells[1].textContent;
+            if (curr_lru == "1") {
+                this.displayedTableBody.rows[index].cells[2].style.backgroundColor = "yellow";
+                this.displayedTableBody.rows[index].cells[3].style.backgroundColor = "yellow";
+                this.displayedTableBody.rows[index].cells[4].style.backgroundColor = "yellow";
+            } else {
+                this.displayedTableBody.rows[index].cells[5].style.backgroundColor = "yellow";
+                this.displayedTableBody.rows[index].cells[6].style.backgroundColor = "yellow";
+                this.displayedTableBody.rows[index].cells[7].style.backgroundColor = "yellow";
+            }
         }
     }
 
@@ -518,6 +645,12 @@ export default class cachetable extends RunestoneBase {
             cellInputLRUBox.setAttribute("size", "1");
             cellInputLRUBox.setAttribute("type", "text");
             cellInputLRUBox.setAttribute("name", "LRU" + curr_ref);
+            cellInputLRUBox.addEventListener("keyup",
+                function() {
+                    this.displayNecessaryFields();
+                }.bind(this),
+                false
+            );
             var cellInputLRU = document.createElement("td");
             cellInputLRU.appendChild(cellInputLRUBox);
             answerTableNewRow.appendChild(cellInputLRU);            
@@ -529,6 +662,10 @@ export default class cachetable extends RunestoneBase {
         cellInputValidBox.setAttribute("size", "1");
         cellInputValidBox.setAttribute("type", "text");
         cellInputValidBox.setAttribute("name", "Valid" + curr_ref);
+        cellInputValidBox.addEventListener("onkeypress",
+            this.onlyBitAllowed,
+            false
+        );
         var cellInputValid = document.createElement("td");
         cellInputValid.appendChild(cellInputValidBox);
         answerTableNewRow.appendChild(cellInputValid);
@@ -539,6 +676,10 @@ export default class cachetable extends RunestoneBase {
         cellInputDirtyBox.setAttribute("size", "1");
         cellInputDirtyBox.setAttribute("type", "text");
         cellInputDirtyBox.setAttribute("name", "Dirty" + curr_ref);
+        cellInputDirtyBox.addEventListener("onkeypress",
+            this.onlyBitAllowed,
+            false
+        );
         var cellInputDirty = document.createElement("td");
         cellInputDirty.appendChild(cellInputDirtyBox);
         answerTableNewRow.appendChild(cellInputDirty);
@@ -549,6 +690,10 @@ export default class cachetable extends RunestoneBase {
         cellInputTagBox.setAttribute("size", "5");
         cellInputTagBox.setAttribute("type", "text");
         cellInputTagBox.setAttribute("name", "Tag" + curr_ref);
+        cellInputTagBox.addEventListener("onkeypress",
+            this.onlyBitAllowed,
+            false
+        );
         var cellInputTag = document.createElement("td");
         cellInputTag.appendChild(cellInputTagBox);
         answerTableNewRow.appendChild(cellInputTag);
@@ -583,30 +728,45 @@ export default class cachetable extends RunestoneBase {
             var cellInputTag2 = document.createElement("td");
             cellInputTag2.appendChild(cellInputTagBox2);
             answerTableNewRow.appendChild(cellInputTag2);
+
         }
 
         // add the event listener for the last button 
-        if ( this.cache_org === direct_mapped ) {
-            cellInputTagBox.addEventListener("keypress", function(e) {
-                if (e.key === "Enter") {
-                    e.preventDefault();
-                    this.submitResponse();
-                }
-            }.bind(this), false);
-        } else {
+        if ( this.cache_org === two_way_set_associative ) {
             cellInputTagBox2.addEventListener("keypress", function(e) {
                 if (e.key === "Enter") {
                     e.preventDefault();
                     this.submitResponse();
                 }
             }.bind(this), false);
-        }
+        } 
+        cellInputTagBox.addEventListener("keypress", function(e) {
+            if (e.key === "Enter") {
+                e.preventDefault();
+                this.submitResponse();
+            }
+        }.bind(this), false);
 
         this.answerTableBody.appendChild(answerTableNewRow);
     }
     
     recordAnswered() {  
         // pass
+    }
+
+    // only display the input fields that will be changed
+    displayNecessaryFields() {
+        this.disableCacheLineLeft();
+        this.disableCacheLineRight();
+        const curr_ref_str = this.getCurrRefStr();
+        const response_lru = 
+            document.querySelector('input[name="LRU' + curr_ref_str + '"]').value;
+        if (response_lru == "0") {
+            this.activateCacheLineRight();
+        }
+        if (response_lru == "1") {
+            this.activateCacheLineLeft();
+        }
     }
 
     // render the two buttons
@@ -639,6 +799,9 @@ export default class cachetable extends RunestoneBase {
             "click",
             function () {
                 this.resetGeneration();
+                if ( this.cache_org == two_way_set_associative ) {
+                    this.displayNecessaryFields();
+                }
             }.bind(this),
             false
         );
@@ -661,9 +824,12 @@ export default class cachetable extends RunestoneBase {
                     this.updateDisplayedTableBody()
                     this.generateAnswerNext();
                     this.updateReferenceTableAndAnswerTable();
+                    if ( this.cache_org === two_way_set_associative ) {
+                        this.displayNecessaryFields();
+                    }
                 } else {
                     // render feedback that congrats and this is all of the question
-                    this.disableAnswerTableCurrentRow();
+                    this.disableAnswerTableCurrentRow(this.curr_ref-1);
                     this.completed = true;
                 }
             }
@@ -1112,24 +1278,28 @@ export default class cachetable extends RunestoneBase {
                 if ( curr_answers[ 2 ].toString() != response_lru ) {
                     this.correct = false;
                 }
-                if ( curr_answers[ 3 ].toString() != response_valid ) {
-                    this.correct = false;
+                if ( response_lru == 1 ) {
+                    if ( curr_answers[ 3 ].toString() != response_valid ) {
+                        this.correct = false;
+                    }
+                    if ( curr_answers[ 4 ].toString() != response_dirty ) {
+                        this.correct = false;
+                    }
+                    if ( curr_answers[ 5 ].toString() != response_tag ) {
+                        this.correct = false;
+                    }     
+                } else {
+                    if ( curr_answers[ 6 ].toString() != response_valid2 ) {
+                        this.correct = false;
+                    }
+                    if ( curr_answers[ 7 ].toString() != response_dirty2 ) {
+                        this.correct = false;
+                    }
+                    if ( curr_answers[ 8 ].toString() != response_tag2 ) {
+                        this.correct = false;
+                    }       
                 }
-                if ( curr_answers[ 4 ].toString() != response_dirty ) {
-                    this.correct = false;
-                }
-                if ( curr_answers[ 5 ].toString() != response_tag ) {
-                    this.correct = false;
-                }       
-                if ( curr_answers[ 6 ].toString() != response_valid2 ) {
-                    this.correct = false;
-                }
-                if ( curr_answers[ 7 ].toString() != response_dirty2 ) {
-                    this.correct = false;
-                }
-                if ( curr_answers[ 8 ].toString() != response_tag2 ) {
-                    this.correct = false;
-                }       
+
             } else {
                 if ( response_valid != "1" ) {
                     this.correct = false;

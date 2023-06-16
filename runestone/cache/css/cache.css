@@ -62,6 +62,10 @@ input.input-validation-error {
    background-color: "Bisque" !important;
 }
 
+input[disabled] {
+   background-color: rgb(172, 172, 172);
+}
+
 table, td, tr, th {
    border: 1px solid;
 }
@@ -82,3 +86,4 @@ table {
    flex-direction: row;
    justify-content: space-between;
 }
+
