@@ -802,6 +802,7 @@ export default class cachetable extends RunestoneBase {
                 if ( this.cache_org == two_way_set_associative ) {
                     this.displayNecessaryFields();
                 }
+                this.hidefeedback();
             }.bind(this),
             false
         );
