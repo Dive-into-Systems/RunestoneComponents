@@ -1,39 +1,30 @@
+'''
+this algorithm generate completely random addresses
+'''
+
 from random import *
 from randAlgoStats import RandAlgo
 
 def generateTag(tag_bits):
     tag = ""
     for i in range(tag_bits):
-        rand = random()
-        if (rand < 0.5):
-            tag += "1"
-        else:
-            tag += "0"
+        tag += choice(["0", "1"])
     return tag
 
 def generateIndex(index_bits):
     index = ""
     for i in range(index_bits):
-        rand = random()
-        if (rand < 0.5):
-            index += "1"
-        else:
-            index += "0"
+        index += choice(["0", "1"])
     return index
 
 def generateOffset(offset_bits):
     offset = ""
     for i in range(offset_bits):
-        rand = random()
-        if (rand < 0.5):
-            offset += "1"
-        else:
-            offset += "0"
+        offset += choice(["0", "1"])
     return offset
 
 def generateOneAddress(tag_bits, index_bits, offset_bits):
     return (generateTag(tag_bits), generateIndex(index_bits), generateOffset(offset_bits))
-
 
 def main_random(ads_num, offset_bits, index_bits, tag_bits):
 

@@ -1,8 +1,6 @@
 '''
-this algorithm generate a list of address based on the idea that
-the first address should create a miss and the default ratio of hit/miss
-is 1:2, while the chance of creating a hit is boosted for every miss, and 
-the chance is reset to 1:2 when there is a hit
+this algorithm generate a list of tag and a list of index with a certain number of repetitions, respectively.
+shuffles the lists, and combines tag, index, and offset to form an address
 '''
 import random
 from randAlgoStats import RandAlgo
@@ -15,44 +13,23 @@ random.seed()
 numUniqueTag = random.randrange(3, 5)
 numUniqueIndex = random.randrange(3, 5)
 
-
-# ads_num = 8
-# offset_bits = 2
-# index_bits = 2
-# tag_bits = 4
-
-binary_list = ["1", "0"]
-
 def generateTag(tag_bits):
     tag = ""
     for i in range(tag_bits):
-        tag += random.choice(binary_list)
+        tag += random.choice(["1", "0"])
     return tag
 
 def generateIndex(index_bits):
     index = ""
     for i in range(index_bits):
-        index += random.choice(binary_list)
+        index += random.choice(["1", "0"])
     return index
 
 def generateOffset(offset_bits):
     offset = ""
     for i in range(offset_bits):
-        offset += random.choice(binary_list)
+        offset += random.choice(["1", "0"])
     return offset
-
-# shuffle tag_list, index_list and concatenate them with offset_list to form an address
-def shuffling(ads_num, tag_list, index_list, offset_list, ret):
-
-    random.shuffle(tag_list)
-    random.shuffle(index_list)
-
-    for i in range(ads_num):
-        ret.append(tag_list[i] + index_list[i] + offset_list[i])
-
-# generate a list for offsets for the memory address set
-def generateOffsetList(ads_num, offset_bits, offset_list):
-    offset_list.append((generateOffset(offset_bits),))
 
 # generate respectively two lists for tag and index for the memory address set
 def generateTagNIndexList(ads_num, tag_bits, index_bits, tag_list, index_list, offset_list):
@@ -83,12 +60,15 @@ def main_bound(ads_num, offset_bits, index_bits, tag_bits):
     # the list of addresses to return
     ret = []
     
-    
     for i in range(ads_num):
         generateTagNIndexList(ads_num, tag_bits, index_bits, tag_list, index_list, offset_list)
-        generateOffsetList(ads_num, offset_bits, offset_list)
-    
-    shuffling(ads_num, tag_list, index_list, offset_list, ret)
+        offset_list.append((generateOffset(offset_bits),))
+
+    random.shuffle(tag_list)
+    random.shuffle(index_list)
+
+    for i in range(ads_num):
+        ret.append(tag_list[i] + index_list[i] + offset_list[i])
     
     boost_Algo = RandAlgo()
     boost_Algo.name = 'bound'
@@ -100,4 +80,4 @@ def main_bound(ads_num, offset_bits, index_bits, tag_bits):
     return boost_Algo
 
 if __name__ == '__main__':
-    print(main_bound(8,2,2,2))
+    print(main_bound(8,2,2,4))

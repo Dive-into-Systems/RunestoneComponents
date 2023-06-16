@@ -1,12 +1,12 @@
-# generate a list of address based on the idea that when we have
-# two hits then the next one should be a miss and its inverse
+'''
+this algorithm generates a list of address based on the principle that
+when there are two consecutive hits then the next one should be a miss
+'''
 
 from random import choice
 from math import pow
 from randAlgoStats import RandAlgo
 from randAlgoStats import toBinary
-
-
 
 def generateTag(tag_bits):
     tag = ""
@@ -20,13 +20,11 @@ def generateIndex(index_bits):
         index += choice(["0", "1"])
     return index
 
-# offset is completely random
 def generateOffset(offset_bits):
     offset = ""
     for i in range(offset_bits):
         offset += choice(["0", "1"])
     return offset
-
 
 def generateOneAddress(curr_ref, offset_bits, index_bits, tag_bits, num_rows, hit_miss_list, curr_tagIndex_table):
     if (curr_ref == 0): # first always a miss
