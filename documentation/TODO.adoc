@@ -20,16 +20,19 @@ conversion among different bases.
 Source code is in /runestone/numconv/js/numconv.js with /runestone/numconv/css/numconv.css and
 /runestone/numconv/js/numconv-i18n.en.js .
 
- * Features/Fuctionality to Add:
+ * Features/Functionality to Add:
    ** [ ] more context-specific feedback for wrong answers    
 
  * Testing: 
 
-   ** correctness of converstions
+   ** correctness of conversions
      *** [ ] binary to unsigned
+     *** [x] unsigned to binary
      *** [ ] binary to signed
+     *** [ ] signed to binary
+     *** [x] binary to hex
+     *** [ ] hex to binary
      *** [ ] add more here ...
-     *** [x] binary to hex 
 
 
 === Cache Info
@@ -40,7 +43,7 @@ in a given cache structure.
 Source code is in /runestone/cache/js/cacheinfo.js with /runestone/cache/css/cache.css and
 /runestone/cache/js/cache-i18n.en.js .
 
- * Features/Fuctionality to Add:
+ * Features/Functionality to Add:
    ** [ ] more context-specific feedback for wrong answers  (wrong number of bits,
        incorrect address bits, ...)
    ** [ ] other features to add ...
@@ -74,13 +77,18 @@ Source code is in /runestone/cache/js/cachetable.js with /runestone/cache/css/ca
 By default the mode of cache table is direct mapped. To specify, 
 add line "cache-org": "Direct-Mapped" to the option json scripts. 
 
- * Features/Fuctionality to Add:
+ * Features/Functionality to Add:
    ** [ ] more specific feedback
    ** [ ] add more guidance
    ** [ ] build a more user-friendly interface
 
+ * Question Quality analysis
+   ** [ ] understand the difference between different algorithms
+   ** [ ] decide which algorithm we want to use
+   ** [ ] try out dynamic parameterizing in bound algorithm
+
  * Testing:
-   ** [ ] works correctly for different adress sizes
+   ** [ ] works correctly for different address sizes
    ** [ ] works correctly for evicting 
    ** [ ] valid generation
 
@@ -92,12 +100,15 @@ Source code is in /runestone/cache/js/cachetable.js with /runestone/cache/css/ca
 By default the mode of cache table is direct mapped. To switch to 2-way set associative mode, 
 add line "cache-org": "2-Way Set Associative" to the option json scripts. 
 
- * Features/Fuctionality to Add: 
+ * Features/Functionality to Add:
    ** [ ] more specific feedback
    ** [ ] build a more user-friendly interface
    ** [ ] try to reduce the number of input fields requires to fill
    ** [ ] add more guidance
-   ** [ ] develop other random generation algorithms 
+   ** [ ] develop other random generation algorithms
+
+ * Question Quality Analysis:
+   ** [ ] find statistics that are more unique to set associative
 
  * Testing:
    ** [ ] works correctly for different adress sizes
