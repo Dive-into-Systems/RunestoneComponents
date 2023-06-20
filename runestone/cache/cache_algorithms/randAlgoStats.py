@@ -42,6 +42,8 @@ class RandAlgo:
         toString += ("Hit miss ratio " + str(self.hit_miss_ratio) + "\n")
         toString += ("Address variety" + str(self.address_variety) + "\n")
         toString += ("Indices coverage" + str(self.indices_coverage) + "\n")
+        toString += ("Number of conflict miss is " + str(self.conflict_miss) + "\n")
+        toString += ("Number of non conflict miss is " + str(self.cold_start_miss) + "\n")
         return toString
     
     # fill in the cache with the list of addresses, update hit_miss_list and record miss type step-wise
