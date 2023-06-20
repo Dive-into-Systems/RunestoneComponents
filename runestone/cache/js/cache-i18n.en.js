@@ -27,5 +27,13 @@ $.i18n().load({
         msg_cachetable_completed: "Congratulations! You've completed the cache table exercise!",
         msg_cachetable_display_help: "Show Help",
         msg_cachetable_hide_help: "Hide Help",
+        msg_cachetable_wrong_index: "Emm...think more about the index?",
+        msg_cachetable_wrong_HM: "Emm...think more about whether hit or miss?",
+        msg_cachetable_wrong_LRU: "Emm...think more about the LRU?",
+        msg_cachetable_wrong_side: "Emm...think more about which side will be affected?",
+        msg_cachetable_wrong_valid: "Emm...think more about the valid bit?",
+        msg_cachetable_wrong_dirty: "Emm...think more about the dirty bit?",
+        msg_cachetable_wrong_tag: "Emm...think more about the tag?",
+        msg_cachetable_incomplete_answer: "Please select whether it will hit or miss."
     },
 });

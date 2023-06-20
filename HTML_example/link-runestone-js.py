@@ -57,6 +57,8 @@ with open(html_path, 'w') as html_file:
 
             for js in json_contents['js']:
                 html_file.write(f'    <script src="{json_dirname}/{js}"></script>\n')
+            
+            html_file.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/seedrandom/3.0.5/seedrandom.min.js"></script>')
 
             html_file.write('    <!-- END LINKED FILES -->\n')
         elif not found_begin:

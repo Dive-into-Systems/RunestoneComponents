@@ -76,6 +76,8 @@ export default class cachetable extends RunestoneBase {
         this.num_refs = 8;
 
         this.init_valid_rate = 0.3;
+        this.hasSeed = false;
+        this.seed = Math.random().toString();
     }
 
     // load customized parameters
@@ -104,6 +106,10 @@ export default class cachetable extends RunestoneBase {
             if (curr_options["init-valid-rate"] != undefined) {
                 this.init_valid_rate = eval(curr_options["init-valid-rate"]);
             }
+            if (curr_options["seed"] != undefined) {
+                this.hasSeed = true;
+                this.seed = curr_options["seed"];
+            }
             this.tag_bits = this.num_bits - this.index_bits - this.offset_bits;
         } catch (error) {
             // pass
@@ -124,7 +130,6 @@ export default class cachetable extends RunestoneBase {
         this.containerDiv.appendChild(this.promptDiv);
         this.containerDiv.appendChild(document.createElement("br"));
         
-        this.createStatement2();
         // create the div for the reference table and the answer table
         this.bodyTableDiv = document.createElement("div");
         this.bodyTableDiv.setAttribute("class", "aligned-tables");
@@ -143,7 +148,7 @@ export default class cachetable extends RunestoneBase {
     createStatement1() {
         this.statementDiv1 = document.createElement("div");
         this.statementDiv1.textContent = 
-            "Given the cache table and its information below, fill in the changes for each memory address.";
+            "Given the cache table and its info below, fill in the effects for each memory address reference.";
         this.containerDiv.appendChild(this.statementDiv1);
     }
     
@@ -287,6 +292,7 @@ export default class cachetable extends RunestoneBase {
         // create the head row for the reference table
         this.referenceTableHead = document.createElement("thead");   
         this.referenceTableHead.innerHTML = 
+        "<tr><th colspan=\"3\">Reference table</th></tr>" + 
         "<tr>" +
         "<th title=\"Reference Number\">Ref</th>"+
         "<th title=\"Address\">Address</th>"+
@@ -307,6 +313,7 @@ export default class cachetable extends RunestoneBase {
         this.answerTableHead = document.createElement("thead");
         if ( this.cache_org === direct_mapped) {
             this.answerTableHead.innerHTML = 
+            "<tr><th colspan=\"6\">Effects from Memory Reference</th></tr>" + 
             "<tr>" +
             "<th title=\"Hit?\" >H</th>"+
             "<th title=\"Miss?\" >M</th>"+
@@ -317,6 +324,7 @@ export default class cachetable extends RunestoneBase {
             "</tr> ";
         } else {
             this.answerTableHead.innerHTML = 
+            "<tr><th colspan=\"10\">Effects from Memory Reference (only input the side being affected)</th></tr>" + 
             "<tr>" +
             "<th title=\"Hit?\" >H</th>"+
             "<th title=\"Miss?\" >M</th>"+
@@ -353,12 +361,12 @@ export default class cachetable extends RunestoneBase {
             this.displayedTableHeadRowD.setAttribute("width", "20%");
             this.displayedTableHeadRowTag.setAttribute("width", "35%");
 
-            this.answerTableHead.rows[0].cells[0].setAttribute("width", "15%");
-            this.answerTableHead.rows[0].cells[1].setAttribute("width", "15%");
-            this.answerTableHead.rows[0].cells[2].setAttribute("width", "17.5%");
-            this.answerTableHead.rows[0].cells[3].setAttribute("width", "14%");
-            this.answerTableHead.rows[0].cells[4].setAttribute("width", "14%");
-            this.answerTableHead.rows[0].cells[5].setAttribute("width", "24.5%");
+            this.answerTableHead.rows[1].cells[0].setAttribute("width", "15%");
+            this.answerTableHead.rows[1].cells[1].setAttribute("width", "15%");
+            this.answerTableHead.rows[1].cells[2].setAttribute("width", "17.5%");
+            this.answerTableHead.rows[1].cells[3].setAttribute("width", "14%");
+            this.answerTableHead.rows[1].cells[4].setAttribute("width", "14%");
+            this.answerTableHead.rows[1].cells[5].setAttribute("width", "24.5%");
         } else {
             this.tableInfo.setAttribute("width", "25%");
             this.displayedTable.setAttribute("width", "54%");
@@ -374,16 +382,16 @@ export default class cachetable extends RunestoneBase {
             this.displayedTableHeadRowD2.setAttribute("width", "10%");
             this.displayedTableHeadRowTag2.setAttribute("width", "20%");
 
-            this.answerTableHead.rows[0].cells[0].setAttribute("width", "5%");
-            this.answerTableHead.rows[0].cells[1].setAttribute("width", "5%");
-            this.answerTableHead.rows[0].cells[2].setAttribute("width", "9%");
-            this.answerTableHead.rows[0].cells[3].setAttribute("width", "9%");
-            this.answerTableHead.rows[0].cells[4].setAttribute("width", "9%");
-            this.answerTableHead.rows[0].cells[5].setAttribute("width", "9%");
-            this.answerTableHead.rows[0].cells[6].setAttribute("width", "18%");
-            this.answerTableHead.rows[0].cells[7].setAttribute("width", "9%");
-            this.answerTableHead.rows[0].cells[8].setAttribute("width", "9%");
-            this.answerTableHead.rows[0].cells[9].setAttribute("width", "18%");
+            this.answerTableHead.rows[1].cells[0].setAttribute("width", "5%");
+            this.answerTableHead.rows[1].cells[1].setAttribute("width", "5%");
+            this.answerTableHead.rows[1].cells[2].setAttribute("width", "9%");
+            this.answerTableHead.rows[1].cells[3].setAttribute("width", "9%");
+            this.answerTableHead.rows[1].cells[4].setAttribute("width", "9%");
+            this.answerTableHead.rows[1].cells[5].setAttribute("width", "9%");
+            this.answerTableHead.rows[1].cells[6].setAttribute("width", "18%");
+            this.answerTableHead.rows[1].cells[7].setAttribute("width", "9%");
+            this.answerTableHead.rows[1].cells[8].setAttribute("width", "9%");
+            this.answerTableHead.rows[1].cells[9].setAttribute("width", "18%");
         }
     }
     
@@ -645,12 +653,12 @@ export default class cachetable extends RunestoneBase {
             cellInputLRUBox.setAttribute("size", "1");
             cellInputLRUBox.setAttribute("type", "text");
             cellInputLRUBox.setAttribute("name", "LRU" + curr_ref);
-            cellInputLRUBox.addEventListener("keyup",
-                function() {
-                    this.displayNecessaryFields();
-                }.bind(this),
-                false
-            );
+            // cellInputLRUBox.addEventListener("keyup",
+            //     function() {
+            //         this.displayNecessaryFields();
+            //     }.bind(this),
+            //     false
+            // );
             var cellInputLRU = document.createElement("td");
             cellInputLRU.appendChild(cellInputLRUBox);
             answerTableNewRow.appendChild(cellInputLRU);            
@@ -729,6 +737,42 @@ export default class cachetable extends RunestoneBase {
             cellInputTag2.appendChild(cellInputTagBox2);
             answerTableNewRow.appendChild(cellInputTag2);
 
+            cellInputDirtyBox.addEventListener("keyup",
+                function() {
+                    this.displayNecessaryFields();
+                }.bind(this),
+                false
+            );
+            cellInputDirtyBox2.addEventListener("keyup",
+                function() {
+                    this.displayNecessaryFields();
+                }.bind(this),
+                false
+            );
+            cellInputValidBox.addEventListener("keyup",
+                function() {
+                    this.displayNecessaryFields();
+                }.bind(this),
+                false
+            );
+            cellInputValidBox2.addEventListener("keyup",
+                function() {
+                    this.displayNecessaryFields();
+                }.bind(this),
+                false
+            );
+            cellInputTagBox.addEventListener("keyup",
+                function() {
+                    this.displayNecessaryFields();
+                }.bind(this),
+                false
+            );
+            cellInputTagBox2.addEventListener("keyup",
+                function() {
+                    this.displayNecessaryFields();
+                }.bind(this),
+                false
+            );
         }
 
         // add the event listener for the last button 
@@ -756,16 +800,32 @@ export default class cachetable extends RunestoneBase {
 
     // only display the input fields that will be changed
     displayNecessaryFields() {
-        this.disableCacheLineLeft();
-        this.disableCacheLineRight();
+        // this.disableCacheLineLeft();
+        // this.disableCacheLineRight();
+        // const curr_ref_str = this.getCurrRefStr();
+        // const response_lru = 
+        //     document.querySelector('input[name="LRU' + curr_ref_str + '"]').value;
+        // if (response_lru == "0") {
+        //     this.activateCacheLineRight();
+        // }
+        // if (response_lru == "1") {
+        //     this.activateCacheLineLeft();
+        // }
+        this.activateCacheLineLeft();
+        this.activateCacheLineRight();
         const curr_ref_str = this.getCurrRefStr();
-        const response_lru = 
-            document.querySelector('input[name="LRU' + curr_ref_str + '"]').value;
-        if (response_lru == "0") {
-            this.activateCacheLineRight();
-        }
-        if (response_lru == "1") {
-            this.activateCacheLineLeft();
+        const response_left = 
+            document.querySelector('input[name="Valid' + curr_ref_str + '"]').value
+            + document.querySelector('input[name="Dirty' + curr_ref_str + '"]').value
+            + document.querySelector('input[name="Tag' + curr_ref_str + '"]').value;
+        const response_right = 
+            document.querySelector('input[name="Valid2' + curr_ref_str + '"]').value
+            + document.querySelector('input[name="Dirty2' + curr_ref_str + '"]').value
+            + document.querySelector('input[name="Tag2' + curr_ref_str + '"]').value;
+        if ( response_left != "" ) {
+            this.disableCacheLineRight();
+        } else if ( response_right != "" ) {
+            this.disableCacheLineLeft();
         }
     }
 
@@ -812,6 +872,8 @@ export default class cachetable extends RunestoneBase {
         this.buttonDiv.setAttribute("class", "aligned-tables");
         this.containerDiv.appendChild(document.createElement("br"));
         this.containerDiv.appendChild(this.buttonDiv);
+
+        this.createStatement2();
     }
 
     // submit the response
@@ -840,6 +902,13 @@ export default class cachetable extends RunestoneBase {
 
     // generate another cache table exercise
     resetGeneration() {
+        if ( this.hasSeed ) {
+            Math.seedrandom(this.seed);
+        } else {
+            this.seed = Math.random().toString();
+            console.log(this.seed);
+            Math.seedrandom(this.seed);
+        }
         this.initDisplayedTableBody();
         this.initReferenceTableBody();
         this.initAnswerTableBody();
@@ -853,6 +922,7 @@ export default class cachetable extends RunestoneBase {
         this.feedbackDiv.id = this.divid + "_feedback";
         this.containerDiv.appendChild(document.createElement("br"));
         this.containerDiv.appendChild(this.feedbackDiv);
+        this.feedbackWrongAnswer = "";
     }
 
 
@@ -1243,7 +1313,7 @@ export default class cachetable extends RunestoneBase {
     // check if the answer is correct
     checkCurrentAnswer() {
         // the answer is correct if each of the input field is the same as its corresponding value in this.answers
-        this.correct = true;
+        this.correct = false;
         const curr_ref = this.curr_ref;
         const curr_ref_str = this.getCurrRefStr();
         try {
@@ -1259,12 +1329,14 @@ export default class cachetable extends RunestoneBase {
                 document.querySelector('input[name="Tag' + curr_ref_str + '"]').value;
             const curr_answers = this.answer_list[ curr_ref ];
             // console.log(curr_answers);
+            if ( curr_answers[ 1 ].toString() != response_index ) {
+                this.feedbackWrongAnswer = $.i18n("msg_cachetable_wrong_index");
+                return;
+            }
 
             if ( this.hit_miss_list[ curr_ref ] != response_hit_miss  ) {
-                this.correct = false;
-            }
-            if ( curr_answers[ 1 ].toString() != response_index ) {
-                this.correct = false;
+                this.feedbackWrongAnswer = $.i18n("msg_cachetable_wrong_HM");
+                return;
             }
             // in 2-way set associative, we need to check 4 extra input fields
             if ( this.cache_org === two_way_set_associative ) {
@@ -1277,42 +1349,62 @@ export default class cachetable extends RunestoneBase {
                 const response_tag2 =
                     document.querySelector('input[name="Tag2' + curr_ref_str + '"]').value;
                 if ( curr_answers[ 2 ].toString() != response_lru ) {
-                    this.correct = false;
+                    this.feedbackWrongAnswer = $.i18n("msg_cachetable_wrong_LRU");
+                    return;
                 }
                 if ( response_lru == 1 ) {
+                    if ( response_valid + response_dirty + response_tag == "") {
+                        this.feedbackWrongAnswer = $.i18n("msg_cachetable_wrong_side");
+                        return;
+                    }
                     if ( curr_answers[ 3 ].toString() != response_valid ) {
-                        this.correct = false;
+                        this.feedbackWrongAnswer = $.i18n("msg_cachetable_wrong_valid");
+                        return;
                     }
                     if ( curr_answers[ 4 ].toString() != response_dirty ) {
-                        this.correct = false;
+                        this.feedbackWrongAnswer = $.i18n("msg_cachetable_wrong_dirty");
+                        return;
                     }
                     if ( curr_answers[ 5 ].toString() != response_tag ) {
-                        this.correct = false;
+                        this.feedbackWrongAnswer = $.i18n("msg_cachetable_wrong_tag");
+                        return;
                     }     
                 } else {
+                    if ( response_valid2 + response_dirty2 + response_tag2 == "") {
+                        this.feedbackWrongAnswer = $.i18n("msg_cachetable_wrong_side");
+                        return;
+                    }
                     if ( curr_answers[ 6 ].toString() != response_valid2 ) {
-                        this.correct = false;
+                        this.feedbackWrongAnswer = $.i18n("msg_cachetable_wrong_valid");
+                        return;
                     }
                     if ( curr_answers[ 7 ].toString() != response_dirty2 ) {
-                        this.correct = false;
+                        this.feedbackWrongAnswer = $.i18n("msg_cachetable_wrong_dirty");
+                        return;
                     }
                     if ( curr_answers[ 8 ].toString() != response_tag2 ) {
-                        this.correct = false;
+                        this.feedbackWrongAnswer = $.i18n("msg_cachetable_wrong_tag");
+                        return;
                     }       
                 }
 
             } else {
                 if ( response_valid != "1" ) {
-                    this.correct = false;
+                    this.feedbackWrongAnswer = $.i18n("msg_cachetable_wrong_valid");
+                    return;
                 }
                 if ( curr_answers[ 2 ].toString() != response_dirty ) {
-                    this.correct = false;
+                    this.feedbackWrongAnswer = $.i18n("msg_cachetable_wrong_dirty");
+                    return;
                 }
                 if ( curr_answers[ 3 ].toString() != response_tag ) {
-                    this.correct = false;
+                    this.feedbackWrongAnswer = $.i18n("msg_cachetable_wrong_tag");
+                    return;
                 }       
             }     
+            this.correct = true;
         } catch (error) {
+            this.feedbackWrongAnswer = $.i18n("msg_cachetable_incomplete_answer");
             this.correct = false;
         }
     }
@@ -1360,7 +1452,7 @@ export default class cachetable extends RunestoneBase {
             }
             $(this.feedbackDiv).attr("class", "alert alert-info");
         } else {
-            feedback_html += "<div>" + $.i18n("msg_cachetable_incorrect") + "</div>";
+            feedback_html += "<div>" + this.feedbackWrongAnswer + "</div>";
             $(this.feedbackDiv).attr("class", "alert alert-danger");
         }
         
