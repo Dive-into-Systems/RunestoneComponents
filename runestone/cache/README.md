@@ -112,11 +112,13 @@ LRU(in 2-way set associative), Valid bit, Dirty bit and Tag bit.
 Readers cannot make any configuration. The author should be responsible for the configurations. Available configurable options include:
 
 - ```cache-org``` : the cache organization, which is a string of either ```Direct-Mapped``` or ```2-Way Set Associative```. Default is ```Direct-Mapped```. 
-- ```bits``` : the length of the memory addresses, which is a positive integer. Default is 8.
-- ```offset``` : the number of offset bits, which is a positive integer. Default is 2.
-- ```index``` : the number of index bits, which is a positive integer. Default is 2.
-- ```ref``` : the number of memory address reference will be generated, which is a positive integer. Default is 8.
-- ```init-valid-rate``` : the probability for a cache line to be valid in the beginning, which is a float number between 0 and 1. Default is 0.3. 
+- ```bits``` : the length of the memory addresses, which is a positive integer. Default is ```8```.
+- ```offset``` : the number of offset bits, which is a positive integer. Default is ```2```.
+- ```index``` : the number of index bits, which is a positive integer. Default is ```2```.
+- ```ref``` : the number of memory address reference will be generated, which is a positive integer. Default is ```8```.
+- ```init-valid-rate``` : the probability for a cache line to be valid in the beginning, which is a float number between ```0``` and ```1```. Default is ```0.3```. 
+- ```debug``` : a boolean value. If it is true, then the program will print out some information in the console, including the seed. Default is ```false```.
+- ```seed``` : a string that used to generate the exercise. If it is not specified, the program will generate random exercises, and have "generate another" function. If it is specified, the program will generate a fixed cache table exercise based on the seed, and have "redo the exercise" function. It doesn't have a default value. 
 
 
 
@@ -154,6 +156,31 @@ Readers cannot make any configuration. The author should be responsible for the 
             {
               "cache-org": "2-Way Set Associative",
               "init-valid-rate": 0.3,
+            }
+        </script>
+    </div>
+    </div>
+</section>
+
+```
+
+### **Example 3**: 
+#### 2-Way Set Associative with a fixed seed
+```html
+<section id="cachetable-example-3">
+<h1>2-Way Set Associative Example</h1>
+    <!-- creation of the exercise -->
+    <div class="runestone ">
+    <div data-component="cachetable" data-question_label="3" id="example_cache_table_3"  style="visibility: hidden;">
+        <!-- parameter setting of the exercise -->
+        <script type="application/json">
+            {
+              "cache-org": "2-Way Set Associative",
+              "init-valid-rate": 0.35,
+              "offset": 1,
+              "index": 3,
+              "seed": "1926.0817",
+              "debug": true
             }
         </script>
     </div>
