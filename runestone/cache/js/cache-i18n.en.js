@@ -5,6 +5,7 @@ $.i18n().load({
         num_rows: "number of sets",
         num_lines: "number of lines",
         msg_no_answer: "No answer provided.",
+        msg_cachetable_redo: "Redo the exercise",
         msg_cacheinfo_check_me: "Check me",
         msg_cachepartition_check_me: "Check me",
         msg_cachetable_check_me: "Check me",

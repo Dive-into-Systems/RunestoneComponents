@@ -119,6 +119,7 @@ Readers cannot make any configuration. The author should be responsible for the 
 - ```init-valid-rate``` : the probability for a cache line to be valid in the beginning, which is a float number between ```0``` and ```1```. Default is ```0.3```. 
 - ```debug``` : a boolean value. If it is true, then the program will print out some information in the console, including the seed. Default is ```false```.
 - ```seed``` : a string that used to generate the exercise. If it is not specified, the program will generate random exercises, and have "generate another" function. If it is specified, the program will generate a fixed cache table exercise based on the seed, and have "redo the exercise" function. It doesn't have a default value. 
+- ```algorithm``` : a string representing the random algorithm, which can be either ```"boost"``` or ```"hitNmiss"```. Default is ```"boost"```.
 
 
 
@@ -135,7 +136,8 @@ Readers cannot make any configuration. The author should be responsible for the 
             {
                 "ref": 8, 
                 "index": 3,
-                "init-valid-rate": 0.2
+                "init-valid-rate": 0.2,
+                "algorithm": "boost"
             }
         </script>
     </div>
