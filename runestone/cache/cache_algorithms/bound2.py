@@ -46,7 +46,7 @@ def generateTagNIndexList(ads_num, tag_bits, index_bits, tag_list, index_list, n
             index_list.append((unique_index,))
 
 '''ads_num, offset_bits, index_bits, tag_bits'''
-def main_bound(ads_num, offset_bits, index_bits, tag_bits, numUniqueTag = 1, numUniqueIndex = 1):
+def main_bound2(ads_num, offset_bits, index_bits, tag_bits, numUniqueTag = 1, numUniqueIndex = 1):
     tag_list = []
     index_list = []
     offset_list = []
@@ -65,7 +65,7 @@ def main_bound(ads_num, offset_bits, index_bits, tag_bits, numUniqueTag = 1, num
         ret.append(tag_list[i] + index_list[i] + offset_list[i])
     
     boost_Algo = RandAlgo()
-    boost_Algo.name = 'bound'
+    boost_Algo.name = 'bound2'
     boost_Algo.addresses = ret
     boost_Algo.num_refs = ads_num
     boost_Algo.index_bits = index_bits
@@ -74,4 +74,4 @@ def main_bound(ads_num, offset_bits, index_bits, tag_bits, numUniqueTag = 1, num
     return boost_Algo
 
 if __name__ == '__main__':
-    print(main_bound(8,2,2,4,1,1))
+    print(main_bound2(8,2,2,4,1,1))
