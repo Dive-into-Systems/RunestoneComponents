@@ -13,7 +13,7 @@
     <!-- BEGIN LINKED FILES -->
     <link rel="stylesheet" type="text/css" href="../runestone/dist/vendors-node_modules_bootstrap_dist_js_bootstrap_js-node_modules_jquery-ui_jquery-ui_js-node_-72cd89.cd688d1623c9932e.css" />
     <link rel="stylesheet" type="text/css" href="../runestone/dist/runestone.8cc3d7e65ac22823.css" />
-    <script src="../runestone/dist/runtime.eb70f9eae0e2130d.bundle.js"></script>
+    <script src="../runestone/dist/runtime.b91c42054ce2e0a7.bundle.js"></script>
     <script src="../runestone/dist/vendors-node_modules_bootstrap_dist_js_bootstrap_js-node_modules_jquery-ui_jquery-ui_js-node_-72cd89.51d9dde4e5162190.bundle.js"></script>
     <script src="../runestone/dist/runestone.fdbd01aa802f0a22.bundle.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/seedrandom/3.0.5/seedrandom.min.js"></script>    <!-- END LINKED FILES -->
@@ -108,7 +108,8 @@
             {
               "ref": 8, 
              "index": 3,
-             "init-valid-rate": 0.2
+             "init-valid-rate": 0.2,
+             "algorithm": "boost"
             }
         </script>       
         </div>
@@ -122,12 +123,94 @@
         <div class="runestone ">
         <div data-component="cachetable" data-question_label="5" id="test_caching_table_2"  style="visibility: hidden;">
         <script type="application/json">
-            {
-              "cache-org": "2-Way Set Associative",
-              "init-valid-rate": 0.3,
-              "offset": 1,
-              "index": 3
-            }
+          {
+            "cache-org": "2-Way Set Associative",
+            "init-valid-rate": 0.35,
+            "offset": 1,
+            "index": 3,
+            "debug": true
+          }
+        </script>       
+        </div>
+        </div>
+</section>
+
+<section id="cache table">
+  <h1>Cache Table<a class="headerlink" href="#cache-table" title="Permalink to this heading">¶</a></h1>
+            <p>Test 6 - test the cache table component (fixed table 1).</p>
+
+        <div class="runestone ">
+        <div data-component="cachetable" data-question_label="6" id="test_caching_table_3"  style="visibility: hidden;">
+        <script type="application/json">
+          {
+            "offset": 1,
+            "index": 2,
+            "debug": true,
+            "fixed": true,
+            "init-cache-table": 
+            [],
+            "reference-list":
+            [
+              ["00101010", "R"],
+              ["00101011", "W"],
+              ["11001100", "R"],
+              ["11001010", "R"],
+              ["11001011", "R"],
+              ["00111101", "W"],
+              ["00111100", "R"],
+              ["00101100", "W"]
+            ]
+          }
+        </script>       
+        </div>
+        </div>
+</section>
+
+<section id="cache table">
+  <h1>Cache Table<a class="headerlink" href="#cache-table" title="Permalink to this heading">¶</a></h1>
+            <p>Test 7 - test the cache table component (fixed table 2).</p>
+
+        <div class="runestone ">
+        <div data-component="cachetable" data-question_label="7" id="test_caching_table_4"  style="visibility: hidden;">
+        <script type="application/json">
+          {
+            "cache-org": "2-Way Set Associative",
+            "offset": 1,
+            "index": 2,
+            "debug": true,
+            "fixed": true,
+            "init-cache-table": 
+            [
+              {
+                "index": 0,
+                "lru": 1,
+                "left": {
+                  "valid":1,
+                  "tag":"1010"
+                }
+              } ,
+              {
+                "index": 3,
+                "lru": 1,
+                "right": {
+                  "valid":1,
+                  "dirty":1,
+                  "tag":"1111"
+                }
+              } 
+            ],
+            "reference-list":
+            [
+              ["00101010", "R"],
+              ["00101011", "W"],
+              ["11001100", "R"],
+              ["11001010", "R"],
+              ["11001011", "R"],
+              ["00111101", "W"],
+              ["00111100", "R"],
+              ["00101100", "W"]
+            ]
+          }
         </script>       
         </div>
         </div>
