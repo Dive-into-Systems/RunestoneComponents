@@ -26,6 +26,7 @@ class RandAlgo:
         self.index_bits = None # number of bits for index
         self.num_rows = None # number of entries in cache structure
         self.hit_miss_list = [] # store hit/miss history
+        self.num_entries = None
 
         self.cold_start_miss = 0
         self.conflict_miss = 0
@@ -46,6 +47,46 @@ class RandAlgo:
         toString += ("Number of non conflict miss is " + str(self.cold_start_miss) + "\n")
         return toString
     
+    # keep track of hit/miss type and a hit/miss list
+    def SA_updateHitMissList_missType(self):
+        self.conflict_miss = 0
+        self.non_conflict_miss = 0
+        self.hit_miss_list = []
+
+        # initialize an empty cache
+        curr_cache_entries = []
+        for i in range(self.num_entries):
+            curr_cache_entries.append([0, [0, ""], [0, ""]])
+
+        # fill in the cache with our list of addresses
+        for i in range(self.num_refs):
+            hitFlag = False
+            recentlyUsedLine = 0
+            curr_idx = int(self.addresses[i][1], 2)
+            # the entry is valid and found
+            if (curr_cache_entries[curr_idx][1][0] == 1 and curr_cache_entries[curr_idx][1][1] == self.addresses[i][0]):
+                hitFlag = True
+                recentlyUsedLine = 0
+            elif (curr_cache_entries[curr_idx][2][0] == 1 and curr_cache_entries[curr_idx][2][1] == self.addresses[i][0]):
+                hitFlag = True
+                recentlyUsedLine = 1
+            else:
+                hitFlag = False
+                recentlyUsedLine = curr_cache_entries[curr_idx][0]
+                # if valid, we need to overwrite it and it is a conflict miss
+                if curr_cache_entries[curr_idx][recentlyUsedLine + 1][0] == 1:
+                    self.conflict_miss += 1
+                else:
+                    self.cold_start_miss += 1
+                curr_cache_entries[curr_idx][0] = 1 - recentlyUsedLine
+                curr_cache_entries[curr_idx][recentlyUsedLine + 1][0] = 1
+                curr_cache_entries[curr_idx][recentlyUsedLine + 1][1] = self.addresses[i][0]
+            self.hit_miss_list.append(hitFlag)
+                    
+                    
+                
+                
+
     # fill in the cache with the list of addresses, update hit_miss_list and record miss type step-wise
     def updateHitMissList_missType(self):
         self.conflict_miss = 0
