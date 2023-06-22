@@ -36,20 +36,36 @@ hit/miss reference flag (hmRef) starts at a miss, its value is updated step-wise
 current cache status (tagIndexRef) keeps track of everything currently in the cache
 validTagIndex collects all valid entries in the current cache, refered to when creating a hit
 '''
-def generateOneAddress(curr_row, num_rows, chance_hit, hit_incr, chance_conf, conf_incr, offset_bits, index_bits, tag_bits, tagIndexRef, hmRef, conflictRef):
+def generateOneAddress(curr_row, num_rows, curr_hit_chance, curr_conflict_chance, chance_hit, hit_incr, chance_conf, conf_incr, offset_bits, index_bits, tag_bits, tagIndexRef, hmRef, conflictRef):
     # set hmRef
     if curr_row == 0: # if first acess
         hmRef = False # force first memory access to be a miss
         conflictRef = False # force this miss to be a non-conflict miss
+        curr_conflict_chance = chance_conf
+        curr_hit_chance = chance_hit
     else:
         # determine hit/miss based on chance_hit and hit_incr
-        curr_hit_chance = chance_hit if hmRef == True else + hit_incr
+        if hmRef == True:
+            curr_hit_chance = chance_hit
+        else:
+            curr_hit_chance += hit_incr
+
         # determine conflict type based on chance_conf and conflict increment
-        curr_conflict_chance = chance_conf if conflictRef else + conf_incr
+        if conflictRef == True:
+            curr_conflict_chance = chance_conf
+        else:
+            curr_conflict_chance += conf_incr
 
         curr_rand = random.random()
-        hmRef = True if (curr_rand < curr_hit_chance) else False # determine new hit/miss
-        conflictRef = True if (curr_rand < curr_conflict_chance) else False # determine new miss type: conflict-True, non-conflict-False
+        if (curr_rand < curr_hit_chance):
+            hmRef = True
+        else:
+            hmRef = False
+            curr_rand = random.random()
+            if (curr_rand < curr_conflict_chance):
+                conflictRef = True
+            else:
+                conflictRef = False
 
     validTagIndex = [] # collects all valid entries in current cache
     validIndex = []
@@ -63,12 +79,14 @@ def generateOneAddress(curr_row, num_rows, chance_hit, hit_incr, chance_conf, co
     # create address based on hit/miss
     if hmRef == True: # if hit, pick a valid address to hit
         target = random.choice(validTagIndex)
-    else: # if miss, determine miss type (conflict/non conflict miss) and generate address
+        conflictRef = False
+    else: # if miss, determine miss type (conflict/non conflict miss) and generate address            
         if conflictRef == True: # if should be a conflict miss, pick a valid index with a different tag
             tag, idx = generateTag(tag_bits), generateIndex(index_bits)
             idx = random.choice(validIndex)
-            while (tag in tags):
+            while (tag == tagIndexRef[idx][0]):
                 tag = generateTag(tag_bits)
+            idx = toBinary(idx, index_bits)
             target = tag + idx
         else: # else does not guarantee that this is a non-conflict miss
             target = generateTag(tag_bits) + generateIndex(index_bits)
@@ -84,9 +102,9 @@ def generateOneAddress(curr_row, num_rows, chance_hit, hit_incr, chance_conf, co
     tagIndexRef[idxInt][0] = tagStr
     tagIndexRef[idxInt][1] = True
 
-    return (tagStr, idxStr, generateOffset(offset_bits))
+    return ((tagStr, idxStr, generateOffset(offset_bits)), curr_hit_chance, curr_conflict_chance, hmRef, conflictRef)
 
-def main_boost(ads_num, offset_bits, index_bits, tag_bits, chance_hit = 1/4, hit_incr = 1/4, chance_conf = 1/2, conf_incr = 1/4):
+def main_boost2(ads_num, offset_bits, index_bits, tag_bits, chance_hit, hit_incr, chance_conf, conf_incr):
 
     hmRef = False
     conflictRef = False
@@ -98,8 +116,10 @@ def main_boost(ads_num, offset_bits, index_bits, tag_bits, chance_hit = 1/4, hit
     for i in range(num_rows):
         tagIndexRef.append(["", False])
 
+    curr_hit_chance = chance_hit
+    curr_conflict_chance = chance_conf
     for i in range(ads_num):
-        oneAds = generateOneAddress(i, num_rows, chance_hit, hit_incr, chance_conf, conf_incr, offset_bits, index_bits, tag_bits, tagIndexRef, hmRef, conflictRef)
+        oneAds, curr_hit_chance, curr_conflict_chance, hmRef, conflictRef = generateOneAddress(i, num_rows, curr_hit_chance, curr_conflict_chance, chance_hit, hit_incr, chance_conf, conf_incr, offset_bits, index_bits, tag_bits, tagIndexRef, hmRef, conflictRef)
         ret.append(oneAds)
 
 
@@ -116,4 +136,4 @@ def main_boost(ads_num, offset_bits, index_bits, tag_bits, chance_hit = 1/4, hit
     return boost_Algo
 
 if __name__ == '__main__':
-    print(main_boost(8,2,1,1, 1/3, 1/3, 1/2, 1/4))
+    print(main_boost2(8,2,1,1, 1/3, 1/3, 1/2, 1/4))
