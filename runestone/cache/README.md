@@ -115,12 +115,25 @@ Readers cannot make any configuration. The author should be responsible for the 
 - ```bits``` : the length of the memory addresses, which is a positive integer. Default is ```8```.
 - ```offset``` : the number of offset bits, which is a positive integer. Default is ```2```.
 - ```index``` : the number of index bits, which is a positive integer. Default is ```2```.
-- ```ref``` : the number of memory address reference will be generated, which is a positive integer. Default is ```8```.
+- ```num-references``` : the number of memory address reference will be generated, which is a positive integer. Default is ```8```.
 - ```init-valid-rate``` : the probability for a cache line to be valid in the beginning, which is a float number between ```0``` and ```1```. Default is ```0.3```. 
 - ```debug``` : a boolean value. If it is true, then the program will print out some information in the console, including the seed. Default is ```false```.
-- ```seed``` : a string that used to generate the exercise. If it is not specified, the program will generate random exercises, and have "generate another" function. If it is specified, the program will generate a fixed cache table exercise based on the seed, and have "redo the exercise" function. It doesn't have a default value. 
 - ```algorithm``` : a string representing the random algorithm, which can be either ```"boost"``` or ```"hitNmiss"```. Default is ```"boost"```.
+- ```fixed``` : a boolean value. If it is true, then the initial cache table layout and list of references will be fixed, and the author should give the initial cache table as ```init-cache-table``` and the list of references as ```reference-list``` (see description below). Default is ```false```.
+- ```init-cache-table```: a list that tells the initial lines of the cache table. Each of its element should be a dictionary that contains the information of a cache set. When ```cache-org``` is ```Direct-Mapped```, each dictionary should include:
+    - ```index```: a decimal number, the index of the cache set. (required)
+    - ```valid```: the valid bit, either ```0``` or  ```1```. (optional, default is ```0```)
+    - ```dirty```: the dirty bit, either ```0``` or  ```1```. (optional, default is ```0```)
+    - ```tag```: the tag bits, which should be a binary string of length ```bits-offset-index```. (optional, default is the empty string)
+When ```cache-org``` is ```2-Way Set Associative```, each dictionary should include:
+    - ```index```: a decimal number, the index of the cache set. (required)
+    - ```lru```: the LRU bit, either ```0``` or  ```1```. (optional, default is ```0```)
+    - ```left```: the information of the left cache line. It should be a dictionary that contains optional ```valid```, ```dirty``` and ```tag```. (optional)
+    - ```right```: the information of the right cache line. It should be a dictionary that contains optional ```valid```, ```dirty``` and ```tag```. (optional)
+Note: ```init-cache-table``` is only valid when the parameter ```fixed``` is ```true```. 
 
+- ```reference-list```: an array that contains the reference list. It should have exact the length of ```num-references```. Each of its element should be an array of ```2``` elements, in which the first one is the address and the second one is the RW. The address should be a binary string of length ```bits```, and the RW should be a string of either ```R``` or ```W```.
+Note: ```reference-list``` is only valid when the parameter ```fixed``` is ```true```. 
 
 
 ### **Example 1**: 
@@ -167,24 +180,54 @@ Readers cannot make any configuration. The author should be responsible for the 
 ```
 
 ### **Example 3**: 
-#### 2-Way Set Associative with a fixed seed
+#### Fixed initial cache table and list of references
 ```html
 <section id="cachetable-example-3">
-<h1>2-Way Set Associative Example</h1>
+<h1>Fixed initial cache table and list of references</h1>
     <!-- creation of the exercise -->
     <div class="runestone ">
     <div data-component="cachetable" data-question_label="3" id="example_cache_table_3"  style="visibility: hidden;">
         <!-- parameter setting of the exercise -->
         <script type="application/json">
-            {
-              "cache-org": "2-Way Set Associative",
-              "init-valid-rate": 0.35,
-              "offset": 1,
-              "index": 3,
-              "seed": "1926.0817",
-              "debug": true
-            }
-        </script>
+          {
+            "cache-org": "2-Way Set Associative",
+            "offset": 1,
+            "index": 2,
+            "debug": true,
+            "fixed": true,
+            "init-cache-table": 
+            [
+              {
+                "index": 0,
+                "lru": 1,
+                "left": {
+                  "valid":1,
+                  "tag":"1010"
+                }
+              } ,
+              {
+                "index": 3,
+                "lru": 1,
+                "right": {
+                  "valid":1,
+                  "dirty":1,
+                  "tag":"1111"
+                }
+              } 
+            ],
+            "reference-list":
+            [
+              ["00101010", "R"],
+              ["00101011", "W"],
+              ["11001100", "R"],
+              ["11001010", "R"],
+              ["11001011", "R"],
+              ["00111101", "W"],
+              ["00111100", "R"],
+              ["00101100", "W"]
+            ]
+          }
+        </script>     
     </div>
     </div>
 </section>
