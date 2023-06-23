@@ -120,20 +120,21 @@ Readers cannot make any configuration. The author should be responsible for the 
 - ```debug``` : a boolean value. If it is true, then the program will print out some information in the console, including the seed. Default is ```false```.
 - ```algorithm``` : a string representing the random algorithm, which can be either ```"boost"``` or ```"hitNmiss"```. Default is ```"boost"```.
 - ```fixed``` : a boolean value. If it is true, then the initial cache table layout and list of references will be fixed, and the author should give the initial cache table as ```init-cache-table``` and the list of references as ```reference-list``` (see description below). Default is ```false```.
-- ```init-cache-table```: a list that tells the initial lines of the cache table. Each of its element should be a dictionary that contains the information of a cache set. When ```cache-org``` is ```Direct-Mapped```, each dictionary should include:
-    - ```index```: a decimal number, the index of the cache set. (required)
-    - ```valid```: the valid bit, either ```0``` or  ```1```. (optional, default is ```0```)
-    - ```dirty```: the dirty bit, either ```0``` or  ```1```. (optional, default is ```0```)
-    - ```tag```: the tag bits, which should be a binary string of length ```bits-offset-index```. (optional, default is the empty string)
-When ```cache-org``` is ```2-Way Set Associative```, each dictionary should include:
-    - ```index```: a decimal number, the index of the cache set. (required)
-    - ```lru```: the LRU bit, either ```0``` or  ```1```. (optional, default is ```0```)
-    - ```left```: the information of the left cache line. It should be a dictionary that contains optional ```valid```, ```dirty``` and ```tag```. (optional)
-    - ```right```: the information of the right cache line. It should be a dictionary that contains optional ```valid```, ```dirty``` and ```tag```. (optional)
-Note: ```init-cache-table``` is only valid when the parameter ```fixed``` is ```true```. 
+- ```init-cache-table```: a list that tells the initial lines of the cache table. Each of its element should be a dictionary that contains the information of a cache set. 
+    - When ```cache-org``` is ```Direct-Mapped```, each dictionary should include:
+        * ```index```: a decimal number, the index of the cache set. (required)
+        * ```valid```: the valid bit, either ```0``` or  ```1```. (optional, default is ```0```)
+        * ```dirty```: the dirty bit, either ```0``` or  ```1```. (optional, default is ```0```)
+        * ```tag```: the tag bits, which should be a binary string of length ```bits-offset-index```. (optional, default is the empty string) 
+    - When ```cache-org``` is ```2-Way Set Associative```, each dictionary should include:
+        * ```index```: a decimal number, the index of the cache set. (required)
+        * ```lru```: the LRU bit, either ```0``` or  ```1```. (optional, default is ```0```)
+        * ```left```: the information of the left cache line. It should be a dictionary that contains optional ```valid```, ```dirty``` and ```tag```. (optional)
+        * ```right```: the information of the right cache line. It should be a dictionary that contains optional ```valid```, ```dirty``` and ```tag```. (optional)
+    - Note: ```init-cache-table``` is only valid when the parameter ```fixed``` is ```true```. 
 
 - ```reference-list```: an array that contains the reference list. It should have exact the length of ```num-references```. Each of its element should be an array of ```2``` elements, in which the first one is the address and the second one is the RW. The address should be a binary string of length ```bits```, and the RW should be a string of either ```R``` or ```W```.
-Note: ```reference-list``` is only valid when the parameter ```fixed``` is ```true```. 
+    - Note: ```reference-list``` is only valid when the parameter ```fixed``` is ```true```. 
 
 
 ### **Example 1**: 

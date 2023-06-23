@@ -79,8 +79,6 @@ export default class cachetable extends RunestoneBase {
         this.tag_bits = this.num_bits - this.index_bits - this.offset_bits;
         this.num_refs = 8;
         this.init_valid_rate = 0.3;
-        this.hasSeed = false;
-        this.seed = Math.random().toString();
         this.debug = false;
 
         this.fixed = false;
@@ -114,10 +112,6 @@ export default class cachetable extends RunestoneBase {
             if (curr_options["init-valid-rate"] != undefined) {
                 this.init_valid_rate = eval(curr_options["init-valid-rate"]);
             }
-            if (curr_options["seed"] != undefined) {
-                this.hasSeed = true;
-                this.seed = curr_options["seed"];
-            }
             if (curr_options["debug"] != undefined) {
                 this.debug = eval(curr_options["debug"]);
             }
@@ -131,6 +125,9 @@ export default class cachetable extends RunestoneBase {
                     const referenceList = curr_options["reference-list"];
                     this.cacheTableInit = cacheTableInit;
                     this.referenceList = referenceList;
+                    if (cacheTableInit == null) {
+                        this.cacheTableInit = [];
+                    }
                 } 
             }
             this.tag_bits = this.num_bits - this.index_bits - this.offset_bits;
@@ -918,25 +915,12 @@ export default class cachetable extends RunestoneBase {
 
     // generate another cache table exercise
     resetGeneration() {
-        this.updateSeed();
         this.initDisplayedTableBody();
         this.initReferenceTableBody();
         this.initAnswerTableBody();
         this.generateAnswerInit();
         this.generateAnswerNext();
         this.updateReferenceTableAndAnswerTable();
-    }
-
-    updateSeed() {
-        if ( this.hasSeed ) {
-            Math.seedrandom(this.seed);
-        } else {
-            this.seed = Math.random().toString();
-            if (this.debug) {
-                console.log(this.seed);
-            }
-            Math.seedrandom(this.seed);
-        }
     }
     
     // render the feedback div
@@ -1441,8 +1425,6 @@ export default class cachetable extends RunestoneBase {
             this.curr_tagIndex_table[curr_idx_d][4] = ans_valid_2; 
             this.curr_tagIndex_table[curr_idx_d][5] = ans_dirty_2; 
             this.curr_tagIndex_table[curr_idx_d][6] = ans_tag_2; 
-            // const curr_address = "00000000";
-            // this.answer_list.push([curr_address]);
         }
 
     }
@@ -1587,7 +1569,7 @@ export default class cachetable extends RunestoneBase {
                 }
                 if ( response_lru == 1 ) {
                     if ( response_valid + response_dirty + response_tag == "") {
-                        this.feedbackWrongAnswer = $.i18n("msg_cachetable_wrong_side");
+                        this.feedbackWrongAnswer = $.i18n("msg_cachetable_wrong_line");
                         return;
                     }
                     if ( curr_answers[ 3 ].toString() != response_valid ) {
@@ -1604,7 +1586,7 @@ export default class cachetable extends RunestoneBase {
                     }     
                 } else {
                     if ( response_valid2 + response_dirty2 + response_tag2 == "") {
-                        this.feedbackWrongAnswer = $.i18n("msg_cachetable_wrong_side");
+                        this.feedbackWrongAnswer = $.i18n("msg_cachetable_wrong_line");
                         return;
                     }
                     if ( curr_answers[ 6 ].toString() != response_valid2 ) {
