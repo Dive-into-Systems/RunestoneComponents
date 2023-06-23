@@ -126,7 +126,7 @@ def main_boost2(ads_num, offset_bits, index_bits, tag_bits, chance_hit, hit_incr
     boost_Algo = RandAlgo()
     boost_Algo.name = 'boost'
     boost_Algo.addresses = ret
-    boost_Algo.hit_miss_list = hmRef
+    # boost_Algo.hit_miss_list = hmRef
     
     boost_Algo.num_refs = ads_num
     boost_Algo.index_bits = index_bits

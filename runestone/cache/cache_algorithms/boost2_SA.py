@@ -7,6 +7,8 @@ logic used for determining hit/miss. As for conflicts, initially, the conflict
 miss/non-conflict miss ratio stands at 1:1, and the likelihood of getting a 
 conflict miss in the next access increases by 1/4 if a non-conflict miss occurs. 
 '''
+
+# ------ Causion: tag bits must be larger than 2 in this algo ------ #
 import random
 from randAlgoStats import RandAlgo
 from randAlgoStats import toBinary
@@ -39,7 +41,7 @@ hit/miss reference flag (hmRef) starts at a miss, its value is updated step-wise
 current cache status (tagIndexRef) keeps track of everything currently in the cache
 validTagIndex collects all valid entries in the current cache, refered to when creating a hit
 '''
-def generateOneAddress(curr_row, num_rows, curr_hit_chance, curr_conflict_chance, chance_hit, hit_incr, chance_conf, conf_incr, offset_bits, index_bits, tag_bits, tagIndexRef, hmRef, conflictRef):
+def generateOneAddress(curr_row, num_rows, curr_hit_chance, curr_conflict_chance, chance_hit, hit_incr, chance_conf, conf_incr, offset_bits, index_bits, tag_bits, tagIndexRef, hmRef, conflictRef, preConflictRef):
     # set hmRef
     if curr_row == 0: # if first acess
         hmRef = False # force first memory access to be a miss
@@ -54,10 +56,13 @@ def generateOneAddress(curr_row, num_rows, curr_hit_chance, curr_conflict_chance
             curr_hit_chance += hit_incr
 
         # determine conflict type based on chance_conf and conflict increment
-        if conflictRef == True:
-            curr_conflict_chance = chance_conf
+        if preConflictRef:
+            curr_conflict_chance = 1
         else:
-            curr_conflict_chance += conf_incr
+            if conflictRef == True:
+                curr_conflict_chance = chance_conf
+            else:
+                curr_conflict_chance += conf_incr
 
         curr_rand = random.random()
         if (curr_rand < curr_hit_chance):
@@ -72,58 +77,83 @@ def generateOneAddress(curr_row, num_rows, curr_hit_chance, curr_conflict_chance
 
     validTagIndex = [] # collects all valid entries in current cache
     validIndex = [] 
+    validFullIndex = []
     tags = []
     location = None
     for x in range(num_rows):
-        if (tagIndexRef[x][1][1] == True):
-            validTagIndex.append(tagIndexRef[x][1][0] + toBinary(x, index_bits))
+        if (tagIndexRef[x][1][1] == True) and (tagIndexRef[x][2][1] == True):
+            validFullIndex.append(x)
             validIndex.append(x)
-            tags.append(tagIndexRef[x][1][0][0 : tag_bits])
-            location = "left"
-        if (tagIndexRef[x][2][1] == True):
-            validTagIndex.append(tagIndexRef[x][2][0] + toBinary(x, index_bits))
+        elif (tagIndexRef[x][1][1] == True) or (tagIndexRef[x][2][1] == True):
             validIndex.append(x)
-            tags.append(tagIndexRef[x][2][0][0 : tag_bits])
-            location = "right"
+        # if (tagIndexRef[x][1][1] == True):
+        #     validTagIndex.append(tagIndexRef[x][1][0] + toBinary(x, index_bits))
+        #     validIndex.append(x)
+        #     tags.append(tagIndexRef[x][1][0][0 : tag_bits])
+        #     location = "left"
+        # if (tagIndexRef[x][2][1] == True):
+        #     validTagIndex.append(tagIndexRef[x][2][0] + toBinary(x, index_bits))
+        #     validIndex.append(x)
+        #     tags.append(tagIndexRef[x][2][0][0 : tag_bits])
+        #     location = "right"
 
     # create address based on hit/miss
+    currIndex = None
+    recentlyUsedLine = None
     if hmRef == True: # if hit, pick a valid address to hit
-        target = random.choice(validTagIndex)
+        currIndex = random.choice(validIndex)
+        recentlyUsedLine = 0
+        if random.random() < 0.5:
+            recentlyUsedLine = 1
+        if tagIndexRef[currIndex][recentlyUsedLine + 1][1]:
+            tagStr = tagIndexRef[currIndex][recentlyUsedLine + 1][0]
+        else:
+            recentlyUsedLine = 1 - recentlyUsedLine
+            tagStr = tagIndexRef[currIndex][recentlyUsedLine + 1][0]
         conflictRef = False
+        preConflictRef = False
     else: # if miss, determine miss type (conflict/non conflict miss) and generate address            
         if conflictRef == True: # if should be a conflict miss, pick a valid index with a different tag
-            tag, idx = generateTag(tag_bits), generateIndex(index_bits)
-            idx = random.choice(validIndex)
-            while (tag == tagIndexRef[idx][0]):
-                tag = generateTag(tag_bits)
-            idx = toBinary(idx, index_bits)
-            target = tag + idx
-        else: # else does not guarantee that this is a non-conflict miss
-            target = generateTag(tag_bits) + generateIndex(index_bits)
-            while (target in validTagIndex):
-                target = generateTag(tag_bits) + generateIndex(index_bits)
+            if len(validFullIndex) > 0: # the case where we can make a conflict miss
+                currIndex = random.choice(validFullIndex)
+                recentlyUsedLine = tagIndexRef[currIndex][0]
+                tagStr = generateTag(tag_bits)
+                # print("previous entries: " + tagIndexRef[currIndex][1][0] + tagIndexRef[currIndex][2][0])
+                while tagStr == tagIndexRef[currIndex][1][0] or tagStr == tagIndexRef[currIndex][2][0]:
+                    tagStr = generateTag(tag_bits)
+                    # print("oneChoice: " + tagStr)
+                preConflictRef = False
+            else: # else, we fill one set and make the next reference a conflict miss
+                currIndex = random.choice(validIndex)
+                recentlyUsedLine = tagIndexRef[currIndex][0]
+                tagStr = generateTag(tag_bits)
+                while (tagStr == tagIndexRef[currIndex][2 - recentlyUsedLine][0]):
+                    tagStr = generateTag(tag_bits)
+                preConflictRef = True
+                    
+        else: # else does not guarantee that this is a non-conflict miss: it might not be able to give non-conflict miss
+            currIndex = random.randint(0, num_rows-1)
+            recentlyUsedLine = tagIndexRef[currIndex][0]
+            tagStr = generateTag(tag_bits)
+            while (tagStr == tagIndexRef[currIndex][1][0] or tagStr == tagIndexRef[currIndex][2][0]):
+                tagStr = generateTag(tag_bits)
+            preConflictRef = False
     
     # partition address into tag, index, offset
-    tagStr = target[0 : tag_bits]
-    idxStr = target[tag_bits:]
+    idxStr = toBinary(currIndex, index_bits)
 
-    idxInt = int(idxStr, 2)
     # update current cache status
-    if (location == "left"):
-        tagIndexRef[idxInt][0] = 1
-        tagIndexRef[idxInt][1][0] = tagStr
-        tagIndexRef[idxInt][2][1] = True
-    else:
-        tagIndexRef[idxInt][0] = 0
-        tagIndexRef[idxInt][1][0] = tagStr
-        tagIndexRef[idxInt][2][1] = True
+    tagIndexRef[currIndex][0] = 1 - recentlyUsedLine
+    tagIndexRef[currIndex][recentlyUsedLine + 1][0] = tagStr
+    tagIndexRef[currIndex][recentlyUsedLine + 1][1] = True
 
-    return ((tagStr, idxStr, generateOffset(offset_bits)), curr_hit_chance, curr_conflict_chance, hmRef, conflictRef)
+    return ((tagStr, idxStr, generateOffset(offset_bits)), curr_hit_chance, curr_conflict_chance, hmRef, conflictRef, preConflictRef)
 
 def main_boost2_SA(ads_num, offset_bits, index_bits, tag_bits, chance_hit, hit_incr, chance_conf, conf_incr):
 
     hmRef = False
     conflictRef = False
+    preConflictRef = False
     tagIndexRef = []
     ret = [] # the list of addresses to return
 
@@ -137,21 +167,22 @@ def main_boost2_SA(ads_num, offset_bits, index_bits, tag_bits, chance_hit, hit_i
     curr_hit_chance = chance_hit
     curr_conflict_chance = chance_conf
     for i in range(ads_num):
-        oneAds, curr_hit_chance, curr_conflict_chance, hmRef, conflictRef = generateOneAddress(i, num_rows, curr_hit_chance, curr_conflict_chance, chance_hit, hit_incr, chance_conf, conf_incr, offset_bits, index_bits, tag_bits, tagIndexRef, hmRef, conflictRef)
+        oneAds, curr_hit_chance, curr_conflict_chance, hmRef, conflictRef, preConflictRef = generateOneAddress(i, num_rows, curr_hit_chance, curr_conflict_chance, chance_hit, hit_incr, chance_conf, conf_incr, offset_bits, index_bits, tag_bits, tagIndexRef, hmRef, conflictRef, preConflictRef)
         ret.append(oneAds)
 
 
-    # boost_Algo = RandAlgo()
-    # boost_Algo.name = 'boost2_SA'
-    # boost_Algo.addresses = ret
+    boostSA_algo = RandAlgo()
+    boostSA_algo.name = 'boost2_SA'
+    boostSA_algo.addresses = ret
     # boost_Algo.hit_miss_list = hmRef
     
-    # boost_Algo.num_refs = ads_num
-    # boost_Algo.index_bits = index_bits
-    # boost_Algo.num_rows = 1 << index_bits
+    boostSA_algo.num_refs = ads_num
+    boostSA_algo.index_bits = index_bits
+    boostSA_algo.num_rows = 1 << index_bits
+    boostSA_algo.setAssoc = 2
     
-    # boost_Algo.calcAll()
-    # return boost_Algo
+    boostSA_algo.SA_updateAll()
+    return boostSA_algo
 
 if __name__ == '__main__':
-    print(main_boost2_SA(8,2,1,1, 1/3, 1/3, 1/2, 1/4))
+    print(main_boost2_SA(8,2,1,2, 1/3, 1/3, 1/2, 1/4))
