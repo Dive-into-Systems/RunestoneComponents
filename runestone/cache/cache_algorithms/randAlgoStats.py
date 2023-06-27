@@ -27,12 +27,15 @@ class RandAlgo:
         self.num_rows = None # number of entries in cache structure
         self.hit_miss_list = [] # store hit/miss history
         self.num_entries = None
+        self.setAssoc = 1
 
         self.cold_start_miss = 0
         self.conflict_miss = 0
         self.hit_miss_ratio = None
         self.indices_coverage = None
         self.address_variety = None
+        self.validPerUsed = None
+        self.lruFlips = None
     
     # print out all info in current test run
     def __str__(self):
@@ -48,27 +51,31 @@ class RandAlgo:
         return toString
     
     # keep track of hit/miss type and a hit/miss list
-    def SA_updateHitMissList_missType(self):
+    def SA_updateAll(self):
         self.conflict_miss = 0
         self.non_conflict_miss = 0
+        self.lruFlips = 0
         self.hit_miss_list = []
 
         # initialize an empty cache
         curr_cache_entries = []
-        for i in range(self.num_entries):
+        for i in range(self.num_refs):
             curr_cache_entries.append([0, [0, ""], [0, ""]])
 
         # fill in the cache with our list of addresses
         for i in range(self.num_refs):
+            
             hitFlag = False
             recentlyUsedLine = 0
             curr_idx = int(self.addresses[i][1], 2)
             # the entry is valid and found
             if (curr_cache_entries[curr_idx][1][0] == 1 and curr_cache_entries[curr_idx][1][1] == self.addresses[i][0]):
                 hitFlag = True
+                # print("hit here")
                 recentlyUsedLine = 0
             elif (curr_cache_entries[curr_idx][2][0] == 1 and curr_cache_entries[curr_idx][2][1] == self.addresses[i][0]):
                 hitFlag = True
+                # print("hit here")
                 recentlyUsedLine = 1
             else:
                 hitFlag = False
@@ -76,14 +83,35 @@ class RandAlgo:
                 # if valid, we need to overwrite it and it is a conflict miss
                 if curr_cache_entries[curr_idx][recentlyUsedLine + 1][0] == 1:
                     self.conflict_miss += 1
+                    # print("conflict here")
                 else:
                     self.cold_start_miss += 1
-                curr_cache_entries[curr_idx][0] = 1 - recentlyUsedLine
                 curr_cache_entries[curr_idx][recentlyUsedLine + 1][0] = 1
                 curr_cache_entries[curr_idx][recentlyUsedLine + 1][1] = self.addresses[i][0]
+            if (curr_cache_entries[curr_idx][0] != (1-recentlyUsedLine)):
+                self.lruFlips += 1
+            curr_cache_entries[curr_idx][0] = 1 - recentlyUsedLine
             self.hit_miss_list.append(hitFlag)
+            # print(curr_cache_entries)
+        self.calculateHitMissRatio()
+        
+        usedLines = 0
+        usedSets = 0
+        for oneSet in curr_cache_entries:
+            currSet = 0
+            if oneSet[1][0] == 1:
+                usedLines += 1
+                currSet = 1
+            if oneSet[2][0] == 1:
+                usedLines += 1
+                currSet = 1
+            usedSets += currSet
+        self.validPerUsed = usedLines/usedSets
+        self.indices_coverage = usedSets/self.num_rows
+        
+        self.calculateAddressVariety()
                     
-                    
+        
                 
                 
 
@@ -117,6 +145,8 @@ class RandAlgo:
             #otherwise, record it as a hit
             else:
                 self.hit_miss_list.append(True)
+        
+        self.calculateHitMissRatio()
     
     '''
     calculate the hit miss ratio 
