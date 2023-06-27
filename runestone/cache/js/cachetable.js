@@ -887,6 +887,7 @@ export default class cachetable extends RunestoneBase {
         this.containerDiv.appendChild(this.buttonDiv);
 
         this.createHelpStatement();
+        this.helpButton.click();
     }
 
     // submit the response

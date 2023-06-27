@@ -117,15 +117,15 @@ export default class NC extends RunestoneBase {
                 }
             }.bind(this),
             false);
-    
- 
+
+
         this.statementNode2 = document.createTextNode(" to ");
         
          // convert to-options to html option elements of menuNode2
         this.menuNode2 = document.createElement("select");
         for (var i = 0; i < this.toOpt.length; i++) {
             var option = document.createElement("option");
-            option.value = this.toOpt[i]; 
+            option.value = this.toOpt[i];
             option.text = this.toOpt[i];
             if ( i === 1 ) {
                 option.selected = "selected";
@@ -162,6 +162,7 @@ export default class NC extends RunestoneBase {
 
         // create the node for the prompt
         this.promptDiv = document.createElement("div");
+        this.promptDiv.style.fontSize = "24px";
 
         // create the node for the number being displayed (conversion from)
         this.promptDivTextNode = document.createElement("code");

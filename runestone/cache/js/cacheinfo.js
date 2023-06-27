@@ -106,6 +106,7 @@ export default class cacheinfo extends RunestoneBase {
         this.addressNode.appendChild(this.addressNodeText);
         this.addressNode.appendChild(this.addressNodeAddress);
         this.addressNode.style.textAlign = "center";
+        this.addressNode.style.fontSize = "24px";
         
         // create question prompt (tag, index, offset)
         this.partitionNode = document.createElement("div");
@@ -125,6 +126,7 @@ export default class cacheinfo extends RunestoneBase {
         this.partitionNode.appendChild(this.offsetNodeText);
         this.partitionNode.appendChild(this.offsetNodeOffset);
         this.partitionNode.style.textAlign = "center";
+        this.partitionNode.style.fontSize = "24px";
         
         // put all question prompt segements together
         this.statementDiv = document.createElement("div");
@@ -148,6 +150,10 @@ export default class cacheinfo extends RunestoneBase {
         this.containerDiv.appendChild(this.statementDiv);
         this.containerDiv.appendChild(document.createElement("br"));
         
+        // generate the helpe statement
+        this.helpStatement = document.createElement("div");
+        this.helpStatement.textContent = "Given the cache organization and cache partition info above, " +
+        "complete the following blanks.";
         // generate question prompts and input fields
         this.question1 = document.createElement("div");
         this.question1Prompt = document.createTextNode($.i18n("block_size") + "\t=\t");
@@ -174,8 +180,9 @@ export default class cacheinfo extends RunestoneBase {
                     e.preventDefault();
                     this.submitButton.click();
                 }
-            }.bind(this), false);
+            }.bind(this), false);  
         }
+        this.questionDiv.appendChild(this.helpStatement);
         this.questionDiv.appendChild(this.question1);
         this.questionDiv.appendChild(this.question3);
         this.questionDiv.appendChild(this.question2);

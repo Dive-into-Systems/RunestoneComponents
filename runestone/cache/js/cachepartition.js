@@ -108,7 +108,8 @@ export default class cachepartition extends RunestoneBase {
         this.addressNode.style.textAlign = "center";
         // create help text
         this.helpNode = document.createElement("div");
-        this.helpNode.textContent = "Usage: Select a range of bits, and then click its corresponding button below.";
+        this.helpNode.textContent = "Usage: Given the cache organization and info above, "+
+        "select a range of bits, and then click its corresponding button below.";
         
         // create question prompt (block size, total number of lines)
         this.promptNode = document.createElement("p");

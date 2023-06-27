@@ -419,7 +419,7 @@ export default class RunestoneBase {
             }
             this.capDiv = capDiv;
             //this.outerDiv.parentNode.insertBefore(capDiv, this.outerDiv.nextSibling);
-            this.containerDiv.appendChild(capDiv);
+            // this.containerDiv.appendChild(capDiv);
         }
     }
 
