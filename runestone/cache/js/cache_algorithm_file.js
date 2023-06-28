@@ -144,6 +144,13 @@ export default class cachetable extends RunestoneBase {
         this.curr_tagIndex_table[currIndex][recentlyUsedLine][0] = 1;
         this.curr_tagIndex_table[currIndex][recentlyUsedLine][1] = this.calculateDirtyBit(currIndex, recentlyUsedLine, this.hmFlag, currRW);
         this.curr_tagIndex_table[currIndex][recentlyUsedLine][2] = currTag;
+
+        let currAddress = currTag + currIndex_str + this.generateOffset();
+        let currAnswer = [];
+        this.answer_list.push([currAddress, currIndex]);
+        for (let i = 0; i< this.lines_in_set; i++){
+            this.answer_list(this.curr_tagIndex_table[currIndex])
+        }
     }
 
     toBinary(num, len) {
@@ -167,6 +174,10 @@ export default class cachetable extends RunestoneBase {
     }
     generateTag(){
         return this.generateAddress(this.tag_bits);
+    }
+
+    generateOffset() {
+        return this.generateAddress(this.offset_bits);
     }
 
     calculateDirtyBit_helper(isValid, isWrite, isHit, PrevDirtyBit) {
