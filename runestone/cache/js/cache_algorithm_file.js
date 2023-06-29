@@ -147,9 +147,9 @@ export default class cachetable extends RunestoneBase {
 
         let currAddress = currTag + currIndex_str + this.generateOffset();
         let currAnswer = [];
-        this.answer_list.push([currAddress, currIndex]);
+        this.currAnswer.concat([currAddress, currIndex]);
         for (let i = 0; i< this.lines_in_set; i++){
-            this.answer_list(this.curr_tagIndex_table[currIndex])
+            this.currAnswer.concat(this.curr_tagIndex_table[currIndex])
         }
     }
 

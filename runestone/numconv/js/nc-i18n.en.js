@@ -1,9 +1,9 @@
 $.i18n().load({
     en: {
         msg_no_answer: "No answer provided.",
-        msg_NC_check_me: "Check me",
+        msg_NC_check_me: "Check answer",
         msg_NC_compare_me: "Compare me",
-        msg_NC_generate_a_number: "Generate a Number",
+        msg_NC_generate_a_number: "Get new value",
         msg_NC_incorrect: "Incorrect. Please think again.",
         msg_NC_correct: "Correct. Good job!",
         msg_NC_same_exp: "There's no point to convert between two same type. Please choose two different expressions.",

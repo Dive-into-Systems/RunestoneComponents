@@ -11,8 +11,8 @@ import { Pass } from "codemirror";
 
 export var cachetableList = {}; // Object containing all instances of cachetable that aren't a child of a timed assessment.
 
-const direct_mapped = "Direct-Mapped";
-const two_way_set_associative = "2-Way Set Associative";
+const directMapped = "Direct-Mapped";
+const twoWaySetAssociative = "2-Way Set Associative";
 const algo_boost = "boost";
 const algo_hitNmiss = "hitNmiss";
 
@@ -57,9 +57,6 @@ export default class cachetable extends RunestoneBase {
         // replaces the intermediate HTML for this component with the rendered HTML of this component
         $(this.origElem).replaceWith(this.containerDiv);
 
-        if (this.cache_org === two_way_set_associative ) {
-            this.displayNecessaryFields();
-        }
     }
 
     initParams() {
@@ -69,68 +66,71 @@ export default class cachetable extends RunestoneBase {
 
     // set the default parameters
     setDefaultParams() {
-        this.cache_org = direct_mapped; 
+        this.cacheOrg = directMapped; 
         this.algorithm = algo_boost;
-        this.num_bits = 8;
-        this.offset_bits = 2;
-        this.block_size = 1 << this.offset_bits;
-        this.index_bits = 2;
-        this.num_rows = 1 << this.index_bits;
-        this.tag_bits = this.num_bits - this.index_bits - this.offset_bits;
-        this.num_refs = 8;
-        this.init_valid_rate = 0.3;
+        this.numBits = 8;
+        this.offsetBits = 2;
+        this.blockSize = 1 << this.offsetBits;
+        this.indexBits = 2;
+        this.numRows = 1 << this.indexBits;
+        this.tagBits = this.numBits - this.indexBits - this.offsetBits;
+        this.numRefs = 8;
+        this.initValidRate = 0.3;
         this.debug = false;
 
         this.fixed = false;
         this.cacheTableInit = null;
         this.referenceList = null;
+
+        this.chance_hit = 1/3;
+        this.hit_incr = 1/3;
+        this.chance_conf = 0.5;
+        this.conf_incr = 0.25
     }
 
     // load customized parameters
     loadParams() {
         try {
-            const curr_options = JSON.parse(
+            const currentOptions = JSON.parse(
                 this.scriptSelector(this.origElem).html()
             );
-            if (curr_options["bits"] != undefined) {
-                this.num_bits = eval(curr_options["bits"]);
+            if (currentOptions["bits"] != undefined) {
+                this.numBits = eval(currentOptions["bits"]);
             }
-            if (curr_options["cache-org"] != undefined) {
-                this.cache_org = curr_options["cache-org"];
+            if (currentOptions["cache-org"] != undefined) {
+                this.cacheOrg = currentOptions["cache-org"];
             }
-            if (curr_options["offset"] != undefined) {
-                this.offset_bits = eval(curr_options["offset"]);
-                this.block_size = 1 << this.offset_bits;
+            if (currentOptions["offset"] != undefined) {
+                this.offsetBits = eval(currentOptions["offset"]);
+                this.blockSize = 1 << this.offsetBits;
             }            
-            if (curr_options["index"] != undefined) {
-                this.index_bits = eval(curr_options["index"]);
-                this.num_rows = 1 << this.index_bits;
+            if (currentOptions["index"] != undefined) {
+                this.indexBits = eval(currentOptions["index"]);
+                this.numRows = 1 << this.indexBits;
             }
-            if (curr_options["num-references"] != undefined) {
-                this.num_refs = eval(curr_options["num-references"]);
+            if (currentOptions["num-references"] != undefined) {
+                this.numRefs = eval(currentOptions["num-references"]);
             }
-            if (curr_options["init-valid-rate"] != undefined) {
-                this.init_valid_rate = eval(curr_options["init-valid-rate"]);
+            if (currentOptions["init-valid-rate"] != undefined) {
+                this.initValidRate = eval(currentOptions["init-valid-rate"]);
             }
-            if (curr_options["debug"] != undefined) {
-                this.debug = eval(curr_options["debug"]);
+            if (currentOptions["debug"] != undefined) {
+                this.debug = eval(currentOptions["debug"]);
             }
-            if (curr_options["algorithm"] != undefined) {
-                this.algorithm = curr_options["algorithm"];
+            if (currentOptions["algorithm"] != undefined) {
+                this.algorithm = currentOptions["algorithm"];
             }
-            if (curr_options["fixed"] != undefined) {
-                this.fixed = eval(curr_options["fixed"]);
+            if (currentOptions["fixed"] != undefined) {
+                this.fixed = eval(currentOptions["fixed"]);
                 if ( this.fixed ) {
-                    const cacheTableInit = curr_options["init-cache-table"];
-                    const referenceList = curr_options["reference-list"];
-                    this.cacheTableInit = cacheTableInit;
-                    this.referenceList = referenceList;
+                    this.cacheTableInit = currentOptions["init-cache-table"];
+                    this.referenceList = currentOptions["reference-list"];
                     if (cacheTableInit == null) {
                         this.cacheTableInit = [];
                     }
                 } 
             }
-            this.tag_bits = this.num_bits - this.index_bits - this.offset_bits;
+            this.tagBits = this.numBits - this.indexBits - this.offsetBits;
         } catch (error) {
             // pass
             console.log(error);
@@ -177,7 +177,7 @@ export default class cachetable extends RunestoneBase {
     createHelpStatement() {
         this.helpDiv = document.createElement("div");
         this.helpStatement = document.createElement("div");
-        if ( this.cache_org == direct_mapped ) {
+        if ( this.cacheOrg == directMapped ) {
             this.helpStatement.innerHTML = 
                 "<div>'H' stands for hit, and 'M' stands for miss. You should choose one from them. </div>" +
                 "<div>Index should be a decimal number. 'V' stands for Valid Bit. </div> " +
@@ -187,8 +187,7 @@ export default class cachetable extends RunestoneBase {
                 "<div>'H' stands for hit, and 'M' stands for miss. You should choose one from them. </div>" +
                 "<div>Index should be a decimal number. 'V' stands for Valid Bit. </div>" +
                 "<div>'D' stands for Dirty Bit. Tag should be a binary string. </div>" + 
-                "<div>'LRU' stands for Least Recent Used Bit. LRU=0 means the left line is the least recent used line, and vice versa. </div>" +
-                "<div>The corresponding input fields for V, D, and Tag will appear after you filled in the LRU.</div>";
+                "<div>'LRU' stands for Least Recent Used Bit. LRU=0 means the left line is the least recent used line, and vice versa. </div>";
         }
         if ( this.hasSeed) {
             this.helpStatement.innerHTML += 
@@ -222,38 +221,22 @@ export default class cachetable extends RunestoneBase {
     // create the table that displays the necessary information for the cache exercise
     createTableInfo() {
         this.tableInfo = document.createElement("table");
-        this.tableInfoHead = document.createElement("thead");
-        this.tableInfoHeadRow = document.createElement("tr");
-        this.tableInfoHeadRow1 = document.createElement("td");
-        this.tableInfoHeadRow1.textContent = "Cache Table Info";
-        this.tableInfoHeadRow.appendChild(this.tableInfoHeadRow1);
-        this.tableInfoHead.appendChild(this.tableInfoHeadRow);
-        this.tableInfo.appendChild(this.tableInfoHead);
-
-        this.tableInfoRow1 = document.createElement("tr");
-        this.tableInfoCacheOrg = document.createElement("td");
-        this.tableInfoCacheOrg.textContent = this.cache_org;
-        this.tableInfoRow1.appendChild(this.tableInfoCacheOrg);
-
-        this.tableInfoRow2 = document.createElement("tr");
-        this.tableInfoAddressLength = document.createElement("td");
-        this.tableInfoAddressLength.textContent = this.num_bits.toString() + "-bit Address";
-        this.tableInfoRow2.appendChild(this.tableInfoAddressLength);
-        
-        this.tableInfoRow3 = document.createElement("tr");
-        this.tableInfoBlockSize = document.createElement("td");
-        this.tableInfoBlockSize.textContent = "Block Size : " + this.block_size.toString();
-        this.tableInfoRow3.appendChild(this.tableInfoBlockSize);
-        
-        this.tableInfoRow4 = document.createElement("tr");
-        this.tableInfoNumRows = document.createElement("td");
-        this.tableInfoNumRows.textContent = "Number of rows : " + this.num_rows;
-        this.tableInfoRow4.appendChild(this.tableInfoNumRows);
-                
-        this.tableInfo.appendChild(this.tableInfoRow1);
-        this.tableInfo.appendChild(this.tableInfoRow2);
-        this.tableInfo.appendChild(this.tableInfoRow3);
-        this.tableInfo.appendChild(this.tableInfoRow4);
+        this.tableInfo.innerHTML = 
+        "<thead>" +
+        "    <tr><td>Cache Table Info</td></tr>" +
+        "</thead>" +
+        "<tr>" + 
+        "   <td>" + this.cacheOrg + "</td>" +
+        "</tr>" +
+        "<tr>" +
+        "   <td>" + this.numBits.toString() + "-bit Address</td>" + 
+        "</tr>" +
+        "<tr>" +
+        "   <td>Block Size : " + this.blockSize.toString() + "</td>" +
+        "</tr>" +
+        "<tr>" +
+        "   <td>Number of rows : " + this.numRows.toString() + "</td>" +
+        "</tr>";
         
         this.promptDiv.appendChild(this.tableInfo);
     }
@@ -263,48 +246,35 @@ export default class cachetable extends RunestoneBase {
         this.displayedTable = document.createElement("table");
         // create the head row for the cache table
         this.displayedTableHead = document.createElement("thead");
-        this.displayedTableHeadRow = document.createElement("tr");
-        this.displayedTableHeadRow0 = document.createElement("th");
-        this.displayedTableHeadRow0.textContent = "Index";
-        
-        this.displayedTableHeadRow.appendChild(this.displayedTableHeadRow0);
 
-        if (this.cache_org === direct_mapped) {
-            this.displayedTableHeadRowV = document.createElement("th");
-            this.displayedTableHeadRowV.textContent = "V";
-            this.displayedTableHeadRowD = document.createElement("th");
-            this.displayedTableHeadRowD.textContent = "D";
-            this.displayedTableHeadRowTag = document.createElement("th");
-            this.displayedTableHeadRowTag.textContent = "Tag";
-            this.displayedTableHeadRow.appendChild(this.displayedTableHeadRowV);
-            this.displayedTableHeadRow.appendChild(this.displayedTableHeadRowD);
-            this.displayedTableHeadRow.appendChild(this.displayedTableHeadRowTag);
+        if (this.cacheOrg === directMapped) {
+            this.displayedTableHead.innerHTML = 
+            "<tr>" +
+            "   <th colspan=\"4\">Cache Table Content</th>" +
+            "</tr>" +
+            "<tr>" +
+            "    <th>Index</th>" +
+            "    <th>V</th>" +
+            "    <th>D</th>" +
+            "    <th>Tag</th>" +
+            "</tr>";
    
         } else { // if it is 2-way set associative
-            this.displayedTableHeadRowLRU = document.createElement("th");
-            this.displayedTableHeadRowLRU.textContent = "LRU";
-            this.displayedTableHeadRowV1 = document.createElement("th");
-            this.displayedTableHeadRowV1.textContent = "V";
-            this.displayedTableHeadRowD1 = document.createElement("th");
-            this.displayedTableHeadRowD1.textContent = "D";
-            this.displayedTableHeadRowTag1 = document.createElement("th");
-            this.displayedTableHeadRowTag1.textContent = "Tag";
-            this.displayedTableHeadRowV2 = document.createElement("th");
-            this.displayedTableHeadRowV2.textContent = "V";
-            this.displayedTableHeadRowD2 = document.createElement("th");
-            this.displayedTableHeadRowD2.textContent = "D";
-            this.displayedTableHeadRowTag2 = document.createElement("th");
-            this.displayedTableHeadRowTag2.textContent = "Tag";
-            this.displayedTableHeadRow.appendChild(this.displayedTableHeadRowLRU);
-            this.displayedTableHeadRow.appendChild(this.displayedTableHeadRowV1);
-            this.displayedTableHeadRow.appendChild(this.displayedTableHeadRowD1);
-            this.displayedTableHeadRow.appendChild(this.displayedTableHeadRowTag1);
-            this.displayedTableHeadRow.appendChild(this.displayedTableHeadRowV2);
-            this.displayedTableHeadRow.appendChild(this.displayedTableHeadRowD2);
-            this.displayedTableHeadRow.appendChild(this.displayedTableHeadRowTag2);
+            this.displayedTableHead.innerHTML = 
+            "<tr>" +
+            "   <th colspan=\"8\">Cache Table Content</th>" +
+            "</tr>" +
+            "<tr>" +
+            "    <th>Index</th>" +
+            "    <th>LRU</th>" +
+            "    <th>V</th>" +
+            "    <th>D</th>" +
+            "    <th>Tag</th>" +
+            "    <th>V</th>" +
+            "    <th>D</th>" +
+            "    <th>Tag</th>" +
+            "</tr>";
         }
-        
-        this.displayedTableHead.appendChild(this.displayedTableHeadRow);
         this.displayedTable.appendChild(this.displayedTableHead);  
         // create the body for the cache table
         this.displayedTableBody = document.createElement("tbody");
@@ -318,7 +288,7 @@ export default class cachetable extends RunestoneBase {
         // create the head row for the reference table
         this.referenceTableHead = document.createElement("thead");   
         this.referenceTableHead.innerHTML = 
-        "<tr><th colspan=\"3\">Reference table</th></tr>" + 
+        "<tr><th colspan=\"3\">Memory Operations</th></tr>" + 
         "<tr>" +
         "<th title=\"Reference Number\">Ref</th>"+
         "<th title=\"Address\">Address</th>"+
@@ -337,7 +307,7 @@ export default class cachetable extends RunestoneBase {
         this.answerTable = document.createElement("table");
         // create the head row for the reference table
         this.answerTableHead = document.createElement("thead");
-        if ( this.cache_org === direct_mapped) {
+        if ( this.cacheOrg === directMapped) {
             this.answerTableHead.innerHTML = 
             "<tr><th colspan=\"6\">Effects from Memory Reference</th></tr>" + 
             "<tr>" +
@@ -376,16 +346,16 @@ export default class cachetable extends RunestoneBase {
     // render the layout for tables
     renderLayout() {
 
-        if ( this.cache_org === direct_mapped) {
+        if ( this.cacheOrg === directMapped) {
             this.tableInfo.setAttribute("width", "25%");
             this.displayedTable.setAttribute("width", "35%");
             this.referenceTable.setAttribute("width", "25%");
             this.answerTable.setAttribute("width", "50%");
     
-            this.displayedTableHeadRow0.setAttribute("width", "25%");
-            this.displayedTableHeadRowV.setAttribute("width", "20%");
-            this.displayedTableHeadRowD.setAttribute("width", "20%");
-            this.displayedTableHeadRowTag.setAttribute("width", "35%");
+            this.displayedTableHead.rows[1].cells[0].setAttribute("width", "25%");
+            this.displayedTableHead.rows[1].cells[1].setAttribute("width", "20%");
+            this.displayedTableHead.rows[1].cells[2].setAttribute("width", "20%");
+            this.displayedTableHead.rows[1].cells[3].setAttribute("width", "35%");
 
             this.answerTableHead.rows[1].cells[0].setAttribute("width", "15%");
             this.answerTableHead.rows[1].cells[1].setAttribute("width", "15%");
@@ -399,14 +369,14 @@ export default class cachetable extends RunestoneBase {
             this.referenceTable.setAttribute("width", "25%");
             this.answerTable.setAttribute("width", "70%");
     
-            this.displayedTableHeadRow0.setAttribute("width", "10%");
-            this.displayedTableHeadRowLRU.setAttribute("width", "10%");
-            this.displayedTableHeadRowV1.setAttribute("width", "10%");
-            this.displayedTableHeadRowD1.setAttribute("width", "10%");
-            this.displayedTableHeadRowTag1.setAttribute("width", "20%");
-            this.displayedTableHeadRowV2.setAttribute("width", "10%");
-            this.displayedTableHeadRowD2.setAttribute("width", "10%");
-            this.displayedTableHeadRowTag2.setAttribute("width", "20%");
+            this.displayedTableHead.rows[1].cells[0].setAttribute("width", "10%");
+            this.displayedTableHead.rows[1].cells[1].setAttribute("width", "10%");
+            this.displayedTableHead.rows[1].cells[2].setAttribute("width", "10%");
+            this.displayedTableHead.rows[1].cells[3].setAttribute("width", "10%");
+            this.displayedTableHead.rows[1].cells[4].setAttribute("width", "20%");
+            this.displayedTableHead.rows[1].cells[5].setAttribute("width", "10%");
+            this.displayedTableHead.rows[1].cells[6].setAttribute("width", "10%");
+            this.displayedTableHead.rows[1].cells[7].setAttribute("width", "20%");
 
             this.answerTableHead.rows[1].cells[0].setAttribute("width", "5%");
             this.answerTableHead.rows[1].cells[1].setAttribute("width", "5%");
@@ -424,50 +394,32 @@ export default class cachetable extends RunestoneBase {
     // initialize the body of displayed cache table
     initDisplayedTableBody() {
         this.displayedTableBody.innerHTML = "";
-        if (this.cache_org === direct_mapped ) {
-            var tableRow, index, valid_bit, dirty_bit, tag_field;
-            for ( var i = 0 ; i < this.num_rows ; i ++ ) {
+        if (this.cacheOrg === directMapped ) {
+            var tableRow;
+            for ( var i = 0 ; i < this.numRows ; i ++ ) {
                 tableRow = document.createElement("tr");
-                index = document.createElement("td");
-                index.textContent = i.toString();
-                valid_bit = document.createElement("td");
-                valid_bit.textContent = "0"
-                dirty_bit = document.createElement("td");
-                dirty_bit.textContent = "0"
-                tag_field = document.createElement("td");
-                tableRow.appendChild(index);
-                tableRow.appendChild(valid_bit);
-                tableRow.appendChild(dirty_bit);
-                tableRow.appendChild(tag_field);
+                tableRow.innerHTML = 
+                "<td>"+ i.toString() +"</td>" + 
+                "<td>0</td>" +
+                "<td>0</td>" +
+                "<td></td>";
                 tableRow.style.backgroundColor = "white";
                 this.displayedTableBody.appendChild(tableRow);
             }
         } else {
-            var tableRow, index, lru_bit, valid_bit1, dirty_bit1, tag_field1, valid_bit2, dirty_bit2, tag_field2;
-            for ( var i = 0 ; i < this.num_rows ; i ++ ) {
+            var tableRow;
+            for ( var i = 0 ; i < this.numRows ; i ++ ) {
                 tableRow = document.createElement("tr");
-                index = document.createElement("td");
-                index.textContent = i.toString();
-                valid_bit1 = document.createElement("td");
-                valid_bit1.textContent = "0";
-                valid_bit2 = document.createElement("td");
-                valid_bit2.textContent = "0";
-                lru_bit = document.createElement("td");
-                lru_bit.textContent = "0";
-                dirty_bit1 = document.createElement("td");
-                dirty_bit1.textContent = "0";
-                dirty_bit2 = document.createElement("td");
-                dirty_bit2.textContent = "0";
-                tag_field1 = document.createElement("td");
-                tag_field2 = document.createElement("td");
-                tableRow.appendChild(index);
-                tableRow.appendChild(lru_bit);
-                tableRow.appendChild(valid_bit1);
-                tableRow.appendChild(dirty_bit1);
-                tableRow.appendChild(tag_field1);
-                tableRow.appendChild(valid_bit2);
-                tableRow.appendChild(dirty_bit2);
-                tableRow.appendChild(tag_field2);
+                tableRow = document.createElement("tr");
+                tableRow.innerHTML = 
+                "<td>"+ i.toString() +"</td>" + 
+                "<td>0</td>" +
+                "<td>0</td>" +
+                "<td>0</td>" +
+                "<td></td>" +
+                "<td>0</td>" +
+                "<td>0</td>" +
+                "<td></td>";
                 tableRow.style.backgroundColor = "white";
                 this.displayedTableBody.appendChild(tableRow);
             }
@@ -549,7 +501,7 @@ export default class cachetable extends RunestoneBase {
     updateDisplayedTableBody() {
         this.setCellsToDefault();
         const changed_line = this.answer_list[this.curr_ref-1][1];
-        for (let i = 0; i < this.num_rows; i++) {
+        for (let i = 0; i < this.numRows; i++) {
             if ( i === changed_line ) {
                 // only update the changed line
                 this.updateDisplayedTableBodyRow(i);
@@ -560,7 +512,7 @@ export default class cachetable extends RunestoneBase {
 
     // update a row of the body of the displayed cache table
     updateDisplayedTableBodyRow(index) {
-        if ( this.cache_org === direct_mapped ) {
+        if ( this.cacheOrg === directMapped ) {
             // update the valid bit, dirty bit, tag bits
             this.displayedTableBody.rows[index].cells[1].textContent = this.curr_tagIndex_table[index][0].toString();
             this.displayedTableBody.rows[index].cells[2].textContent = this.curr_tagIndex_table[index][1].toString();
@@ -588,7 +540,7 @@ export default class cachetable extends RunestoneBase {
 
     highlightChanges(index) {
         this.displayedTableBody.rows[index].cells[0].style.backgroundColor = "yellow";
-        if ( this.cache_org === direct_mapped ) {
+        if ( this.cacheOrg === directMapped ) {
             // highlight the valid bit, dirty bit, tag bits
             this.displayedTableBody.rows[index].cells[1].style.backgroundColor = "yellow";
             this.displayedTableBody.rows[index].cells[2].style.backgroundColor = "yellow";
@@ -645,40 +597,48 @@ export default class cachetable extends RunestoneBase {
         // generate radio for Hit and Miss
         var cellHit = document.createElement("td");
         var cellHitBox = document.createElement("input");
-        cellHitBox.setAttribute("type", "radio");
-        cellHitBox.setAttribute("value", "H");
-        cellHitBox.setAttribute("name", "HM" + curr_ref);
-        cellHitBox.setAttribute("id", "Hit" + curr_ref);
+        $(cellHitBox).attr({
+            type: "radio",
+            value: "H",
+            name: "HM" + curr_ref,
+            id: "Hit" + curr_ref
+        });
         cellHit.appendChild(cellHitBox);
         answerTableNewRow.appendChild(cellHit);
         
         var cellMiss = document.createElement("td");
         var cellMissBox = document.createElement("input");
-        cellMissBox.setAttribute("type", "radio");
-        cellMissBox.setAttribute("name", "HM" + curr_ref);
-        cellMissBox.setAttribute("value", "M");
-        cellMissBox.setAttribute("id", "Miss" + curr_ref);
+        $(cellMissBox).attr({
+            type: "radio",
+            value: "M",
+            name: "HM" + curr_ref,
+            id: "Miss" + curr_ref
+        });
         cellMiss.appendChild(cellMissBox);
         answerTableNewRow.appendChild(cellMiss);
 
         // generate normal input fields
         // generate input field for index
         var cellInputIndexBox = document.createElement("input");
-        cellInputIndexBox.setAttribute("maxlength", "2");
-        cellInputIndexBox.setAttribute("size", "2");
-        cellInputIndexBox.setAttribute("type", "text");
-        cellInputIndexBox.setAttribute("name", "Index" + curr_ref);
+        $(cellInputIndexBox).attr({
+            type: "text",
+            size: "2",
+            maxlength: "2",
+            name: "Index" + curr_ref,
+        });
         var cellInputIndex = document.createElement("td");
         cellInputIndex.appendChild(cellInputIndexBox);
         answerTableNewRow.appendChild(cellInputIndex);
 
         // generate the LRU input field 
-        if ( this.cache_org === two_way_set_associative ) {
+        if ( this.cacheOrg === twoWaySetAssociative ) {
             var cellInputLRUBox = document.createElement("input");
-            cellInputLRUBox.setAttribute("maxlength", "1");
-            cellInputLRUBox.setAttribute("size", "1");
-            cellInputLRUBox.setAttribute("type", "text");
-            cellInputLRUBox.setAttribute("name", "LRU" + curr_ref);
+            $(cellInputLRUBox).attr({
+                type: "text",
+                size: "1",
+                maxlength: "1",
+                name: "LRU" + curr_ref,
+            });
             var cellInputLRU = document.createElement("td");
             cellInputLRU.appendChild(cellInputLRUBox);
             answerTableNewRow.appendChild(cellInputLRU);            
@@ -686,73 +646,73 @@ export default class cachetable extends RunestoneBase {
 
         // generate input field for valid bit
         var cellInputValidBox = document.createElement("input");
-        cellInputValidBox.setAttribute("maxlength", "1");
-        cellInputValidBox.setAttribute("size", "1");
-        cellInputValidBox.setAttribute("type", "text");
-        cellInputValidBox.setAttribute("name", "Valid" + curr_ref);
-        cellInputValidBox.addEventListener("onkeypress",
-            this.onlyBitAllowed,
-            false
-        );
+        $(cellInputValidBox).attr({
+            type: "text",
+            size: "1",
+            maxlength: "1",
+            name: "Valid" + curr_ref,
+        });
         var cellInputValid = document.createElement("td");
         cellInputValid.appendChild(cellInputValidBox);
         answerTableNewRow.appendChild(cellInputValid);
 
         // generate input field for dirty bit
         var cellInputDirtyBox = document.createElement("input");
-        cellInputDirtyBox.setAttribute("maxlength", "1");
-        cellInputDirtyBox.setAttribute("size", "1");
-        cellInputDirtyBox.setAttribute("type", "text");
-        cellInputDirtyBox.setAttribute("name", "Dirty" + curr_ref);
-        cellInputDirtyBox.addEventListener("onkeypress",
-            this.onlyBitAllowed,
-            false
-        );
+        $(cellInputDirtyBox).attr({
+            type: "text",
+            size: "1",
+            maxlength: "1",
+            name: "Dirty" + curr_ref,
+        });
         var cellInputDirty = document.createElement("td");
         cellInputDirty.appendChild(cellInputDirtyBox);
         answerTableNewRow.appendChild(cellInputDirty);
 
         // generate input field for tag bits
         var cellInputTagBox = document.createElement("input");
-        cellInputTagBox.setAttribute("maxlength", "8");
-        cellInputTagBox.setAttribute("size", "5");
-        cellInputTagBox.setAttribute("type", "text");
-        cellInputTagBox.setAttribute("name", "Tag" + curr_ref);
-        cellInputTagBox.addEventListener("onkeypress",
-            this.onlyBitAllowed,
-            false
-        );
+        $(cellInputTagBox).attr({
+            type: "text",
+            size: "5",
+            maxlength: "8",
+            name: "Tag" + curr_ref,
+        });
         var cellInputTag = document.createElement("td");
         cellInputTag.appendChild(cellInputTagBox);
         answerTableNewRow.appendChild(cellInputTag);
 
-        if ( this.cache_org === two_way_set_associative ) {
+        if ( this.cacheOrg === twoWaySetAssociative ) {
             // generate input field for valid bit
             var cellInputValidBox2 = document.createElement("input");
-            cellInputValidBox2.setAttribute("maxlength", "1");
-            cellInputValidBox2.setAttribute("size", "1");
-            cellInputValidBox2.setAttribute("type", "text");
-            cellInputValidBox2.setAttribute("name", "Valid2" + curr_ref);
+            $(cellInputValidBox2).attr({
+                type: "text",
+                size: "1",
+                maxlength: "1",
+                name: "Valid2" + curr_ref,
+            });
             var cellInputValid2 = document.createElement("td");
             cellInputValid2.appendChild(cellInputValidBox2);
             answerTableNewRow.appendChild(cellInputValid2);
 
             // generate the second input field for dirty bit
             var cellInputDirtyBox2 = document.createElement("input");
-            cellInputDirtyBox2.setAttribute("maxlength", "1");
-            cellInputDirtyBox2.setAttribute("size", "1");
-            cellInputDirtyBox2.setAttribute("type", "text");
-            cellInputDirtyBox2.setAttribute("name", "Dirty2" + curr_ref);
+            $(cellInputDirtyBox2).attr({
+                type: "text",
+                size: "1",
+                maxlength: "1",
+                name: "Dirty2" + curr_ref,
+            });
             var cellInputDirty2 = document.createElement("td");
             cellInputDirty2.appendChild(cellInputDirtyBox2);
             answerTableNewRow.appendChild(cellInputDirty2);
 
             // generate the second input field for tag bits
             var cellInputTagBox2 = document.createElement("input");
-            cellInputTagBox2.setAttribute("maxlength", "8");
-            cellInputTagBox2.setAttribute("size", "5");
-            cellInputTagBox2.setAttribute("type", "text");
-            cellInputTagBox2.setAttribute("name", "Tag2" + curr_ref);
+            $(cellInputTagBox2).attr({
+                type: "text",
+                size: "5",
+                maxlength: "8",
+                name: "Tag2" + curr_ref,
+            });
             var cellInputTag2 = document.createElement("td");
             cellInputTag2.appendChild(cellInputTagBox2);
             answerTableNewRow.appendChild(cellInputTag2);
@@ -796,7 +756,7 @@ export default class cachetable extends RunestoneBase {
         }
 
         // add the event listener for the last button 
-        if ( this.cache_org === two_way_set_associative ) {
+        if ( this.cacheOrg === twoWaySetAssociative ) {
             cellInputTagBox2.addEventListener("keypress", function(e) {
                 if (e.key === "Enter") {
                     e.preventDefault();
@@ -872,7 +832,7 @@ export default class cachetable extends RunestoneBase {
             "click",
             function () {
                 this.resetGeneration();
-                if ( this.cache_org == two_way_set_associative ) {
+                if ( this.cacheOrg == twoWaySetAssociative ) {
                     this.displayNecessaryFields();
                 }
                 this.hidefeedback();
@@ -892,16 +852,16 @@ export default class cachetable extends RunestoneBase {
 
     // submit the response
     submitResponse() {
-        if (this.curr_ref != this.num_refs ) {
+        if (this.curr_ref != this.numRefs ) {
             this.checkCurrentAnswer();
             if (this.correct) {
                 this.curr_ref += 1;
-                if (this.curr_ref < this.num_refs) {
+                if (this.curr_ref < this.numRefs) {
                     // call next
                     this.updateDisplayedTableBody()
                     this.generateAnswerNext();
                     this.updateReferenceTableAndAnswerTable();
-                    if ( this.cache_org === two_way_set_associative ) {
+                    if ( this.cacheOrg === twoWaySetAssociative ) {
                         this.displayNecessaryFields();
                     }
                 } else {
@@ -919,7 +879,7 @@ export default class cachetable extends RunestoneBase {
         this.initDisplayedTableBody();
         this.initReferenceTableBody();
         this.initAnswerTableBody();
-        this.generateAnswerInit();
+        this.genRefBoostInit();
         this.generateAnswerNext();
         this.updateReferenceTableAndAnswerTable();
     }
@@ -976,15 +936,15 @@ export default class cachetable extends RunestoneBase {
         } else {
             this.addRandomInitLines();
         }
-        for (let i = 0; i < this.num_rows; i++) {
+        for (let i = 0; i < this.numRows; i++) {
             this.updateDisplayedTableBodyRow(i);
         }
     }
 
     readInitLines() {
         // set every line of the table to be empty
-        for (let i = 0; i < this.num_rows; i++) {
-            if ( this.cache_org == direct_mapped ) {
+        for (let i = 0; i < this.numRows; i++) {
+            if ( this.cacheOrg == directMapped ) {
                 this.curr_tagIndex_table.push([0, 0, ""]);
             } else {
                 this.curr_tagIndex_table.push([0, 0, 0, "",0, 0, "",]);
@@ -993,7 +953,7 @@ export default class cachetable extends RunestoneBase {
         //
         for (const line of this.cacheTableInit) {
             const index = line["index"];
-            if ( this.cache_org == direct_mapped ) {
+            if ( this.cacheOrg == directMapped ) {
                 var v = 0, d = 0, tag = "";
                 if (line["valid"] != undefined) {
                     v = eval(line["valid"]);
@@ -1049,76 +1009,77 @@ export default class cachetable extends RunestoneBase {
         }
     }
 
-    addRandomInitLines() {
-        if (this.cache_org === direct_mapped ) {
-            var valid_init, dirty_init, tag_init, currRand;
-            for (let i = 0; i < this.num_rows; i++) {
-                currRand = Math.random();
-                if (currRand < this.init_valid_rate) {
-                    valid_init = 1;
-                    tag_init = this.generateTag();
-                    dirty_init = this.getRandomBit();
-                } else {
-                    valid_init = 0;
-                    dirty_init = 0;
-                    tag_init = "";
-                    if ( currRand > 0.81 ) {
-                        tag_init = this.generateTag();
-                        if ( currRand > 0.9 ) {
-                            dirty_init = 1;
-                        }
-                    }
-                }
-                this.curr_tagIndex_table.push([valid_init, dirty_init, tag_init]);
-            }
-        } else {
-            var lru_init, valid_init1, dirty_init1, tag_init1;
-            var valid_init2, dirty_init2, tag_init2, currRand1, currRand2;
-            for (let i = 0; i < this.num_rows; i++) {
-                lru_init = this.getRandomBit();
-                currRand1 = Math.random();
-                if (currRand1 < this.init_valid_rate) {
-                    valid_init1 = 1;
-                    tag_init1 = this.generateTag();
-                    dirty_init1 = this.getRandomBit();
-                } else {
-                    valid_init1 = 0;
-                    dirty_init1 = 0;
-                    tag_init1 = "";
-                    if ( currRand1 > 0.81 ) {
-                        tag_init1 = this.generateTag();
-                        if ( currRand1 > 0.9 ) {
-                            dirty_init1 = 1;
-                        }
-                    }
-                }
-                currRand2 = Math.random();
-                if (currRand2 < this.init_valid_rate) {
-                    valid_init2 = 1;
-                    tag_init2 = this.generateTag();
-                    dirty_init2 = this.getRandomBit();
-                } else {
-                    valid_init2 = 0;
-                    dirty_init2 = 0;
-                    tag_init2 = "";
-                    if ( currRand2 > 0.81 ) {
-                        tag_init2 = this.generateTag();
-                        if ( currRand2 > 0.9 ) {
-                            dirty_init2 = 1;
-                        }
-                    }
-                }
-                this.curr_tagIndex_table.push([lru_init, valid_init1, dirty_init1, tag_init1,
-                    valid_init2, dirty_init2, tag_init2]);
-            }
-        }
-    }
+    // DEPRECATED
+    // addRandomInitLines() {
+    //     if (this.cacheOrg === directMapped ) {
+    //         var valid_init, dirty_init, tag_init, currRand;
+    //         for (let i = 0; i < this.numRows; i++) {
+    //             currRand = Math.random();
+    //             if (currRand < this.initValidRate) {
+    //                 valid_init = 1;
+    //                 tag_init = this.generateTag();
+    //                 dirty_init = this.getRandomBit();
+    //             } else {
+    //                 valid_init = 0;
+    //                 dirty_init = 0;
+    //                 tag_init = "";
+    //                 if ( currRand > 0.81 ) {
+    //                     tag_init = this.generateTag();
+    //                     if ( currRand > 0.9 ) {
+    //                         dirty_init = 1;
+    //                     }
+    //                 }
+    //             }
+    //             this.curr_tagIndex_table.push([valid_init, dirty_init, tag_init]);
+    //         }
+    //     } else {
+    //         var lru_init, valid_init1, dirty_init1, tag_init1;
+    //         var valid_init2, dirty_init2, tag_init2, currRand1, currRand2;
+    //         for (let i = 0; i < this.numRows; i++) {
+    //             lru_init = this.getRandomBit();
+    //             currRand1 = Math.random();
+    //             if (currRand1 < this.initValidRate) {
+    //                 valid_init1 = 1;
+    //                 tag_init1 = this.generateTag();
+    //                 dirty_init1 = this.getRandomBit();
+    //             } else {
+    //                 valid_init1 = 0;
+    //                 dirty_init1 = 0;
+    //                 tag_init1 = "";
+    //                 if ( currRand1 > 0.81 ) {
+    //                     tag_init1 = this.generateTag();
+    //                     if ( currRand1 > 0.9 ) {
+    //                         dirty_init1 = 1;
+    //                     }
+    //                 }
+    //             }
+    //             currRand2 = Math.random();
+    //             if (currRand2 < this.initValidRate) {
+    //                 valid_init2 = 1;
+    //                 tag_init2 = this.generateTag();
+    //                 dirty_init2 = this.getRandomBit();
+    //             } else {
+    //                 valid_init2 = 0;
+    //                 dirty_init2 = 0;
+    //                 tag_init2 = "";
+    //                 if ( currRand2 > 0.81 ) {
+    //                     tag_init2 = this.generateTag();
+    //                     if ( currRand2 > 0.9 ) {
+    //                         dirty_init2 = 1;
+    //                     }
+    //                 }
+    //             }
+    //             this.curr_tagIndex_table.push([lru_init, valid_init1, dirty_init1, tag_init1,
+    //                 valid_init2, dirty_init2, tag_init2]);
+    //         }
+    //     }
+    // }
 
     generateAnswerNext() {
         if ( this.fixed ) {
             this.loadNextAnswer();
         } else {
-            this.generateRandomAnswerNext();
+            this.genRefBoostNext();
         }
     }
 
@@ -1126,16 +1087,16 @@ export default class cachetable extends RunestoneBase {
         const curr_ref_num = this.curr_ref;
         const current_reference = this.referenceList[ curr_ref_num ];
         const curr_address = current_reference[ 0 ];
-        const currtagIndex = curr_address.slice(0, this.index_bits + this.tag_bits);
+        const currtagIndex = curr_address.slice(0, this.indexBits + this.tagBits);
         const curr_RW = current_reference[ 1 ] == "W" ? true : false;
-        const curr_idx_b = currtagIndex.slice(-this.index_bits);
+        const curr_idx_b = currtagIndex.slice(-this.indexBits);
         const curr_idx_d = this.binary2decimal(curr_idx_b);
-        const curr_tag_b = currtagIndex.slice(0, this.tag_bits);
+        const curr_tag_b = currtagIndex.slice(0, this.tagBits);
         let curr_hm;
-        if ( this.cache_org == direct_mapped ) {
-            const prev_valid = this.curr_tagIndex_table[ curr_idx_d ][ 0 ];
-            const prev_dirty = this.curr_tagIndex_table[ curr_idx_d ][ 1 ];
-            const prev_tag = this.curr_tagIndex_table[ curr_idx_d ][ 2 ];
+        if ( this.cacheOrg == directMapped ) {
+            const prev_valid = this.curr_tagIndex_table[ curr_idx_d ][ 0 ][ 0 ];
+            const prev_dirty = this.curr_tagIndex_table[ curr_idx_d ][ 0 ][ 1 ];
+            const prev_tag = this.curr_tagIndex_table[ curr_idx_d ][ 0 ][ 2 ];
             let curr_d;
             // determine whether hit or miss
             if ( prev_valid == 0 ) {
@@ -1153,17 +1114,24 @@ export default class cachetable extends RunestoneBase {
             // console.log( curr_hm );
             // console.log( prev_dirty );
             // console.log(this.answer_list[ this.curr_ref ] );
-            this.curr_tagIndex_table[curr_idx_d][0] = 1; // change valid bit to 1
-            this.curr_tagIndex_table[curr_idx_d][1] = curr_d; // change dirty bit to corresponding value
-            this.curr_tagIndex_table[curr_idx_d][2] = curr_tag_b; // change tag to corresponding string
+            this.curr_tagIndex_table[curr_idx_d][0][0] = 1; // change valid bit to 1
+            this.curr_tagIndex_table[curr_idx_d][0][1] = curr_d; // change dirty bit to corresponding value
+            this.curr_tagIndex_table[curr_idx_d][0][2] = curr_tag_b; // change tag to corresponding string
         } else {
-            const prev_lru = this.curr_tagIndex_table[ curr_idx_d ][ 0 ];
-            const prev_valid1 = this.curr_tagIndex_table[ curr_idx_d ][ 1 ];
-            const prev_dirty1 = this.curr_tagIndex_table[ curr_idx_d ][ 2 ];
-            const prev_tag1 = this.curr_tagIndex_table[ curr_idx_d ][ 3 ];
-            const prev_valid2 = this.curr_tagIndex_table[ curr_idx_d ][ 4 ];
-            const prev_dirty2 = this.curr_tagIndex_table[ curr_idx_d ][ 5 ];
-            const prev_tag2 = this.curr_tagIndex_table[ curr_idx_d ][ 6 ];
+            // const prev_lru = this.curr_tagIndex_table[ curr_idx_d ][ 0 ];
+            // const prev_valid1 = this.curr_tagIndex_table[ curr_idx_d ][ 1 ];
+            // const prev_dirty1 = this.curr_tagIndex_table[ curr_idx_d ][ 2 ];
+            // const prev_tag1 = this.curr_tagIndex_table[ curr_idx_d ][ 3 ];
+            // const prev_valid2 = this.curr_tagIndex_table[ curr_idx_d ][ 4 ];
+            // const prev_dirty2 = this.curr_tagIndex_table[ curr_idx_d ][ 5 ];
+            // const prev_tag2 = this.curr_tagIndex_table[ curr_idx_d ][ 6 ];
+            const prev_lru = this.curr_tagIndex_table[ curr_idx_d ][ 2 ];
+            const prev_valid1 = this.curr_tagIndex_table[ curr_idx_d ][ 0 ][ 0 ];
+            const prev_dirty1 = this.curr_tagIndex_table[ curr_idx_d ][ 0 ][ 1 ];
+            const prev_tag1 = this.curr_tagIndex_table[ curr_idx_d ][ 0 ][ 2 ];
+            const prev_valid2 = this.curr_tagIndex_table[ curr_idx_d ][ 1 ][ 0 ];
+            const prev_dirty2 = this.curr_tagIndex_table[ curr_idx_d ][ 1 ][ 1 ];
+            const prev_tag2 = this.curr_tagIndex_table[ curr_idx_d ][ 1 ][ 2 ];
             let curr_lru, ans_valid_1, ans_dirty_1, ans_tag_1, ans_valid_2, ans_dirty_2, ans_tag_2;
 
             if ( prev_valid1 && prev_tag1 == curr_tag_b ) {
@@ -1225,210 +1193,442 @@ export default class cachetable extends RunestoneBase {
             this.answer_list.push([curr_address, curr_idx_d, curr_lru,
                 ans_valid_1, ans_dirty_1, ans_tag_1, ans_valid_2, ans_dirty_2, ans_tag_2]);
     
-            this.curr_tagIndex_table[curr_idx_d][0] = curr_lru; 
-            this.curr_tagIndex_table[curr_idx_d][1] = ans_valid_1; 
-            this.curr_tagIndex_table[curr_idx_d][2] = ans_dirty_1; 
-            this.curr_tagIndex_table[curr_idx_d][3] = ans_tag_1; 
-            this.curr_tagIndex_table[curr_idx_d][4] = ans_valid_2; 
-            this.curr_tagIndex_table[curr_idx_d][5] = ans_dirty_2; 
-            this.curr_tagIndex_table[curr_idx_d][6] = ans_tag_2; 
+            // this.curr_tagIndex_table[curr_idx_d][0] = curr_lru; 
+            // this.curr_tagIndex_table[curr_idx_d][1] = ans_valid_1; 
+            // this.curr_tagIndex_table[curr_idx_d][2] = ans_dirty_1; 
+            // this.curr_tagIndex_table[curr_idx_d][3] = ans_tag_1; 
+            // this.curr_tagIndex_table[curr_idx_d][4] = ans_valid_2; 
+            // this.curr_tagIndex_table[curr_idx_d][5] = ans_dirty_2; 
+            // this.curr_tagIndex_table[curr_idx_d][6] = ans_tag_2; 
+            this.curr_tagIndex_table[curr_idx_d][2] = curr_lru; 
+            this.curr_tagIndex_table[curr_idx_d][0][0] = ans_valid_1; 
+            this.curr_tagIndex_table[curr_idx_d][0][1] = ans_dirty_1; 
+            this.curr_tagIndex_table[curr_idx_d][0][2] = ans_tag_1; 
+            this.curr_tagIndex_table[curr_idx_d][1][0] = ans_valid_2; 
+            this.curr_tagIndex_table[curr_idx_d][1][1] = ans_dirty_2; 
+            this.curr_tagIndex_table[curr_idx_d][1][2] = ans_tag_2; 
         }
         this.read_write_list.push(curr_RW);
         this.hit_miss_list.push(curr_hm);
     }
 
-    generateRandomAnswerNext() {
+    // DEPRECATED
+    // generateRandomAnswerNext() {
 
-        // determine the read/ write for this step - always half half
-        // write = true; read = false
-        const curr_rw = this.getRandomBit() === 0 ? false : true;
-        this.read_write_list.push(curr_rw);
+    //     // determine the read/ write for this step - always half half
+    //     // write = true; read = false
+    //     const curr_rw = this.getRandomBit() === 0 ? false : true;
+    //     this.read_write_list.push(curr_rw);
 
-        // generate current tagIndex
-        var currtagIndex;
-        let valid_tagIndex_list = []; 
-        if ( this.cache_org === direct_mapped ) {
+    //     // generate current tagIndex
+    //     var currtagIndex;
+    //     let valid_tagIndex_list = []; 
+    //     if ( this.cacheOrg === directMapped ) {
 
-            for (var j = 0; j < this.curr_tagIndex_table.length; j++) { // collect all current valid tagIndices
-                if (this.curr_tagIndex_table[j][0] == 1) {
-                    valid_tagIndex_list.push(this.curr_tagIndex_table[j][2] + this.toBinary(j, this.index_bits));
-                }
-            }
-        } else {
-            for (var j = 0; j < this.curr_tagIndex_table.length; j++) { // collect all current valid tagIndices
-                if (this.curr_tagIndex_table[j][1] == 1) {
-                    valid_tagIndex_list.push(this.curr_tagIndex_table[j][3] + this.toBinary(j, this.index_bits));
-                }
-                if (this.curr_tagIndex_table[j][4] == 1) {
-                    valid_tagIndex_list.push(this.curr_tagIndex_table[j][6] + this.toBinary(j, this.index_bits));
-                }
-            }
-        }
-        // determine the hit/ miss answer for this step
-        var curr_hm; // hit = true; miss = false
-        var conf_miss = false;
-        if ( this.algorithm == algo_hitNmiss ) {
-            if (valid_tagIndex_list.length == 0) { // when there is no valid line, it is always miss
-                curr_hm = false;
-            } else if (this.curr_ref <= 1) { // second half half
-                curr_hm = this.getRandomBit() === 0 ? true : false;
-            } else {
-                // if previous two hits, miss this time
-                if (this.hit_miss_list[this.curr_ref - 2] && this.hit_miss_list[this.curr_ref - 1]) {
-                    curr_hm = false;
-                } else { // otherwise half half
-                    curr_hm = this.getRandomBit() === 0 ? true : false;
-                }
-            }
-        } else {
+    //         for (var j = 0; j < this.curr_tagIndex_table.length; j++) { // collect all current valid tagIndices
+    //             if (this.curr_tagIndex_table[j][0] == 1) {
+    //                 valid_tagIndex_list.push(this.curr_tagIndex_table[j][2] + this.toBinary(j, this.indexBits));
+    //             }
+    //         }
+    //     } else {
+    //         for (var j = 0; j < this.curr_tagIndex_table.length; j++) { // collect all current valid tagIndices
+    //             if (this.curr_tagIndex_table[j][1] == 1) {
+    //                 valid_tagIndex_list.push(this.curr_tagIndex_table[j][3] + this.toBinary(j, this.indexBits));
+    //             }
+    //             if (this.curr_tagIndex_table[j][4] == 1) {
+    //                 valid_tagIndex_list.push(this.curr_tagIndex_table[j][6] + this.toBinary(j, this.indexBits));
+    //             }
+    //         }
+    //     }
+    //     // determine the hit/ miss answer for this step
+    //     var curr_hm; // hit = true; miss = false
+    //     var conf_miss = false;
+    //     if ( this.algorithm == algo_hitNmiss ) {
+    //         if (valid_tagIndex_list.length == 0) { // when there is no valid line, it is always miss
+    //             curr_hm = false;
+    //         } else if (this.curr_ref <= 1) { // second half half
+    //             curr_hm = this.getRandomBit() === 0 ? true : false;
+    //         } else {
+    //             // if previous two hits, miss this time
+    //             if (this.hit_miss_list[this.curr_ref - 2] && this.hit_miss_list[this.curr_ref - 1]) {
+    //                 curr_hm = false;
+    //             } else { // otherwise half half
+    //                 curr_hm = this.getRandomBit() === 0 ? true : false;
+    //             }
+    //         }
+    //     } else {
             
-            if (valid_tagIndex_list.length == 0) { // when there is no valid line, it is always miss
-                curr_hm = false;
-            } else {
-                curr_hm = Math.random() < this.hit_boost_levels[ this.hit_boost_curr ] ? true : false;
-                if ( curr_hm ) {
-                    this.hit_boost_curr = 0;
-                } else {
-                    this.hit_boost_curr ++;
-                    conf_miss = Math.random() < this.conf_boost_levels[ this.conf_boost_curr ] ? true : false;
-                    if ( conf_miss ) {
-                        this.conf_boost_curr = 0;
-                    } else {
-                        this.conf_boost_curr ++;
-                    }
-                }
-            }
-        }
-        this.hit_miss_list.push(curr_hm);
+    //         if (valid_tagIndex_list.length == 0) { // when there is no valid line, it is always miss
+    //             curr_hm = false;
+    //         } else {
+    //             curr_hm = Math.random() < this.hit_boost_levels[ this.hit_boost_curr ] ? true : false;
+    //             if ( curr_hm ) {
+    //                 this.hit_boost_curr = 0;
+    //             } else {
+    //                 this.hit_boost_curr ++;
+    //                 conf_miss = Math.random() < this.conf_boost_levels[ this.conf_boost_curr ] ? true : false;
+    //                 if ( conf_miss ) {
+    //                     this.conf_boost_curr = 0;
+    //                 } else {
+    //                     this.conf_boost_curr ++;
+    //                 }
+    //             }
+    //         }
+    //     }
+    //     this.hit_miss_list.push(curr_hm);
 
         
-        // console.log(valid_tagIndex_list)
-        if (curr_hm) {
-            // if it is a hit, pick a valid tagIndex to proceed
-            let currRand = Math.floor(Math.random() * valid_tagIndex_list.length);
-            currtagIndex = valid_tagIndex_list[currRand];
-        } else {
-            // if it is a miss, then generate a new tagIndex
-            if ( this.algorithm == algo_hitNmiss || this.cache_org == two_way_set_associative 
-                || valid_tagIndex_list.length == 0 || !conf_miss ) {
-                currtagIndex = this.generateTagIndex();
-                if (valid_tagIndex_list.length > 0 ) {
-                    while (valid_tagIndex_list.includes(currtagIndex)) {
-                        currtagIndex = this.generateTagIndex();
-                    }
-                }
-            } else {
-                const evicted_entry = valid_tagIndex_list[ Math.floor( Math.random() * valid_tagIndex_list.length)  ];
-                const evicted_entry_index = evicted_entry.slice(0, this.tag_bits);
-                const evicted_entry_tag = evicted_entry.slice(-this.index_bits);
-                var new_tag = this.generateTag();
-                while(new_tag == evicted_entry_tag) {
-                    new_tag = this.generateTag();
-                }
-                currtagIndex = new_tag + evicted_entry_index;
-            }
+    //     // console.log(valid_tagIndex_list)
+    //     if (curr_hm) {
+    //         // if it is a hit, pick a valid tagIndex to proceed
+    //         let currRand = Math.floor(Math.random() * valid_tagIndex_list.length);
+    //         currtagIndex = valid_tagIndex_list[currRand];
+    //     } else {
+    //         // if it is a miss, then generate a new tagIndex
+    //         if ( this.algorithm == algo_hitNmiss || this.cacheOrg == twoWaySetAssociative 
+    //             || valid_tagIndex_list.length == 0 || !conf_miss ) {
+    //             currtagIndex = this.generateTagIndex();
+    //             if (valid_tagIndex_list.length > 0 ) {
+    //                 while (valid_tagIndex_list.includes(currtagIndex)) {
+    //                     currtagIndex = this.generateTagIndex();
+    //                 }
+    //             }
+    //         } else {
+    //             const evicted_entry = valid_tagIndex_list[ Math.floor( Math.random() * valid_tagIndex_list.length)  ];
+    //             const evicted_entry_index = evicted_entry.slice(0, this.tagBits);
+    //             const evicted_entry_tag = evicted_entry.slice(-this.indexBits);
+    //             var new_tag = this.generateTag();
+    //             while(new_tag == evicted_entry_tag) {
+    //                 new_tag = this.generateTag();
+    //             }
+    //             currtagIndex = new_tag + evicted_entry_index;
+    //         }
+    //     }
+
+    //     if ( this.cacheOrg === directMapped ) {
+
+    //         const curr_tag_b = currtagIndex.slice(0, this.tagBits);
+    //         const curr_idx_b = currtagIndex.slice(-this.indexBits);
+    //         const curr_idx_d = this.binary2decimal(curr_idx_b);
+    //         const curr_address = currtagIndex + this.generateOffset();
+    //         const curr_valid = this.curr_tagIndex_table[curr_idx_d][0];
+    //         // generate current dirty bit
+    //         const curr_d = this.calculateDirtyBit(curr_valid, curr_rw, curr_hm, this.curr_tagIndex_table[curr_idx_d][1]);
+            
+    //         // reflect the changes in answer_list and curr_tagIndex_table
+    //         this.answer_list.push([curr_address, curr_idx_d, curr_d, curr_tag_b]);
+    //         this.curr_tagIndex_table[curr_idx_d][0] = 1; // change valid bit to 1
+    //         this.curr_tagIndex_table[curr_idx_d][1] = curr_d; // change dirty bit to corresponding value
+    //         this.curr_tagIndex_table[curr_idx_d][2] = curr_tag_b; // change tag to corresponding string
+
+    //     } else {
+
+    //         const curr_idx_b = currtagIndex.slice(-this.indexBits);
+    //         const curr_idx_d = this.binary2decimal(curr_idx_b);
+    //         const curr_tag_b = currtagIndex.slice(0, this.tagBits);
+    //         const curr_address = currtagIndex + this.generateOffset();
+    //         // previous lru
+    //         const prev_lru = this.curr_tagIndex_table[curr_idx_d][0];
+    //         const prev_valid1 = this.curr_tagIndex_table[curr_idx_d][1];
+    //         const prev_dirty1 = this.curr_tagIndex_table[curr_idx_d][2];
+    //         const prev_tag1 = this.curr_tagIndex_table[curr_idx_d][3];
+    //         const prev_valid2 = this.curr_tagIndex_table[curr_idx_d][4];
+    //         const prev_dirty2 = this.curr_tagIndex_table[curr_idx_d][5];
+    //         const prev_tag2 = this.curr_tagIndex_table[curr_idx_d][6];
+    //         var curr_lru = null;
+    //         var ans_tag_1 = null;
+    //         var ans_tag_2 = null;
+    //         var ans_valid_1 = null;
+    //         var ans_valid_2 = null;
+    //         var ans_dirty_1 = null;
+    //         var ans_dirty_2 = null;
+    //         if ( curr_hm ) {
+    //             if ( curr_tag_b === prev_tag1 ) {
+    //                 curr_lru = 1;
+    //             } else {
+    //                 curr_lru = 0;
+    //             }
+    //         } else {
+    //             // check if there is no available space
+    //             if ( prev_valid1 && prev_valid2 ) {
+    //                 if ( prev_lru === 1 ) {
+    //                     curr_lru = 0;
+    //                 } else {
+    //                     curr_lru = 1;
+    //                 }
+    //             } else { // occupy the available one
+    //                 // if both available, occupy the one previous LRU points to
+    //                 if ( prev_valid1 == prev_valid2 ) {
+    //                     curr_lru = 1 - prev_lru;
+    //                 } else if ( prev_valid1 ) { // otherwise, occupy the one with valid bit 0
+    //                     curr_lru = 0;
+    //                 } else {
+    //                     curr_lru = 1;
+    //                 }
+    //             }
+    //         }
+
+    //         // determine the answer based on current LRU
+    //         if (curr_lru == 1) {
+    //             ans_valid_2 = prev_valid2;
+    //             ans_dirty_2 = prev_dirty2;
+    //             ans_tag_2 = prev_tag2;
+
+    //             ans_valid_1 = 1;
+    //             ans_dirty_1 = 
+    //                 this.calculateDirtyBit(prev_valid1, curr_rw, 
+    //                 curr_hm, prev_dirty1);
+    //             ans_tag_1 = curr_tag_b;
+    //         } else {
+    //             ans_valid_1 = prev_valid1;
+    //             ans_dirty_1 = prev_dirty1;
+    //             ans_tag_1 = prev_tag1;
+
+    //             ans_valid_2 = 1;
+    //             ans_dirty_2 = 
+    //                 this.calculateDirtyBit(prev_valid2, curr_rw, 
+    //                 curr_hm, prev_dirty2);
+    //             ans_tag_2 = curr_tag_b;
+    //         }
+            
+    //         // reflect the changes in answer_list and curr_tagIndex_table
+    //         this.answer_list.push([curr_address, curr_idx_d, curr_lru,
+    //         ans_valid_1, ans_dirty_1, ans_tag_1, ans_valid_2, ans_dirty_2, ans_tag_2]);
+
+    //         this.curr_tagIndex_table[curr_idx_d][0] = curr_lru; 
+    //         this.curr_tagIndex_table[curr_idx_d][1] = ans_valid_1; 
+    //         this.curr_tagIndex_table[curr_idx_d][2] = ans_dirty_1; 
+    //         this.curr_tagIndex_table[curr_idx_d][3] = ans_tag_1; 
+    //         this.curr_tagIndex_table[curr_idx_d][4] = ans_valid_2; 
+    //         this.curr_tagIndex_table[curr_idx_d][5] = ans_dirty_2; 
+    //         this.curr_tagIndex_table[curr_idx_d][6] = ans_tag_2; 
+    //     }
+
+    // }
+
+    genRefBoostInit() {
+        // generate read write list (bool): write = true; read = false
+        this.read_write_list = [];
+
+        // this list keeps track of the answer in terms of [address, line# (int), dirty bit (int 0/1), tag (str)]
+        // in 2-way set associative, it is [address, line#, LRU bit, valid bit(1), dirty bit(1), tag(1), valid bit(2), dirty bit(2), tag(2)]
+        // Remark: this list size grows as there is growing number of steps
+        this.answer_list = [];
+
+        // initialize the variable that traces whether a response is correct
+        this.correct = null;
+
+        // this is the flag that indicates whether one practice is completed 
+        this.completed = false;
+
+
+        this.curr_ref = 0;
+        // initialize for different cache org
+        if (this.cacheOrg === directMapped) {
+            this.lines_in_set = 1;
+        } else if (this.cacheOrg === twoWaySetAssociative){
+            this.lines_in_set = 2;
         }
 
-        if ( this.cache_org === direct_mapped ) {
+        // we would use implicit parameters: num_ref, lines_in_set, offsetBits, tagBits, chance_hit, hit_incr, chance_conf, conf_incr
+        this.numRows = 1<< this.indexBits;
+        this.curr_hit_chance = this.chance_hit;
+        this.hmFlag = false;
+        this.curr_conflict_chance = this.chance_conf;
+        this.conflictFlag = false;
+        this.preconflictFlag = false;
+        this.curr_ref = 0;
 
-            const curr_tag_b = currtagIndex.slice(0, this.tag_bits);
-            const curr_idx_b = currtagIndex.slice(-this.index_bits);
-            const curr_idx_d = this.binary2decimal(curr_idx_b);
-            const curr_address = currtagIndex + this.generateOffset();
-            const curr_valid = this.curr_tagIndex_table[curr_idx_d][0];
-            // generate current dirty bit
-            const curr_d = this.calculateDirtyBit(curr_valid, curr_rw, curr_hm, this.curr_tagIndex_table[curr_idx_d][1]);
-            
-            // reflect the changes in answer_list and curr_tagIndex_table
-            this.answer_list.push([curr_address, curr_idx_d, curr_d, curr_tag_b]);
-            this.curr_tagIndex_table[curr_idx_d][0] = 1; // change valid bit to 1
-            this.curr_tagIndex_table[curr_idx_d][1] = curr_d; // change dirty bit to corresponding value
-            this.curr_tagIndex_table[curr_idx_d][2] = curr_tag_b; // change tag to corresponding string
-
-        } else {
-
-            const curr_idx_b = currtagIndex.slice(-this.index_bits);
-            const curr_idx_d = this.binary2decimal(curr_idx_b);
-            const curr_tag_b = currtagIndex.slice(0, this.tag_bits);
-            const curr_address = currtagIndex + this.generateOffset();
-            // previous lru
-            const prev_lru = this.curr_tagIndex_table[curr_idx_d][0];
-            const prev_valid1 = this.curr_tagIndex_table[curr_idx_d][1];
-            const prev_dirty1 = this.curr_tagIndex_table[curr_idx_d][2];
-            const prev_tag1 = this.curr_tagIndex_table[curr_idx_d][3];
-            const prev_valid2 = this.curr_tagIndex_table[curr_idx_d][4];
-            const prev_dirty2 = this.curr_tagIndex_table[curr_idx_d][5];
-            const prev_tag2 = this.curr_tagIndex_table[curr_idx_d][6];
-            var curr_lru = null;
-            var ans_tag_1 = null;
-            var ans_tag_2 = null;
-            var ans_valid_1 = null;
-            var ans_valid_2 = null;
-            var ans_dirty_1 = null;
-            var ans_dirty_2 = null;
-            if ( curr_hm ) {
-                if ( curr_tag_b === prev_tag1 ) {
-                    curr_lru = 1;
+        // structure of current tagIndex table
+        // [[Vi, Di, "Tagi"], LRU]: i < this.line_in_set
+        // the table is initialized with initial values and noises
+        this.curr_tagIndex_table = [];
+        for (let i = 0; i < this.numRows; i++) {
+            let current_row = [];
+            let valid_line = [];
+            for (let j = 0; j < this.lines_in_set; j++) {
+                let valid_init = 0, dirty_init = 0, tag_init = "";
+                if (Math.random() < this.initValidRate) {
+                    valid_init = 1;
+                    tag_init = this.generateTag();
+                    dirty_init = this.getRandomBit();
+                    valid_line.push(i);
                 } else {
-                    curr_lru = 0;
-                }
-            } else {
-                // check if there is no available space
-                if ( prev_valid1 && prev_valid2 ) {
-                    if ( prev_lru === 1 ) {
-                        curr_lru = 0;
-                    } else {
-                        curr_lru = 1;
-                    }
-                } else { // occupy the available one
-                    // if both available, occupy the one previous LRU points to
-                    if ( prev_valid1 == prev_valid2 ) {
-                        curr_lru = 1 - prev_lru;
-                    } else if ( prev_valid1 ) { // otherwise, occupy the one with valid bit 0
-                        curr_lru = 0;
-                    } else {
-                        curr_lru = 1;
+                    valid_init = 0;
+                    dirty_init = 0;
+                    tag_init = "";
+                    if ( Math.random() > 0.81 ) {
+                        tag_init = this.generateTag();
+                        if ( Math.random() > 0.9 ) {
+                            dirty_init = 1;
+                        }
                     }
                 }
+                current_row.push([valid_init, dirty_init, tag_init]);
             }
-
-            // determine the answer based on current LRU
-            if (curr_lru == 1) {
-                ans_valid_2 = prev_valid2;
-                ans_dirty_2 = prev_dirty2;
-                ans_tag_2 = prev_tag2;
-
-                ans_valid_1 = 1;
-                ans_dirty_1 = 
-                    this.calculateDirtyBit(prev_valid1, curr_rw, 
-                    curr_hm, prev_dirty1);
-                ans_tag_1 = curr_tag_b;
+            if (valid_line.length === 0) {
+                current_row.push(0);
+            } else if (valid_line.length === this.lines_in_set) {
+                current_row.push(Math.floor(this.lines_in_set * Math.random()))
             } else {
-                ans_valid_1 = prev_valid1;
-                ans_dirty_1 = prev_dirty1;
-                ans_tag_1 = prev_tag1;
-
-                ans_valid_2 = 1;
-                ans_dirty_2 = 
-                    this.calculateDirtyBit(prev_valid2, curr_rw, 
-                    curr_hm, prev_dirty2);
-                ans_tag_2 = curr_tag_b;
+                current_row.push(this.lines_in_set - 1 - valid_line[0]);
             }
-            
-            // reflect the changes in answer_list and curr_tagIndex_table
-            this.answer_list.push([curr_address, curr_idx_d, curr_lru,
-            ans_valid_1, ans_dirty_1, ans_tag_1, ans_valid_2, ans_dirty_2, ans_tag_2]);
+            this.curr_tagIndex_table.push(current_row);
+        }
+    }
 
-            this.curr_tagIndex_table[curr_idx_d][0] = curr_lru; 
-            this.curr_tagIndex_table[curr_idx_d][1] = ans_valid_1; 
-            this.curr_tagIndex_table[curr_idx_d][2] = ans_dirty_1; 
-            this.curr_tagIndex_table[curr_idx_d][3] = ans_tag_1; 
-            this.curr_tagIndex_table[curr_idx_d][4] = ans_valid_2; 
-            this.curr_tagIndex_table[curr_idx_d][5] = ans_dirty_2; 
-            this.curr_tagIndex_table[curr_idx_d][6] = ans_tag_2; 
+    genRefBoostNext() {
+        // collect valid information
+        let validIndex = [];
+        let validFullIndex = [];
+        for (let i = 0; i < this.numRows; i++) {
+            let part_valid = false;
+            let full_valid = true;
+            for (let j = 0; i < this.lines_in_set; i++) {
+                part_valid = (part_valid || this.curr_tagIndex_table[i][0][0]);
+                full_valid = (full_valid && this.curr_tagIndex_table[i][0][0]);
+            }
+            if (part_valid) {
+                validIndex.push(i);
+            }
+            if (full_valid) {
+                validFullIndex.push(i);
+            }
+        }
+        console.log(validIndex);
+
+        // determine whether we should hit/miss conflict/non-conflict
+        if (validIndex.length === 0) {
+            // if the cache table is empty, then we must have a non-conflict miss
+            this.hmFlag = false;
+            this.conflictFlag = false;
+            this.curr_conflict_chance = this.chance_conf;
+            this.curr_hit_chance = this.chance_hit;
+        } else {
+            if (this.preconflictFlag) {
+                // if we have a pending delayed conflict miss, 
+                // we perform the conflict miss for this turn
+                this.hmFlag = false;
+                this.conflictFlag = true;
+                this.curr_hit_chance += this.hit_incr;
+            } else {
+                if (this.hmFlag) {
+                    // if previous is a hit, then we reduce the hit chance
+                    this.curr_hit_chance = this.chance_hit;
+                } else {
+                    this.curr_hit_chance += this.hit_incr;
+                    if (this.conflictFlag) {
+                        // if previous miss is a conflict miss, reset the conflict miss chance
+                        this.curr_conflict_chance = this.chance_conf;
+                    } else {
+                        // if previous miss is a non-conflict miss, boost the conflict miss chance
+                        this.curr_conflict_chance += this.conf_incr;
+                    }
+                }
+
+                // draw to determine whether current one is a hit, or miss
+                if (Math.random() < this.curr_hit_chance) {
+                    this.hmFlag = true;
+                    this.conflictFlag = false;
+                } else {
+                    // if it is a miss, then we further determine whether this is a conflict miss or non-conflict miss
+                    this.hmFlag = false;
+                    this.conflictFlag = Math.random() < this.curr_conflict_chance;
+                }
+            }
         }
 
+        console.log(validIndex);
+        // create address based on hit/miss
+        let currIndex = null;
+        let currTag = null;
+        let recentlyUsedLine = null;
+        if (this.hmFlag) {
+            // if it's a hit, select an valid index and then select a valid line
+            currIndex = validIndex[Math.floor(validIndex.length * Math.random())];
+            recentlyUsedLine = Math.random() < 0.5 ? 0 : 1;
+            if (1- this.curr_tagIndex_table[currIndex][recentlyUsedLine][0]) {
+                recentlyUsedLine = this.lines_in_set - 1 - recentlyUsedLine;
+            }
+            currTag = this.curr_tagIndex_table[currIndex][recentlyUsedLine][2];
+            this.conflictFlag = false;
+            this.preconflictFlag = false;
+        } else {
+            if (this.conflictFlag) {
+                if (validFullIndex.length) {
+                    // if it is a conflict miss, we need to make a conflict happen
+                    currIndex = validFullIndex[Math.floor(validFullIndex.length * Math.random())];
+                    recentlyUsedLine = this.curr_tagIndex_table[currIndex][2];
+                    let alreadyUsed = true;
+                    do {
+                        currTag = this.generateTag();
+                        alreadyUsed = false;
+                        for (let i = 0; i < this.lines_in_set; i++) {
+                            alreadyUsed = alreadyUsed || (this.curr_tagIndex_table[currIndex][i][2] === currTag);
+                        }
+                    } while (alreadyUsed);
+                    this.preconflictFlag = false;
+                    console.log(this.curr_tagIndex_table)
+                    console.log(currIndex);
+                    console.log("miss - conf: RUL " + recentlyUsedLine)
+                } else {
+                    // if a conflict is not possible, fill one set and delay the conflict
+                    currIndex = validIndex[Math.floor(validIndex.length * Math.random())];
+                    recentlyUsedLine = this.curr_tagIndex_table[currIndex][2];
+                    do {
+                        currTag = this.generateTag();
+                    } while (currTag === this.curr_tagIndex_table[currIndex][this.lines_in_set - recentlyUsedLine]);
+                    this.preconflictFlag = true;
+                    console.log(this.curr_tagIndex_table)
+                    console.log(currIndex);
+                    console.log("miss - delay: RUL " + recentlyUsedLine)
+                }
+            } else {
+                // select arbitrary set and make a miss (small chance being a conflict miss)
+                currIndex = Math.floor(this.numRows * Math.random());
+                recentlyUsedLine = this.curr_tagIndex_table[currIndex][2];
+                let alreadyUsed = true;
+                do {
+                    currTag = this.generateTag();
+                    alreadyUsed = false;
+                    for (let i = 0; i < this.lines_in_set; i++) {
+                        alreadyUsed = alreadyUsed || (this.curr_tagIndex_table[currIndex][i][2] === currTag);
+                    }
+                } while (alreadyUsed);
+                this.preconflictFlag = false;
+                console.log(this.curr_tagIndex_table)
+                console.log(currIndex);
+                console.log("miss - non: RUL " + recentlyUsedLine)
+            }
+            console.log("miss: RUL " + recentlyUsedLine)
+        }
+        // tidy up the address creation
+        let currIndex_str = this.toBinary(currIndex, this.indexBits);
+
+        let currLRU = this.lines_in_set - 1 - recentlyUsedLine;
+        let currRW = (Math.random() < 0.5);
+        let currDirty = this.calculateDirtyBit2(currIndex, recentlyUsedLine, this.hmFlag, currRW);
+
+        // update tagIndex table
+        this.curr_tagIndex_table[currIndex][2] = currLRU;
+        this.curr_tagIndex_table[currIndex][recentlyUsedLine][0] = 1;
+        this.curr_tagIndex_table[currIndex][recentlyUsedLine][1] = currDirty;
+        this.curr_tagIndex_table[currIndex][recentlyUsedLine][2] = currTag;
+        
+        // update reference table aka answerlist
+        let currAddress = currTag + currIndex_str + this.generateOffset();
+        let currAnswer = [currAddress, currIndex];
+        for (let i = 0; i< this.lines_in_set; i++){
+            currAnswer.concat(this.curr_tagIndex_table[currIndex]);
+        }
+        // console.log(currAnswer);
+        this.answer_list.push(currAnswer);
+        // console.log(this.answer_list);
+
+        // update read write list
+        this.read_write_list.push(currRW)
     }
+
 
     /*===================================
     === Helper functions             ===
@@ -1444,7 +1644,7 @@ export default class cachetable extends RunestoneBase {
             return 1;
         } else { // if it is a read request
             if (isHit) { // then if it is a hit, match current dirty bit state to that of the previous content
-                if (PrevDirtyBit == 1 && isValid == 1) {
+                if (PrevDirtyBit === 1 && isValid === 1) {
                     return 1;
                 } else {
                     return 0;
@@ -1454,6 +1654,27 @@ export default class cachetable extends RunestoneBase {
             }
         }
     }
+
+    calculateDirtyBit2(currIndex, recentlyUsedLine, curr_hm, curr_rw) {
+        return this.calculateDirtyBit(this.curr_tagIndex_table[currIndex][recentlyUsedLine][0], curr_rw, curr_hm, this.curr_tagIndex_table[currIndex][recentlyUsedLine][1]);
+    }
+
+    // DEPRECATED
+    // calculateDirtyBit(isValid, isWrite, isHit, PrevDirtyBit) {
+    //     if (isWrite) { // if it is a write request, always set dirty bit to 1
+    //         return 1;
+    //     } else { // if it is a read request
+    //         if (isHit) { // then if it is a hit, match current dirty bit state to that of the previous content
+    //             if (PrevDirtyBit == 1 && isValid == 1) {
+    //                 return 1;
+    //             } else {
+    //                 return 0;
+    //             }
+    //         } else { // then if it is a miss, would replace the original content, and always set dirty bit to 0
+    //             return 0;
+    //         }
+    //     }
+    // }
 
     // convert a binary string expression to integer
     binary2decimal(binary) {
@@ -1498,15 +1719,15 @@ export default class cachetable extends RunestoneBase {
     }
 
     generateTag() {
-        return this.generateAddress(this.tag_bits);
+        return this.generateAddress(this.tagBits);
     }
 
     generateTagIndex() {
-        return this.generateAddress(this.tag_bits + this.index_bits);
+        return this.generateAddress(this.tagBits + this.indexBits);
     }
 
     generateOffset() {
-        return this.generateAddress(this.offset_bits);
+        return this.generateAddress(this.offsetBits);
     }
 
     // get the string of this div id plus current reference number 
@@ -1555,7 +1776,7 @@ export default class cachetable extends RunestoneBase {
                 return;
             }
             // in 2-way set associative, we need to check 4 extra input fields
-            if ( this.cache_org === two_way_set_associative ) {
+            if ( this.cacheOrg === twoWaySetAssociative ) {
                 const response_lru = 
                     document.querySelector('input[name="LRU' + curr_ref_str + '"]').value;
                 const response_dirty2 =

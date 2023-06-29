@@ -379,7 +379,7 @@ export default class NC extends RunestoneBase {
         switch(this.menuNode2.value) {
             case "binary" : 
                 this.promptDivTextNode.append("0b");
-                placeholder = "your answer (" + this.num_bits.toString() + "digits of binary number)";
+                placeholder = "your answer (" + this.num_bits.toString() + "-digit binary value)";
                 break;
             case "decimal-unsigned" : 
                 placeholder = "your answer (unsigend decimal)";
@@ -389,7 +389,7 @@ export default class NC extends RunestoneBase {
                 break;
             case "hexadecimal" : 
                 this.promptDivTextNode.append("0x");
-                placeholder = "your answer (" + this.num_bits.toString() + "digits of hexadecimal number)";
+                placeholder = "your answer (" + this.num_bits.toString() + "-digit hexadecimal value)";
                 break;           
         }
         this.inputNode.setAttribute("placeholder", placeholder);

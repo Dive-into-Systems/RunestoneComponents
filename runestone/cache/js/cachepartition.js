@@ -106,11 +106,15 @@ export default class cachepartition extends RunestoneBase {
         this.addressNodeAddress = document.createElement("div");
         this.addressNode.appendChild(this.addressNodeAddress);
         this.addressNode.style.textAlign = "center";
+        this.addressNode.style.fontSize = "x-large";
+
         // create help text
-        this.helpNode = document.createElement("div");
-        this.helpNode.textContent = "Usage: Given the cache organization and info above, "+
-        "select a range of bits, and then click its corresponding button below.";
-        
+        this.helperDiv = document.createElement("div");
+        this.instructionText = document.createTextNode("Divide the following address bits into the tag, index, and offset.");
+        this.helperDiv.appendChild(this.instructionText);
+        this.helperDiv.appendChild(document.createElement("br"));
+        this.usageText = document.createTextNode("Usage: click and drag through the address bits your want to highlight and click the buttons below.");
+        this.helperDiv.appendChild(this.usageText);
         // create question prompt (block size, total number of lines)
         this.promptNode = document.createElement("p");
         this.blockNodeText = document.createTextNode("block size: ");
@@ -124,13 +128,16 @@ export default class cachepartition extends RunestoneBase {
         this.promptNode.appendChild(this.lineNodeText);
         this.promptNode.appendChild(this.lineNodeLine);
         this.promptNode.style.textAlign = "center";
-        this.promptNode.style.fontSize = "24px";
+        this.promptNode.style.fontSize = "x-large";
         
         // put all question prompt segements together
         this.statementDiv = document.createElement("div");
-        this.statementDiv.append("   Cache Organization: ");
+        this.statementDiv.appendChild(this.helperDiv);
+        this.statementDiv.appendChild(document.createElement("br"));
+        this.statementDiv.appendChild(document.createElement("br"));
+        this.statementDiv.append("Cache Organization: ");
         this.statementDiv.appendChild(this.orgMenuNode);
-        this.statementDiv.append("   Address Length: ");
+        this.statementDiv.append("Address Length: ");
         this.statementDiv.appendChild(this.addrMenuNode);
         this.statementDiv.appendChild(document.createElement("br"));
         this.statementDiv.appendChild(document.createElement("br"));
@@ -143,8 +150,10 @@ export default class cachepartition extends RunestoneBase {
         this.statementDiv.style.borderBlockStyle = "solid";
         this.statementDiv.style.borderBlockColor = "White";
         this.statementDiv.style.backgroundColor = "White";
+        this.statementDiv.style.padding = "8px";
 
         // create selected bits display section
+        var spaceNode = document.createTextNode("  ");
         this.inputBitsDiv = document.createElement("div");
         this.input_tag_text = document.createTextNode("Your current tag bits: ");
         this.input_tag_count = document.createElement("code");
@@ -157,15 +166,15 @@ export default class cachepartition extends RunestoneBase {
         this.input_offset_count.textContent = "0";
         this.inputBitsDiv.appendChild(this.input_tag_text);
         this.inputBitsDiv.appendChild(this.input_tag_count);
+        this.inputBitsDiv.appendChild(spaceNode);
         this.inputBitsDiv.appendChild(this.input_index_text);
         this.inputBitsDiv.appendChild(this.input_index_count);
+        this.inputBitsDiv.appendChild(spaceNode);
         this.inputBitsDiv.appendChild(this.input_offset_text);
         this.inputBitsDiv.appendChild(this.input_offset_count);
         this.inputBitsDiv.style.textAlign = "center";
 
         this.containerDiv.appendChild(this.statementDiv);
-        this.containerDiv.appendChild(document.createElement("br"));
-        this.containerDiv.appendChild(this.helpNode);
         this.containerDiv.appendChild(document.createElement("br"));
         this.containerDiv.appendChild(this.addressNode);
         this.containerDiv.appendChild(document.createElement("br"));
@@ -552,13 +561,13 @@ export default class cachepartition extends RunestoneBase {
         this.addressNodeAddress.innerHTML = "";
         this.addressNodeAddress.appendChild(this.addressNodeText);
         for ( var i = 0 ; i < this.num_bits ; i ++ ) {
-            this.address_node_list[ i ].style.fontSize = "18px";
+            this.address_node_list[ i ].style.fontSize = "x-large";
             this.addressNodeAddress.appendChild(this.address_node_list[ i ]);
             // insert an empty node between neighboring two bit nodes
             if ( i != this.num_bits - 1 ) {
                 breakNode = document.createElement("code");
                 breakNode.setAttribute("class", "prevent-select");
-                breakNode.style.fontSize = "18px";
+                breakNode.style.fontSize = "x-large";
                 this.addressNodeAddress.appendChild(breakNode);
             }
         }

@@ -50,6 +50,7 @@ class RandAlgo:
         toString += ("Number of non conflict miss is " + str(self.cold_start_miss) + "\n")
         return toString
     
+    
     # keep track of hit/miss type and a hit/miss list
     def SA_updateAll(self):
         self.conflict_miss = 0
