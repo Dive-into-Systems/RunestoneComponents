@@ -113,7 +113,7 @@ export default class cachepartition extends RunestoneBase {
         this.instructionText = document.createTextNode("Divide the following address bits into the tag, index, and offset.");
         this.helperDiv.appendChild(this.instructionText);
         this.helperDiv.appendChild(document.createElement("br"));
-        this.usageText = document.createTextNode("Usage: click and drag through the address bits your want to highlight and click the buttons below.");
+        this.usageText = document.createTextNode("Usage: click and drag through the address bits and highlight them with the buttons below.");
         this.helperDiv.appendChild(this.usageText);
         // create question prompt (block size, total number of lines)
         this.promptNode = document.createElement("p");

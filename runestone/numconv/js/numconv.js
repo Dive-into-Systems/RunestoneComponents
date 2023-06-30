@@ -162,7 +162,7 @@ export default class NC extends RunestoneBase {
 
         // create the node for the prompt
         this.promptDiv = document.createElement("div");
-        this.promptDiv.style.fontSize = "24px";
+        this.promptDiv.style.fontSize = "x-large";
 
         // create the node for the number being displayed (conversion from)
         this.promptDivTextNode = document.createElement("code");
