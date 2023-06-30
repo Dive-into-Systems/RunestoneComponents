@@ -169,7 +169,9 @@ export default class cachetable extends RunestoneBase {
     createStatement1() {
         this.statementDiv1 = document.createElement("div");
         this.statementDiv1.textContent = 
-            "Given the cache table and its info below, fill in the effects for each memory address reference.";
+            "Fill in the results of each memory operation (listed in the reference " + 
+            "table) in the table located at the lower-right corner. The effects of each memory operation " +
+            "will be reflected in your current cache content table below.";
         this.containerDiv.appendChild(this.statementDiv1);
     }
     
