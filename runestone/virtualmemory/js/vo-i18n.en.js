@@ -3,7 +3,7 @@ $.i18n().load({
         msg_no_answer: "No answer provided.",
         msg_VO_check_me: "Check answer",
         msg_VO_compare_me: "Compare me",
-        msg_VO_generate_a_number: "Ask me another",
+        msg_VO_generate_another: "Ask me another",
         msg_VO_incorrect: "Incorrect. Please think again.",
         msg_VO_correct: "Correct. Good job!",
         msg_VO_same_exp: "There's no point to convert between two same type. Please choose two different expressions.",

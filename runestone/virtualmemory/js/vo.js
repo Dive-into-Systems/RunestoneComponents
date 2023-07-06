@@ -27,14 +27,12 @@ export default class VO extends RunestoneBase {
         // declare all elements that could appear in the prompt
         this.ops = ["addl", "subl", "imull", "sall", "sarl", "shrl", "xorl", "andl", "orl", "leal", "movl"];
         this.registers = ["%eax", "%ecx", "%edx", "%ebx", "%esi", "%edi"];
-        this.range = range(0, 11); // value range of the constants
-        this.answerFields = ["pf", "cm", "db"];
+        this.range = 11; // value range of the constants
         
         this.createVOElement();
-        this.generateButton.click();
         this.caption = "Virtual Memory Operations";
         this.addCaption("runestone");
-        this.checkServer("vo", true);
+        // this.checkServer("vo", true);
         if (typeof Prism !== "undefined") {
             Prism.highlightAllUnder(this.containerDiv);
         }
@@ -50,130 +48,98 @@ export default class VO extends RunestoneBase {
     createVOElement() {
         this.renderVOInputField();
         this.renderVOButtons();
-        this.renderVOFeedbackDiv();
+        //this.renderVOFeedbackDiv();
         // replaces the intermediate HTML for this component with the rendered HTML of this component
         $(this.origElem).replaceWith(this.containerDiv);
     }
 
     renderVOInputField() {
-        this.containerDiv = document.createElement("div");
-        this.containerDiv.id = this.divid;
-        // create instructions for the question
-        this.instruction = document.createElement("div");
-        this.instruction.innerHTML = 
+        this.containerDiv = $("<div>").attr("id", this.divid);
+        this.instruction = $("<div>").html(
             "For each of the following IA32 instructions, indicate whether the instruction " + 
             "<b>could</b> cause a page fault, whether it <b>could</b> cause a cache miss, and " + 
-            "whether it <b>could</b> cause the dirty bit in the cache to be set to 1.";
-        this.containerDiv.appendChild(this.instruction);
+            "whether it <b>could</b> cause the dirty bit in the cache to be set to 1."
+        );
+        this.statementDiv = $("<div>").append(this.instruction);
+        this.containerDiv.append(this.statementDiv);
+        
+        var answerList = this.genAnswerList();
+        var promptList = this.genPrompts();
 
-        const promptList = genPrompts();
-        const answerList = genAnswerList(promptList);
-
-        this.promptNode = []
-        this.statementDiv = document.createElement("div");
-        this.selectionFieldList = ["Page fault? ", "Cache miss? ", "Dirty bit? "];
+        this.fieldList = ["Page fault? ", "Cache miss? ", "Dirty bit? "];
+        this.shorthandList = ["pf", "cm", "db"];
+        var blankLine = $("<div>").css("height", "20px"); // not working somehow? =^owo^=
 
         for (let i = 0; i < this.num_q_in_group; i++) {
-            const temp = `divid_${i}`;
-            [temp] = document.createElement('div');
-            for (let j = 0; j < 3; i++) {
-                [temp].apppendChild(this.selectionFieldList[j]);
-                var btnYes = document.createElement("input");
-                $(btnYes).attr({
+            var divID = "div" + i;
+            var newDiv = $("<div>").attr("id", divID);
+            var title =  String.fromCharCode(i + 97);
+            newDiv.append(title + ". " + this.renderOnePrompt(promptList[i]) + "<br>");
+
+            for (let j = 0; j < 3; j++) {
+                newDiv.append(this.fieldList[j]);
+                // create labels and button for YES and NO
+                var lblYes = $("<label>").text("YES");
+                var btnYes = $("<input>").attr({
                     type: "radio",
                     value: "Y",
-                    name: "YN" + this.answerFields[j],
-                    id: "Yes" + this.answerFields[j]
+                    name: "YN" + i + this.shorthandList[j],
+                    id: "Yes" + i + this.shorthandList[j]
                 });
-                var btnNo = document.createElement("input");
-                $(btnNo).attr({
+                var lblNo = $("<label>").text("NO");
+                var btnNo = $("<input>").attr({
                     type: "radio",
                     value: "N",
-                    name: "YN" + this.answerFields[j],
-                    id: "No" + this.answerFields[j]
+                    name: "YN" + i + this.shorthandList[j],
+                    id: "No" + i + this.shorthandList[j]
                 });
-                [temp].appendChild(btnYes);
-                [temp].appendChild(btnNo);
+                newDiv.append(lblYes);
+                newDiv.append(btnYes);
+                newDiv.append(lblNo);
+                newDiv.append(btnNo);
             }
-            this.statementDiv.appendChild([temp]);
+            this.statementDiv.append(newDiv);
         }
-        
-        // create the node for the prompt
-        this.promptDiv = document.createElement("div");
-        this.promptDiv.style.fontSize = "x-large";
-
-        // create the node for the number being displayed (conversion from)
-        this.promptDivTextNode = document.createElement("code");
-        this.promptDiv.appendChild(this.promptDivTextNode);
-        
-        // render the input field
-        this.inputNode = document.createElement("input");
-        this.inputNode.setAttribute('type', 'text');
-        this.inputNode.setAttribute("size", "20");
-        this.inputNode.setAttribute("id", this.divid + "_input");
-        this.promptDiv.appendChild((this.inputNode));
-        this.containerDiv.appendChild(this.promptDiv);
-
-        // prompt is invisible by default
-        this.promptDiv.style.visibility = "hidden"; 
 
         // Copy the original elements to the container holding what the user will see.
         $(this.origElem).children().clone().appendTo(this.containerDiv);
+        
+        this.statementDiv.css({
+            borderWidth: "1px",
+            borderRadius: "5px",
+            borderBlockStyle: "solid",
+            borderBlockColor: "white",
+            backgroundColor: "white",
+            padding: "8px"
+        });
 
         // Remove the script tag.
         this.scriptSelector(this.containerDiv).remove();
-        // Set the class for the text inputs, then store references to them.
-        let ba = $(this.containerDiv).find(":input");
-        ba.attr("class", "form form-control selectwidthauto");
-        ba.attr("aria-label", "input area");
-        this.blankArray = ba.toArray();
-        // Set the style of code
-        $(this.containerDiv).find("code").attr("class","code-inline tex2jax_ignore");
-        // When a blank is changed mark this component as interacted with.
-        // And set a class on the component in case we want to render components that have been used
-        // differently
-        for (let blank of this.blankArray) {
-            $(blank).change(this.recordAnswered.bind(this));
-        }
+    }
+
+    renderOnePrompt(operation) {
+        return operation[0] + " " + operation[1] + ", " + operation[2];
+        // console.log(operation[0] + " " + operation[1] + ", " + operation[2]);
     }
 
     genPrompts() {
-        const promptList = []
-        for (let i = 0; i < this.num_q_in_group; i++) {
-            const randIdx = Math.floor(this.ops.length);
-            var operator = this.ops[randIdx];
-            randIdx = Math.floor(this.resgisters.length);
-            var dest = this.resgisters[randIdx];
-            randIdx = Math.floor(this.resgisters.length);
-            var src = this.resgisters[randIdx];
-            promptList[i] = [operator, src, dest];
-        }
-        console.log(promptList);
-        return promptList;
+        // const promptList = []
+        // for (let i = 0; i < this.num_q_in_group; i++) {
+        //     const randIdx = Math.floor(this.ops.length);
+        //     var operator = this.ops[randIdx];
+        //     randIdx = Math.floor(this.resgisters.length);
+        //     var dest = this.resgisters[randIdx];
+        //     randIdx = Math.floor(this.resgisters.length);
+        //     var src = this.resgisters[randIdx];
+        //     promptList[i] = [operator, src, dest];
+        // }
+        // console.log(promptList);
+        // return promptList;
+        return [["movl", "$5", "(%eax)"], ["movl", "$6", "(%ebx)"], ["movl", "$7", "(%ecx)"], ["movl", "$8", "(%edx)"]];
     }
 
     genAnswerList(promptList) {
-        console.log("here in genAnswerList");
-    }
-
-    checkThisAnswer() {
-        this.correct = False;
-        try {
-            if (1) { // if pf selection is incorrect
-                console.log("if pf selection is incorrect");
-            }
-            if (1) { // if cm selection is incorrect
-                console.log("if cm selection is incorrect");
-            }
-            if (1) { // if db selection is incorrect
-                console.log("if db selection is incorrect");
-            }
-        }
-        catch {
-            this.feedBackWrongAnswer = $.i18n("msg_VO_incomplete_answer");
-            this.correct = false;
-            console.log(error);
-        }
+        return [false, false, false, false];
     }
 
     recordAnswered() {
@@ -186,55 +152,47 @@ export default class VO extends RunestoneBase {
         this.submitButton.textContent = $.i18n("msg_VO_check_me");
         $(this.submitButton).attr({
             class: "btn btn-success",
-            name: "do answer",
+            name: "answer",
             type: "button",
         });
         // check the answer when the conversion is valid
-        this.submitButton.addEventListener(
-            "click",
-            function () {
-                this.checkValidConversion();
-                if ( this.valid_conversion ) {
-                    this.checkCurrentAnswer();
-                    this.logCurrentAnswer();
-                }
-            }.bind(this),
-            false
-        );
+        // this.submitButton.addEventListener("click",
+        //     function () {
+        //         this.checkThisAnswer();
+        //         this.logCurrentAnswer();
+        //     }.bind(this),
+        //     false
+        // );
 
         this.generateButton = document.createElement("button");
-        this.generateButton.textContent = $.i18n("msg_VO_generate_a_number");
+        this.generateButton.textContent = $.i18n("msg_VO_generate_another");
         $(this.generateButton).attr({
             class: "btn btn-success",
             name: "generate a number",
             type: "button",
         });
-        // generate a new number for conversion 
-        this.generateButton.addEventListener(
-            "click",
-            function () {
-                this.checkValidConversion();
-                if ( this.valid_conversion ) {
-                    this.clearAnswer();
-                    this.generateNumber();
-                    this.generateAnswer();
-                }
-            }.bind(this),
-            false
-        );
+        // haven't finished this
+        // this.generateButton.addEventListener("click",
+        //     function () {
+        //         this.clearAnswer();
+        //         // this.generateNumber();
+        //         // this.generateAnswer();
+        //     }.bind(this),
+        //     false
+        // );
 
-        this.containerDiv.appendChild(document.createElement("br"));
-        this.containerDiv.appendChild(this.generateButton);
-        this.containerDiv.appendChild(this.submitButton);
+        this.containerDiv.append("<br>");
+        this.containerDiv.append(this.generateButton);
+        this.containerDiv.append(this.submitButton);
 
-        this.inputNode.addEventListener(
-            "keypress",
-            function(event) {
-            if (event.key === "Enter") {
-                    this.submitButton.click();
-                }
-            }.bind(this), false
-            );
+        // this.inputNode.addEventListener(
+        //     "keypress",
+        //     function(event) {
+        //     if (event.key === "Enter") {
+        //             this.submitButton.click();
+        //         }
+        //     }.bind(this), false
+        //     );
     }
 
     renderVOFeedbackDiv() {
@@ -249,10 +207,15 @@ export default class VO extends RunestoneBase {
         this.inputNode.value = "";
     }
 
+    getRandomInt(min, max) {
+        min = Math.ceil(min);
+        max = Math.floor(max);
+        return Math.floor(Math.random() * (max - min + 1)) + min;
+      }
+
     // generate a random number from 0 to 2^(this.num_bits)-1 and set the number to display
     generateNumber() {
-        var randIdx = Math.floor(this.range.length);
-        const randVal = this.range[randIdx];
+        var randVal = getRandomInt(0, this.range);
         return "$" + randVal; 
     }
 
@@ -286,20 +249,20 @@ export default class VO extends RunestoneBase {
     generatePrompt() {
         
         this.inputNode.style.visibility = 'visible';
-        switch(this.menuNode1.value) {
-            case "binary" : 
-                this.promptDivTextNode.textContent = "0b" + this.displayed_num_string + " = ";
-                break;
-            case "decimal-unsigned" : 
-                this.promptDivTextNode.textContent = this.displayed_num_string + " = ";
-                break;
-            case "decimal-signed" : 
-                this.promptDivTextNode.textContent = this.displayed_num_string + " = ";
-                break;
-            case "hexadecimal" : 
-                this.promptDivTextNode.textContent = "0x" + this.displayed_num_string + " = ";
-                break;           
-        }
+        // switch(this.menuNode1.value) {
+        //     case "binary" : 
+        //         this.promptDivTextNode.textContent = "0b" + this.displayed_num_string + " = ";
+        //         break;
+        //     case "decimal-unsigned" : 
+        //         this.promptDivTextNode.textContent = this.displayed_num_string + " = ";
+        //         break;
+        //     case "decimal-signed" : 
+        //         this.promptDivTextNode.textContent = this.displayed_num_string + " = ";
+        //         break;
+        //     case "hexadecimal" : 
+        //         this.promptDivTextNode.textContent = "0x" + this.displayed_num_string + " = ";
+        //         break;           
+        // }
 
         // // the placeholder tells what the desired input should be like
         // var placeholder;
@@ -366,19 +329,24 @@ export default class VO extends RunestoneBase {
     //     }
     // }
     
-    // check if the answer is correct
-    checkCurrentAnswer() {
-        // the answer is correct if it is the same as the string this.target_num_string
-        var input_value = this.inputNode.value.toLowerCase();
-        if ( input_value === "" ) {
-            this.feedback_msg = ($.i18n("msg_no_answer"));
+    checkThisAnswer(i, j, answerList) {
+        var isYes = $("#" + "Yes" + i + this.shorthandList[j]).is(":checked");
+        var isNo = $("#" + "No" + i + this.shorthandList[j]).is(":checked");
+        try {
+            if (1) { // if pf selection is incorrect
+                console.log("if pf selection is incorrect");
+            }
+            if (1) { // if cm selection is incorrect
+                console.log("if cm selection is incorrect");
+            }
+            if (1) { // if db selection is incorrect
+                console.log("if db selection is incorrect");
+            }
+        }
+        catch {
+            this.feedBackWrongAnswer = $.i18n("msg_VO_incomplete_answer");
             this.correct = false;
-        } else if ( input_value != this.target_num_string ) {
-            this.feedback_msg = ($.i18n("msg_VO_incorrect"));
-            this.correct = false;            
-        } else {
-            this.feedback_msg = ($.i18n("msg_VO_correct"));
-            this.correct = true;
+            console.log(error);
         }
     }
 
@@ -391,7 +359,7 @@ export default class VO extends RunestoneBase {
             timestamp: new Date(),
         });
         let data = {
-            event: "numconv",
+            event: "vo",
             act: answer || "",
             answer: answer || "",
             correct: this.correct ? "T" : "F",
@@ -460,11 +428,10 @@ $(document).on("runestone:login-complete", function () {
             try {
                 VOList[this.id] = new VO(opts);
             } catch (err) {
-                // console.log(
-                //     `Error rendering Virtual Memory Operations Problem ${this.id}
-                //      Details: ${err}`
-                // );
-                alert(err.line);
+                console.log(
+                    `Error rendering Virtual Memory Operations Problem ${this.id}
+                     Details: ${err}`
+                );
             }
         }
     });
