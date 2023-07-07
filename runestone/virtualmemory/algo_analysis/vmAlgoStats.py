@@ -47,6 +47,10 @@ class vmAlgo:
         self.address_variety = None
         
         self.range_frames = None
+        
+        self.currentVmTable = []
+        for i in range(self.num_pages):
+            self.currentVmTable.append([0, ])
     
     # print out all info in current test run
     def __str__(self):
@@ -59,107 +63,63 @@ class vmAlgo:
         toString += ("Indices coverage" + str(self.indices_coverage) + "\n")
         toString += ("Number of conflict miss is " + str(self.conflict_miss) + "\n")
         toString += ("Number of non conflict miss is " + str(self.cold_start_miss) + "\n")
-        return toString
-    
-    
-    # keep track of hit/miss type and a hit/miss list
-    def SA_updateAll(self):
-        self.conflict_miss = 0
-        self.non_conflict_miss = 0
-        self.lruFlips = 0
-        self.hit_miss_list = []
-
-        # initialize an empty cache
-        curr_cache_entries = []
-        for i in range(self.num_refs):
-            curr_cache_entries.append([0, [0, ""], [0, ""]])
-
-        # fill in the cache with our list of addresses
-        for i in range(self.num_refs):
-            
-            hitFlag = False
-            recentlyUsedLine = 0
-            curr_idx = int(self.addresses[i][1], 2)
-            # the entry is valid and found
-            if (curr_cache_entries[curr_idx][1][0] == 1 and curr_cache_entries[curr_idx][1][1] == self.addresses[i][0]):
-                hitFlag = True
-                # print("hit here")
-                recentlyUsedLine = 0
-            elif (curr_cache_entries[curr_idx][2][0] == 1 and curr_cache_entries[curr_idx][2][1] == self.addresses[i][0]):
-                hitFlag = True
-                # print("hit here")
-                recentlyUsedLine = 1
-            else:
-                hitFlag = False
-                recentlyUsedLine = curr_cache_entries[curr_idx][0]
-                # if valid, we need to overwrite it and it is a conflict miss
-                if curr_cache_entries[curr_idx][recentlyUsedLine + 1][0] == 1:
-                    self.conflict_miss += 1
-                    # print("conflict here")
-                else:
-                    self.cold_start_miss += 1
-                curr_cache_entries[curr_idx][recentlyUsedLine + 1][0] = 1
-                curr_cache_entries[curr_idx][recentlyUsedLine + 1][1] = self.addresses[i][0]
-            if (curr_cache_entries[curr_idx][0] != (1-recentlyUsedLine)):
-                self.lruFlips += 1
-            curr_cache_entries[curr_idx][0] = 1 - recentlyUsedLine
-            self.hit_miss_list.append(hitFlag)
-            # print(curr_cache_entries)
-        self.calculateHitMissRatio()
-        
-        usedLines = 0
-        usedSets = 0
-        for oneSet in curr_cache_entries:
-            currSet = 0
-            if oneSet[1][0] == 1:
-                usedLines += 1
-                currSet = 1
-            if oneSet[2][0] == 1:
-                usedLines += 1
-                currSet = 1
-            usedSets += currSet
-        self.validPerUsed = usedLines/usedSets
-        self.indices_coverage = usedSets/self.num_rows
-        
-        self.calculateAddressVariety()
-                    
-        
-                
+        return toString        
                 
 
     # fill in the cache with the list of addresses, update hit_miss_list and record miss type step-wise
-    def updateHitMissList_missType(self):
-        self.conflict_miss = 0
-        self.cold_start_miss = 0
-        self.hit_miss_list = []
-        
-        curr_tagIndex_table = [] # represent current cache status
-        for i in range(self.num_rows): # init cache as empty
-            curr_tagIndex_table.append([0, ""])
-        
-        # fill in the cache with the list of addresses, update hit_miss_list and record miss type step-wise
-        for i in range(self.num_refs):
-            valid_tagIndex_list = []
-            for j in range(self.num_rows): # collect all current valid tagIndices
-                if (curr_tagIndex_table[j][0] == 1):
-                    valid_tagIndex_list.append(curr_tagIndex_table[j][1] + toBinary(j, self.index_bits))
-            # if current tag_index combination is not valid, record it as a miss
-            if (self.addresses[i][0] + self.addresses[i][1]) not in valid_tagIndex_list:
-                self.hit_miss_list.append(False)
-                curr_tagIndex_table[int(self.addresses[i][1],2)][1] = self.addresses[i][0]
-                # if this tag_index combination index into a valid entry, record it as a conflict miss
-                if (curr_tagIndex_table[int(self.addresses[i][1], 2)][0] == 1):
-                    self.conflict_miss += 1
-                # otherwise, record it as a cold start miss
-                else:
-                    self.cold_start_miss += 1
-                    curr_tagIndex_table[int(self.addresses[i][1], 2)][0] = 1
-            #otherwise, record it as a hit
-            else:
-                self.hit_miss_list.append(True)
-        
-        self.calculateHitMissRatio()
+    def updateHitPageFaultList_missType(self):
+        for currPage in self.addresses:
+            currPage_binary = toBinary(currPage, self.index_bits)
+            currFrame, evictedPage, curr_hm = self.replacementFIFO(currPage)
+
+            if (evictedPage != -1):
+                evictedPageIndex = this.getRealRowIndex( evictedPage )
+                this.currentVmTable[evictedPageIndex][0] = 0;
+                this.currentVmTable[evictedPageIndex][1] = 0;
+                this.currentVmTable[evictedPageIndex][2] = "";
+            }
+        this.currentVmTable[currPageIndex][0] = 1;
+        this.currentVmTable[currPageIndex][1] = curr_dirty;
+        this.currentVmTable[currPageIndex][2] = currPage_str;
+
+        // [address, evicted# (int or null), line# (int), valid bit (int 0/1), dirty bit (int 0/1), frame number (int)]
+        const currAnswer = [currPage_binary + this.generateOffset(), evictedPage, currPage, 1, curr_dirty, currFrame];
+        this.answer_list.push(currAnswer);
+        this.hit_miss_list.push(curr_hm);
+        this.read_write_list.push(curr_rw);
     
+    def findPage(self, currPage) {
+        for (let i = 0; i < this.replacementStruct.length; i++) {
+            if (currPage == this.replacementStruct[i][1]) {
+                return i;
+            }
+        }
+        return -1;
+    }
+    
+    def replacementFIFO(self, currPage) {
+        idx = this.findPage(currPage);
+        let ret;
+        if (idx == -1) {
+            if (this.replacementStruct.length < this.numFrames) {
+                this.replacementStruct.push([this.replacementStruct.length, currPage]);
+                this.invalid.remove(this.binary2decimal(currPage));
+                ret = [this.replacementStruct.length - 1, -1, false];
+            } else {
+                let curr = this.replacementStruct.shift();
+                let currFrame = curr[0];
+                let evictedPage = curr[1];
+                this.invalid.add(this.binary2decimal(evictedPage));
+                this.invalid.remove(this.binary2decimal(currPage));
+                this.replacementStruct.push([currFrame, currPage]);
+                ret = [currFrame, evictedPage, false];
+            }   
+        } else {
+            ret = [this.replacementStruct[idx][0], -1, true];
+        }
+        // console.log(this.replacementStruct);
+        return ret;
+    }
     '''
     calculate the hit miss ratio 
     by dividing the number of hit over the total times of accessing the cache
