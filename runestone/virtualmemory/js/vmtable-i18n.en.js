@@ -1,5 +1,10 @@
 $.i18n().load({
     en: {
+        msg_vmtable_correct: "Correct. Good job!",
+        msg_vmtable_generate_another: "Ask me another",
+        msg_vmtable_check_me: "Check answer",
+        msg_vmtable_redo: "Redo exercise",
+        msg_vmtable_incorrect: "Emm...please think more about it?",
         msg_vmtable_completed: "Congratulations! You've completed the virtual memory table exercise!",
         msg_vmtable_display_help: "Show Help",
         msg_vmtable_hide_help: "Hide Help",

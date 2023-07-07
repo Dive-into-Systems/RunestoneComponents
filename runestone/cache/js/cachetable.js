@@ -79,6 +79,9 @@ export default class cachetable extends RunestoneBase {
         this.initValidRate = 0.3;
         this.debug = false;
 
+        this.redo = true;
+        this.generateAnother = true;
+
         this.fixed = false;
         this.cacheTableInit = null;
         this.referenceList = null;
@@ -118,6 +121,13 @@ export default class cachetable extends RunestoneBase {
             if (currentOptions["debug"] != undefined) {
                 this.debug = eval(currentOptions["debug"]);
             }
+            if (currentOptions["redo"] != undefined) {
+                this.redo = eval(currentOptions["redo"]);
+            }
+            if (currentOptions["generate-another"] != undefined) {
+                this.generateAnother = eval(currentOptions["generate-another"]);
+            }
+
             if (currentOptions["algorithm"] != undefined) {
                 this.algorithm = currentOptions["algorithm"];
             }
@@ -200,9 +210,16 @@ export default class cachetable extends RunestoneBase {
         //         "<div>Click 'check me' to check your response. Click 'Generate Another' to generate another exercise.</div>";
         // }
         this.helpStatement.innerHTML +=
-            "<div>Click 'Check answer' to check your response. </div>" + 
-            "<div>Click 'Redo Exercise' to redo the exercise.</div>" +
-            "<div>Click 'Generate another' to generate another exercise.</div>";
+            "<div>Click 'Check answer' to check your response. </div>";
+        if ( this.redo ) {
+            this.helpStatement.innerHTML +=
+                "<div>Click 'Redo Exercise' to redo the exercise.</div>";
+        }
+        if ( this.generateAnother ) {
+            this.helpStatement.innerHTML += 
+                "<div>Click 'Generate another' to generate another exercise.</div>";
+        }
+            
         this.helpStatement.style.visibility = "hidden";
         // create the button for display/hide help
         this.helpButton = document.createElement("button");
@@ -230,7 +247,7 @@ export default class cachetable extends RunestoneBase {
         this.tableInfo = document.createElement("table");
         this.tableInfo.innerHTML = 
         "<thead>" +
-        "    <tr><td>Cache Table Info</td></tr>" +
+        "    <tr><th>Cache Table Info</th></tr>" +
         "</thead>" +
         "<tr>" + 
         "   <td>" + this.cacheOrg + "</td>" +
@@ -864,8 +881,12 @@ export default class cachetable extends RunestoneBase {
         );
 
         // put all buttons together
-        this.buttonDiv.appendChild(this.redoButton);
-        this.buttonDiv.appendChild(this.generateButton);
+        if ( this.redo ) {
+            this.buttonDiv.appendChild(this.redoButton);
+        }
+        if ( this.generateAnother ) {
+            this.buttonDiv.appendChild(this.generateButton);
+        }
         this.buttonDiv.appendChild(this.submitButton);
         this.buttonDiv.setAttribute("class", "aligned-tables");
         this.containerDiv.appendChild(document.createElement("br"));

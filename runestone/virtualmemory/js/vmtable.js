@@ -65,7 +65,7 @@ export default class vmtable extends RunestoneBase {
     setDefaultParams() {
         this.numRefs = 8;
         this.numBits = 8;
-        this.offsetBits = 3;
+        this.offsetBits = 4;
         this.blockSize = 1 << this.offsetBits;
         // this.indexBits = 2;
         // this.numRows = 1 << this.indexBits;
@@ -81,8 +81,10 @@ export default class vmtable extends RunestoneBase {
         this.minIndex = null;
 
         this.replacement = algo_FIFO;
-        
         this.fixed = false;
+
+        this.redo = false;
+        this.generateAnother = true;
         // this.cacheTableInit = null;
         // this.referenceList = null;
 
@@ -90,14 +92,6 @@ export default class vmtable extends RunestoneBase {
         this.hit_incr = 1/3;
         this.chance_conf = 0.5;
         this.conf_incr = 0.25
-    }
-
-    generateRandomIndex() {
-        return Math.floor( Math.random() * this.numDisplayedRows ) + this.minIndex;
-    }
-
-    generateRandomOffset() {
-        return this.generateAddress(this.offsetBits);
     }
 
     // load customized parameters
@@ -159,6 +153,7 @@ export default class vmtable extends RunestoneBase {
         this.promptDiv = document.createElement("div");
         this.promptDiv.setAttribute("class", "aligned-tables");
         this.createTableInfo();
+        this.createRamTable();
         this.createDisplayedTable();
         this.containerDiv.appendChild(this.promptDiv);
         this.containerDiv.appendChild(document.createElement("br"));
@@ -189,51 +184,44 @@ export default class vmtable extends RunestoneBase {
     
     // create the div with detailed help
     createHelpStatement() {
-        // this.helpDiv = document.createElement("div");
-        // this.helpStatement = document.createElement("div");
-        // if ( this.cacheOrg == directMapped ) {
-        //     this.helpStatement.innerHTML = 
-        //         "<div>'H' stands for hit, and 'M' stands for miss. You should choose one from them. </div>" +
-        //         "<div>Index should be a decimal number. 'V' stands for Valid Bit. </div> " +
-        //         "<div>'D' stands for Dirty Bit. Tag should be a binary string. </div>";
-        // } else {
-        //     this.helpStatement.innerHTML = 
-        //         "<div>'H' stands for hit, and 'M' stands for miss. You should choose one from them. </div>" +
-        //         "<div>Index should be a decimal number. 'V' stands for Valid Bit. </div>" +
-        //         "<div>'D' stands for Dirty Bit. Tag should be a binary string. </div>" + 
-        //         "<div>'LRU' stands for Least Recent Used Bit. LRU=0 means the left line is the least recent used line, and vice versa. </div>";
-        // }
-        // // if ( this.hasSeed) {
-        // //     this.helpStatement.innerHTML += 
-        // //         "<div>Click 'check me' to check your response. Click 'Redo the exercise' to reset and redo the exercise.</div>";
-        // // } else {
-        // //     this.helpStatement.innerHTML += 
-        // //         "<div>Click 'check me' to check your response. Click 'Generate Another' to generate another exercise.</div>";
-        // // }
-        // this.helpStatement.innerHTML +=
-        //     "<div>Click 'Check answer' to check your response. </div>" + 
-        //     "<div>Click 'Redo Exercise' to redo the exercise.</div>" +
-        //     "<div>Click 'Generate another' to generate another exercise.</div>";
-        // this.helpStatement.style.visibility = "hidden";
-        // // create the button for display/hide help
-        // this.helpButton = document.createElement("button");
-        // this.helpButton.textContent = $.i18n("msg_vmtable_display_help");
-        // this.helpButton.addEventListener(            
-        //     "click",
-        //     function() {
-        //         if (this.helpStatement.style.visibility == "hidden") {
-        //             this.helpStatement.style.visibility = "visible";
-        //             this.helpDiv.appendChild(this.helpStatement);
-        //             this.helpButton.textContent = $.i18n("msg_vmtable_hide_help");
-        //         } else {
-        //             this.helpStatement.style.visibility = "hidden";
-        //             this.helpDiv.removeChild(this.helpStatement);
-        //             this.helpButton.textContent = $.i18n("msg_vmtable_display_help");
-        //         }
-        //     }.bind(this),
-        // false); 
-        // this.helpDiv.appendChild(this.helpButton);
-        // this.containerDiv.appendChild(this.helpDiv);
+        this.helpDiv = document.createElement("div");
+        this.helpStatement = document.createElement("div");
+        this.helpStatement.innerHTML = 
+            "<div>'H' stands for hit, and 'PF' stands for page fault. You should choose one from them. </div>" +
+            "<div>Page # should be a decimal number. 'V' stands for Valid Bit. </div>" +
+            "<div>'D' stands for Dirty Bit. Frame should be a decimal number. </div>" + 
+            "<div>If there will be an evicted page, select its page number and enter the valid bit and dirty bit of the evicted page. </div>" +
+            "<div>If there won't be any page evicted, select the \"NA\" option. </div>";
+        this.helpStatement.innerHTML +=
+            "<div>Click 'Check answer' to check your response. </div>";
+        if ( this.redo ) {
+            this.helpStatement.innerHTML +=
+                "<div>Click 'Redo Exercise' to redo the exercise.</div>";
+        }
+        if ( this.generateAnother ) {
+            this.helpStatement.innerHTML += 
+                "<div>Click 'Generate another' to generate another exercise.</div>";
+        }
+        this.helpStatement.style.visibility = "hidden";
+        // create the button for display/hide help
+        this.helpButton = document.createElement("button");
+        this.helpButton.textContent = $.i18n("msg_vmtable_display_help");
+        this.helpButton.addEventListener(            
+            "click",
+            function() {
+                if (this.helpStatement.style.visibility == "hidden") {
+                    this.helpStatement.style.visibility = "visible";
+                    this.helpDiv.appendChild(this.helpStatement);
+                    this.helpButton.textContent = $.i18n("msg_vmtable_hide_help");
+                } else {
+                    this.helpStatement.style.visibility = "hidden";
+                    this.helpDiv.removeChild(this.helpStatement);
+                    this.helpButton.textContent = $.i18n("msg_vmtable_display_help");
+                }
+            }.bind(this),
+        false); 
+        this.helpDiv.appendChild(this.helpButton);
+        this.containerDiv.appendChild(this.helpDiv);
     }
 
     // create the table that displays the necessary information for the cache exercise
@@ -241,7 +229,7 @@ export default class vmtable extends RunestoneBase {
         this.tableInfo = document.createElement("table");
         this.tableInfo.innerHTML = 
         "<thead>" +
-        "    <tr><td>Virtual Memory Info</td></tr>" +
+        "    <tr><th>Virtual Memory Info</th></tr>" +
         "</thead>" +
         "<tr>" +
         "   <td>" + this.numBits.toString() + "-bit Virtual Address</td>" + 
@@ -258,6 +246,25 @@ export default class vmtable extends RunestoneBase {
         
         this.promptDiv.appendChild(this.tableInfo);
     }
+
+    createRamTable() {
+        this.ramTable = document.createElement("table");
+        this.ramTableHead = document.createElement("thead");
+        this.ramTableHead.innerHTML = 
+        "<tr><th colspan=\"3\">RAM Content</th></tr>" +
+        "<tr>" +
+        "    <th>Frame</th>" +
+        "    <th>V</th>" +
+        "    <th>Page</th>" +
+        "</tr>";
+        
+        this.ramTable.appendChild(this.ramTableHead);
+
+        this.ramTableBody = document.createElement("tbody");
+        this.ramTable.appendChild(this.ramTableBody);
+        this.promptDiv.appendChild(this.ramTable);
+    }
+
     // height: auto; display:flex; flex-direction: row; justify-content:space-between
     // create the cache table to display
     createDisplayedTable() {
@@ -265,35 +272,18 @@ export default class vmtable extends RunestoneBase {
         // create the head row for the cache table
         this.displayedTableHead = document.createElement("thead");
 
-
         // if (this.cacheOrg === directMapped) {
         this.displayedTableHead.innerHTML = 
         "<tr>" +
-        "   <th colspan=\"4\">Virtual Memory Content</th>" +
+        "   <th colspan=\"4\">Page Table</th>" +
         "</tr>" +
         "<tr>" +
-        "    <th>Index</th>" +
+        "    <th>Page</th>" +
         "    <th>V</th>" +
         "    <th>D</th>" +
         "    <th>Frame</th>" +
         "</tr>";
-   
-        // } else { // if it is 2-way set associative
-        //     this.displayedTableHead.innerHTML = 
-        //     "<tr>" +
-        //     "   <th colspan=\"8\">Cache Table Content</th>" +
-        //     "</tr>" +
-        //     "<tr>" +
-        //     "    <th>Index</th>" +
-        //     "    <th>LRU</th>" +
-        //     "    <th>V</th>" +
-        //     "    <th>D</th>" +
-        //     "    <th>Tag</th>" +
-        //     "    <th>V</th>" +
-        //     "    <th>D</th>" +
-        //     "    <th>Tag</th>" +
-        //     "</tr>";
-        // }
+
         this.displayedTable.appendChild(this.displayedTableHead);  
         // create the body for the cache table
         this.displayedTableBody = document.createElement("tbody");
@@ -331,8 +321,7 @@ export default class vmtable extends RunestoneBase {
         "<tr>" +
         "<th title=\"Hit?\" >H</th>"+
         "<th title=\"Page Fault?\" >PF</th>"+
-        "<th title=\"Evicted Line\" >Evicted?</th>"+
-        "<th title=\"Index\" >Index</th>"+
+        "<th title=\"Page Number\" >Page #</th>"+
         "<th title=\"Valid Bit\" >V</th>"+
         "<th title=\"Dirty Bit\" >D</th>"+
         "<th title=\"Frame Number\" >Frame</th>"+
@@ -394,6 +383,20 @@ export default class vmtable extends RunestoneBase {
         }
     }
 
+    initRamTableBody() {
+        this.ramTableBody.innerHTML = "";
+        var tableRow;
+        for ( var i = 0 ; i < this.numFrames ; i ++ ) {
+            tableRow = document.createElement("tr");
+            tableRow.innerHTML = 
+            "<td>"+ i.toString() +"</td>" + 
+            "<td>0</td>" +
+            "<td></td>";
+            tableRow.style.backgroundColor = "white";
+            this.ramTableBody.appendChild(tableRow);
+        }
+    }
+
     getDisplayedRowIndex(index) {
         return (index + this.minIndex);
     }
@@ -449,15 +452,11 @@ export default class vmtable extends RunestoneBase {
         const changed_line_index = this.getRealRowIndex( this.answer_list[this.curr_ref-1][2]);
         const evicted_line_index = this.getRealRowIndex( this.answer_list[this.curr_ref-1][1]);
         for (let i = 0; i < this.numDisplayedRows; i++) {
-            if ( i === changed_line_index ) {
+            if ( i == changed_line_index || i == evicted_line_index ) {
                 // only update the changed line
                 this.updateDisplayedTableBodyRow(i);
                 this.highlightChanges(i, false);
             } 
-            if ( this.getDisplayedRowIndex(i) === evicted_line_index ) {
-                this.updateDisplayedTableBodyRow(i);
-                this.highlightChanges(i, true);
-            }
         }
     }
 
@@ -473,7 +472,7 @@ export default class vmtable extends RunestoneBase {
 
     setCellsToDefault() {
         for (var row of this.displayedTableBody.rows) {
-            for (var cell of row.cells) {
+            for (let cell of row.cells) {
                 // console.log(cell);
                 cell.style.backgroundColor = "white";
             }
@@ -481,7 +480,7 @@ export default class vmtable extends RunestoneBase {
     }
 
     highlightChanges(index, isEvicted) {
-        this.displayedTableBody.rows[index].cells[0].style.backgroundColor = "yellow";
+        // this.displayedTableBody.rows[index].cells[0].style.backgroundColor = "yellow";
         if ( !isEvicted ) {
             // highlight the valid bit, dirty bit, frame number
             this.displayedTableBody.rows[index].cells[1].style.backgroundColor = "yellow";
@@ -496,29 +495,33 @@ export default class vmtable extends RunestoneBase {
     addReferenceTableNewRow() {
         // create new row element
         let referenceTableNewRow = document.createElement("tr");
-        referenceTableNewRow.setAttribute("rowspan", "2");
         // get the current reference number
         const curr_ref = this.curr_ref; 
 
         // the first column is the reference number
         var cellCurrRef = document.createElement("td");
         cellCurrRef.textContent = curr_ref.toString();
+        cellCurrRef.setAttribute("rowspan", "2");
         referenceTableNewRow.appendChild(cellCurrRef);
 
         // the second column is the address
         const curr_address = this.answer_list[curr_ref][0];
         var cellCurrAddr = document.createElement("td");
         cellCurrAddr.textContent = curr_address;
+        cellCurrAddr.setAttribute("rowspan", "2");
         referenceTableNewRow.appendChild(cellCurrAddr);
 
         // the third column is RW
         const curr_RW = this.read_write_list[curr_ref] ? "W" : "R";
         var cellCurrRW = document.createElement("td");
         cellCurrRW.textContent = curr_RW;
+        cellCurrRW.setAttribute("rowspan", "2");
         referenceTableNewRow.appendChild(cellCurrRW);
 
         this.referenceTableBody.appendChild(referenceTableNewRow);
-
+        
+        let referenceTablePlaceHolder = document.createElement("tr");
+        this.referenceTableBody.appendChild(referenceTablePlaceHolder);
     }
 
     // add a new row to the answer table
@@ -656,6 +659,9 @@ export default class vmtable extends RunestoneBase {
         cellInputDirty2.appendChild(cellInputDirtyBox2);
         answerTableNewRow2.appendChild(cellInputDirty2);
 
+        this.disableOneInputField(cellInputValidBox2);
+        this.disableOneInputField(cellInputDirtyBox2);
+
         this.answerTableBody.appendChild(answerTableNewRow1);
         this.answerTableBody.appendChild(answerTableNewRow2);
 
@@ -672,7 +678,7 @@ export default class vmtable extends RunestoneBase {
                 this.submitResponse();
             }
         }.bind(this), false);
-        this.changeSecondInputLine();
+        // this.changeSecondInputLine();
     }
     
     changeSecondInputLine() {
@@ -682,7 +688,7 @@ export default class vmtable extends RunestoneBase {
         const dirtyField2 = 
             document.querySelector('input[name="Dirty2' + curr_ref_str + '"]');
         const currentOption =
-            document.querySelector('select[name="Evicted' + curr_ref_str + '"]');
+            document.querySelector('select[name="Evicted' + curr_ref_str + '"]').value;
         if ( currentOption.toString() == "-1" ) {
             this.disableOneInputField(validField2);
             this.disableOneInputField(dirtyField2);
@@ -745,33 +751,37 @@ export default class vmtable extends RunestoneBase {
             false
         );
 
-        // this.redoButton = document.createElement("button");
-        // this.redoButton.textContent = $.i18n("msg_vmtable_redo");
-        // $(this.redoButton).attr({
-        //     class: "btn btn-success",
-        //     name: "Redo Exercise",
-        //     type: "button",
-        // });
-        // this.redoButton.addEventListener(
-        //     "click",
-        //     function () {
-        //         this.resetGeneration();
-        //         this.displayNecessaryFields();
-        //         this.hidefeedback();
-        //     }.bind(this),
-        //     false
-        // );
+        this.redoButton = document.createElement("button");
+        this.redoButton.textContent = $.i18n("msg_vmtable_redo");
+        $(this.redoButton).attr({
+            class: "btn btn-success",
+            name: "Redo Exercise",
+            type: "button",
+        });
+        this.redoButton.addEventListener(
+            "click",
+            function () {
+                // this.resetGeneration();
+                // this.displayNecessaryFields();
+                // this.hidefeedback();
+            }.bind(this),
+            false
+        );
 
         // put all buttons together
-        // this.buttonDiv.appendChild(this.redoButton);
-        this.buttonDiv.appendChild(this.generateButton);
+        if ( this.redo ) {
+            this.buttonDiv.appendChild(this.redoButton);
+        }
+        if ( this.generateAnother ) {
+            this.buttonDiv.appendChild(this.generateButton);
+        }
         this.buttonDiv.appendChild(this.submitButton);
         this.buttonDiv.setAttribute("class", "aligned-tables");
         this.containerDiv.appendChild(document.createElement("br"));
         this.containerDiv.appendChild(this.buttonDiv);
 
-        // this.createHelpStatement();
-        // this.helpButton.click();
+        this.createHelpStatement();
+        this.helpButton.click();
     }
 
     // submit the response
@@ -782,6 +792,7 @@ export default class vmtable extends RunestoneBase {
                 this.curr_ref += 1;
                 this.updateCurrentTagIndexTable();
                 this.updateDisplayedTableBody();
+                this.updateRamTableBody();
                 if (this.curr_ref < this.numRefs) {
                     // call next
                     this.generateAnswerNext();
@@ -812,6 +823,7 @@ export default class vmtable extends RunestoneBase {
     // generate another cache table exercise
     resetGeneration() {
         this.generateAnswerParams();
+        this.initRamTableBody();
         this.initDisplayedTableBody();
         this.initReferenceTableBody();
         this.initAnswerTableBody();
@@ -827,7 +839,7 @@ export default class vmtable extends RunestoneBase {
         // // this.readInitLines();
         // this.updateDisplayedTableBodyInit();
         this.updateReferenceTableAndAnswerTable();
-
+        // this.changeSecondInputLine();
         // this.storeCurrentGeneration();
     }
 
@@ -896,12 +908,24 @@ export default class vmtable extends RunestoneBase {
     generateAnswerInit() {
         
         this.genBoostInit();
+        this.updateDisplayedTableBodyInit();
+        this.updateRamTableBody();
     }
 
     updateDisplayedTableBodyInit() {
         this.setCellsToDefault();
-        for (let i = 0; i < this.numRows; i++) {
+        for (let i = 0; i < this.numDisplayedRows; i++) {
             this.updateDisplayedTableBodyRow(i);
+        }
+    }
+
+    updateRamTableBody() {
+        this.initRamTableBody();
+        for (let i = 0; i < this.replacementStruct.length; i++) {
+            const currFrame = this.replacementStruct[i][0];
+            const currPage = this.replacementStruct[i][1];
+            this.ramTableBody.rows[ currFrame ].cells[ 1 ].textContent = 1;
+            this.ramTableBody.rows[ currFrame ].cells[ 2 ].textContent = currPage;
         }
     }
 
@@ -933,7 +957,7 @@ export default class vmtable extends RunestoneBase {
         this.replacementStruct = [];
 
         this.invalid = new Set();
-        for (let i = this.minIndex; i < this.minIndex + this.numDisplayedRows - 1; i++) {
+        for (let i = this.minIndex; i < this.minIndex + this.numDisplayedRows; i++) {
             this.invalid.add(i);
         }
         // we would use implicit parameters: num_ref, lines_in_set, offsetBits, tagBits, chance_hit, hit_incr, chance_conf, conf_incr
@@ -1017,7 +1041,6 @@ export default class vmtable extends RunestoneBase {
     generateAnswerNext() {
         const currPage = this.genBoostNext();
 
-        const currPage_str = currPage.toString();
         const currPage_binary = this.toBinary(currPage, this.indexBits);
         const curr = this.replacementFIFO(currPage);
         const currFrame = curr[0];
@@ -1026,6 +1049,8 @@ export default class vmtable extends RunestoneBase {
         const curr_rw = (Math.random() < 0.5);
         const currPageIndex = this.getRealRowIndex(currPage);
 
+        console.log(this.invalid);
+        console.log(currPageIndex);
         const curr_dirty = this.calculateDirtyBit(this.currentVmTable[currPageIndex][0], 
             curr_rw, curr_hm, this.currentVmTable[currPageIndex][1]);
 
@@ -1038,7 +1063,9 @@ export default class vmtable extends RunestoneBase {
         }
         this.currentVmTable[currPageIndex][0] = 1;
         this.currentVmTable[currPageIndex][1] = curr_dirty;
-        this.currentVmTable[currPageIndex][2] = currPage_str;
+        this.currentVmTable[currPageIndex][2] = currFrame;
+
+        console.log(this.currentVmTable);
 
         // [address, evicted# (int or null), line# (int), valid bit (int 0/1), dirty bit (int 0/1), frame number (int)]
         const currAnswer = [currPage_binary + this.generateOffset(), evictedPage, currPage, 1, curr_dirty, currFrame];
@@ -1157,30 +1184,44 @@ export default class vmtable extends RunestoneBase {
         // this.hit_miss_list.push(curr_hm);
     }
 
-    genRandomNext() {
-        return this.generateRandomIndex();
-    }
-
     genBoostInit() {
         this.curr_ref = 0;
-        this.hit_chance_base = 1/4;
-        this.hit_chance_boost = 1/4;
-        this.curr_hit_chance = this.hit_chance_base;
+        this.pf_chance_base = 1/2;
+        this.pf_chance_boost = 1/4;
+        this.curr_pf_chance = this.pf_chance_base;
+
+        for (let i = 0; i < this.numFrames; i++) {
+            if (Math.random() < 0.5) {
+                continue;
+            }
+            const items = Array.from(this.invalid);
+            const currPage = items[Math.floor(Math.random() * items.length)];
+            const currFrame = this.replacementFIFO(currPage)[0];
+
+            const currPageIndex = this.getRealRowIndex(currPage);
+            const curr_dirty = Math.random() > 0.5 ? 1 : 0
+            
+            this.currentVmTable[currPageIndex][0] = 1;
+            this.currentVmTable[currPageIndex][1] = curr_dirty;
+            this.currentVmTable[currPageIndex][2] = currFrame;
+        }
+
+        console.log(this.replacementStruct);
     }
 
     genBoostNext() {
         if (this.curr_ref == 0) {
             const currIndex =  this.generateRandomIndex();
-            this.curr_hit_chance += this.hit_chance_boost;
+            this.curr_pf_chance = this.pf_chance_base;
             return currIndex;
         } else {
-            if (Math.random() < this.hit_chance_base) {
-                this.curr_hit_chance = this.hit_chance_base;
-                return this.replacementStruct[Math.floor(Math.random() * this.replacementStruct.length)][1];
-            } else {
-                this.curr_hit_chance += this.hit_chance_boost;
+            if (Math.random() < this.curr_pf_chance) {
+                this.curr_pf_chance = this.pf_chance_base;
                 const items = Array.from(this.invalid);
-                return this.toBinary(items[Math.floor(Math.random() * items.length)], this.indexBits);
+                return items[Math.floor(Math.random() * items.length)];
+            } else {
+                this.curr_pf_chance += this.pf_chance_boost;
+                return this.replacementStruct[Math.floor(Math.random() * this.replacementStruct.length)][1];
             }
         }
     }
@@ -1206,14 +1247,14 @@ export default class vmtable extends RunestoneBase {
         if (idx == -1) {
             if (this.replacementStruct.length < this.numFrames) {
                 this.replacementStruct.push([this.replacementStruct.length, currPage]);
-                this.invalid.delete(this.binary2decimal(currPage));
+                this.invalid.delete(currPage);
                 ret = [this.replacementStruct.length - 1, -1, false];
             } else {
                 let curr = this.replacementStruct.shift();
                 let currFrame = curr[0];
                 let evictedPage = curr[1];
-                this.invalid.add(this.binary2decimal(evictedPage));
-                this.invalid.delete(this.binary2decimal(currPage));
+                this.invalid.add(evictedPage);
+                this.invalid.delete(currPage);
                 this.replacementStruct.push([currFrame, currPage]);
                 ret = [currFrame, evictedPage, false];
             }   
@@ -1252,6 +1293,18 @@ export default class vmtable extends RunestoneBase {
     === Helper functions             ===
     ===================================*/
     
+
+    generateRandomIndex() {
+        return Math.floor( Math.random() * this.numDisplayedRows ) + this.minIndex;
+    }
+
+    generateRandomOffset() {
+        return this.generateAddress(this.offsetBits);
+    }
+
+    genRandomNext() {
+        return this.generateRandomIndex();
+    }
     // calculate the dirty bit
     // isValid:     bool
     // isWrite:     bool
