@@ -1194,6 +1194,11 @@ export default class vmtable extends RunestoneBase {
         return -1;
     }
 
+    replacementReference(currPage) {
+        let idx = this.findPage(currPage);
+        let ret;
+    }
+
     // returns [frame to put in, page to evict, hit or miss]
     replacementFIFO(currPage) {
         let idx = this.findPage(currPage);
@@ -1201,14 +1206,14 @@ export default class vmtable extends RunestoneBase {
         if (idx == -1) {
             if (this.replacementStruct.length < this.numFrames) {
                 this.replacementStruct.push([this.replacementStruct.length, currPage]);
-                this.invalid.remove(this.binary2decimal(currPage));
+                this.invalid.delete(this.binary2decimal(currPage));
                 ret = [this.replacementStruct.length - 1, -1, false];
             } else {
                 let curr = this.replacementStruct.shift();
                 let currFrame = curr[0];
                 let evictedPage = curr[1];
                 this.invalid.add(this.binary2decimal(evictedPage));
-                this.invalid.remove(this.binary2decimal(currPage));
+                this.invalid.delete(this.binary2decimal(currPage));
                 this.replacementStruct.push([currFrame, currPage]);
                 ret = [currFrame, evictedPage, false];
             }   
