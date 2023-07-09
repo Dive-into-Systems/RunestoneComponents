@@ -1,23 +1,31 @@
 .selectwidthauto {
-     width:auto !important;
-     display: inline-block !important;
-     margin: 5px;
+    width:auto !important;
+    display: inline-block !important;
+    margin: 5px;
 }
 
 input.input-validation-error {
-    border: 1px solid #e80c4d;
+   border: 1px solid #e80c4d;
 }
 
 input {
-    padding:5px;
-    color:#222;
-    font-family:corbel,sans-serif;
-    font-size: 14px;
-    margin: 10px;
+   padding:5px;
+   color:#222;
+   font-family:corbel,sans-serif;
+   font-size: 14px;
+   margin: 10px;
 }
 
 input[type="radio"] {
-    margin-top: -1px;
-    margin-left: 2px;
-    vertical-align: middle;
+   margin-top: -1px;
+   margin-left: 2px;
+   vertical-align: middle;
+}
+
+.box {
+   margin-bottom: 10px;
+ }
+
+.highlightWrong {
+   accent-color: brown;
 }
