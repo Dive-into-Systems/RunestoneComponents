@@ -50,7 +50,7 @@ class vmAlgo:
         
         self.currentVmTable = []
         for i in range(self.num_pages):
-            self.currentVmTable.append([0, ])
+            self.currentVmTable.append([0, -1])
     
     # print out all info in current test run
     def __str__(self):
@@ -73,20 +73,13 @@ class vmAlgo:
             currFrame, evictedPage, curr_hm = self.replacementFIFO(currPage)
 
             if (evictedPage != -1):
-                evictedPageIndex = this.getRealRowIndex( evictedPage )
-                this.currentVmTable[evictedPageIndex][0] = 0;
-                this.currentVmTable[evictedPageIndex][1] = 0;
-                this.currentVmTable[evictedPageIndex][2] = "";
-            }
-        this.currentVmTable[currPageIndex][0] = 1;
-        this.currentVmTable[currPageIndex][1] = curr_dirty;
-        this.currentVmTable[currPageIndex][2] = currPage_str;
+                self.currentVmTable[evictedPage][0] = 0
+                self.currentVmTable[evictedPage][1] = -1
+        self.currentVmTable[currPage][0] = 1
+        self.currentVmTable[currPage][1] = currFrame
 
-        // [address, evicted# (int or null), line# (int), valid bit (int 0/1), dirty bit (int 0/1), frame number (int)]
-        const currAnswer = [currPage_binary + this.generateOffset(), evictedPage, currPage, 1, curr_dirty, currFrame];
-        this.answer_list.push(currAnswer);
-        this.hit_miss_list.push(curr_hm);
-        this.read_write_list.push(curr_rw);
+        self.hit_miss_list.push(curr_hm);
+
     
     def findPage(self, currPage) {
         for (let i = 0; i < this.replacementStruct.length; i++) {

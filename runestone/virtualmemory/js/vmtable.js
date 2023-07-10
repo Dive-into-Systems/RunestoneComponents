@@ -58,7 +58,7 @@ export default class vmtable extends RunestoneBase {
 
     initParams() {
         this.setDefaultParams();
-        // this.loadParams();
+        this.loadParams();
     }
 
     // set the default parameters
@@ -67,26 +67,23 @@ export default class vmtable extends RunestoneBase {
         this.numBits = 8;
         this.offsetBits = 4;
         this.blockSize = 1 << this.offsetBits;
-        // this.indexBits = 2;
-        // this.numRows = 1 << this.indexBits;
-        // this.tagBits = this.numBits - this.indexBits - this.offsetBits;
-        // this.initValidRate = 0.3;
-        // this.debug = false;
         this.indexBits = this.numBits - this.offsetBits;
         this.numRows = 1 << this.indexBits;
 
         this.numFrames = 4;
-        this.numDisplayedRows = 8;
+        this.numDisplayedPages = 8;
         
         this.minIndex = null;
+        this.fixedMinIndex = false;
 
         this.replacement = algo_FIFO;
         this.fixed = false;
 
         this.redo = false;
         this.generateAnother = true;
-        // this.cacheTableInit = null;
-        // this.referenceList = null;
+
+        this.ramTableInit = null;
+        this.referenceList = null;
 
         this.chance_hit = 1/3;
         this.hit_incr = 1/3;
@@ -97,19 +94,29 @@ export default class vmtable extends RunestoneBase {
     // load customized parameters
     loadParams() {
         try {
-            // const currentOptions = JSON.parse(
-            //     this.scriptSelector(this.origElem).html()
-            // );
-            // if (currentOptions["bits"] != undefined) {
-            //     this.numBits = eval(currentOptions["bits"]);
-            // }
+            const currentOptions = JSON.parse(
+                this.scriptSelector(this.origElem).html()
+            );
+            if (currentOptions["bits"] != undefined) {
+                this.numBits = eval(currentOptions["bits"]);
+            }
             // if (currentOptions["cache-org"] != undefined) {
             //     this.cacheOrg = currentOptions["cache-org"];
             // }
-            // if (currentOptions["offset"] != undefined) {
-            //     this.offsetBits = eval(currentOptions["offset"]);
-            //     this.blockSize = 1 << this.offsetBits;
-            // }            
+            if (currentOptions["offset"] != undefined) {
+                this.offsetBits = eval(currentOptions["offset"]);
+                this.blockSize = 1 << this.offsetBits;
+            }            
+            if (currentOptions["frames"] != undefined) {
+                this.numFrames = eval(currentOptions["frames"]);
+            }            
+            if (currentOptions["displayed-pages"] != undefined) {
+                this.numDisplayedPages = eval(currentOptions["displayed-pages"]);
+            }            
+            if (currentOptions["min-index"] != undefined) {
+                this.fixedMinIndex = true;
+                this.minIndex = eval(currentOptions["min-index"]);
+            }            
             // if (currentOptions["index"] != undefined) {
             //     this.indexBits = eval(currentOptions["index"]);
             //     this.numRows = 1 << this.indexBits;
@@ -126,17 +133,19 @@ export default class vmtable extends RunestoneBase {
             // if (currentOptions["algorithm"] != undefined) {
             //     this.algorithm = currentOptions["algorithm"];
             // }
-            // if (currentOptions["fixed"] != undefined) {
-            //     this.fixed = eval(currentOptions["fixed"]);
-            //     if ( this.fixed ) {
-            //         this.cacheTableInit = currentOptions["init-cache-table"];
-            //         this.referenceList = currentOptions["reference-list"];
-            //         if (this.cacheTableInit == null) {
-            //             this.cacheTableInit = [];
-            //         }
-            //     } 
-            // }
-            // this.tagBits = this.numBits - this.indexBits - this.offsetBits;
+            if (currentOptions["fixed"] != undefined) {
+                this.fixed = eval(currentOptions["fixed"]);
+                if ( this.fixed ) {
+                    this.cacheTableInit = currentOptions["init-cache-table"];
+                    this.referenceList = currentOptions["reference-list"];
+                    if (this.cacheTableInit == null) {
+                        this.cacheTableInit = [];
+                    }
+                } 
+            }
+
+            this.indexBits = this.numBits - this.offsetBits;
+            this.numRows = 1 << this.indexBits;
         } catch (error) {
             // pass
             // console.log(error);
@@ -365,7 +374,7 @@ export default class vmtable extends RunestoneBase {
     initDisplayedTableBody() {
         this.displayedTableBody.innerHTML = "";
         var tableRow;
-        for ( var i = 0 ; i < this.numDisplayedRows ; i ++ ) {
+        for ( var i = 0 ; i < this.numDisplayedPages ; i ++ ) {
             const rowIndex = this.getDisplayedRowIndex(i).toString();
             tableRow = document.createElement("tr");
             tableRow.innerHTML = 
@@ -448,7 +457,7 @@ export default class vmtable extends RunestoneBase {
         this.setCellsToDefault(this.displayedTableBody);
         const changed_line_index = this.getRealRowIndex( this.answer_list[this.curr_ref-1][2]);
         const evicted_line_index = this.getRealRowIndex( this.answer_list[this.curr_ref-1][1]);
-        for (let i = 0; i < this.numDisplayedRows; i++) {
+        for (let i = 0; i < this.numDisplayedPages; i++) {
             if ( i == changed_line_index || i == evicted_line_index ) {
                 // only update the changed line
                 this.updateDisplayedTableBodyRow(i);
@@ -616,7 +625,7 @@ export default class vmtable extends RunestoneBase {
         nullOption.value = "-1";
         nullOption.text = "NA";
         cellEvictedBox.appendChild(nullOption);
-        for ( var i = 0; i < this.numDisplayedRows; i ++ ) {
+        for ( var i = 0; i < this.numDisplayedPages; i ++ ) {
             const rowIndex = this.getDisplayedRowIndex(i);
             var rowOption = document.createElement("option");
             rowOption.value = rowIndex;
@@ -654,6 +663,9 @@ export default class vmtable extends RunestoneBase {
         var cellInputDirty2 = document.createElement("td");
         cellInputDirty2.appendChild(cellInputDirtyBox2);
         answerTableNewRow2.appendChild(cellInputDirty2);
+
+        var cellInputFrame2 = document.createElement("td");
+        answerTableNewRow2.appendChild(cellInputFrame2);
 
         this.disableOneInputField(cellInputValidBox2);
         this.disableOneInputField(cellInputDirtyBox2);
@@ -878,7 +890,7 @@ export default class vmtable extends RunestoneBase {
 
     updateDisplayedTableBodyInit() {
         this.setCellsToDefault(this.displayedTableBody);
-        for (let i = 0; i < this.numDisplayedRows; i++) {
+        for (let i = 0; i < this.numDisplayedPages; i++) {
             this.updateDisplayedTableBodyRow(i);
         }
     }
@@ -931,12 +943,14 @@ export default class vmtable extends RunestoneBase {
 
         this.curr_ref = 0;
 
-        this.minIndex = Math.floor( Math.random() * (this.numRows - this.numDisplayedRows) );
+        if ( !this.fixedMinIndex ) {
+            this.minIndex = Math.floor( Math.random() * (this.numRows - this.numDisplayedPages) );
+        }
         
         this.replacementStruct = [];
 
         this.invalid = new Set();
-        for (let i = this.minIndex; i < this.minIndex + this.numDisplayedRows; i++) {
+        for (let i = this.minIndex; i < this.minIndex + this.numDisplayedPages; i++) {
             this.invalid.add(i);
         }
         // we would use implicit parameters: num_ref, lines_in_set, offsetBits, tagBits, chance_hit, hit_incr, chance_conf, conf_incr
@@ -1104,7 +1118,7 @@ export default class vmtable extends RunestoneBase {
     
 
     generateRandomIndex() {
-        return Math.floor( Math.random() * this.numDisplayedRows ) + this.minIndex;
+        return Math.floor( Math.random() * this.numDisplayedPages ) + this.minIndex;
     }
 
     generateRandomOffset() {
@@ -1254,11 +1268,11 @@ export default class vmtable extends RunestoneBase {
                 const response_valid2 =
                     document.querySelector('input[name="Valid2' + curr_ref_str + '"]').value;
                 if ( "0" != response_valid2 ) {
-                    this.feedbackWrongAnswer = $.i18n("msg_vmtable_wrong_valid");
+                    this.feedbackWrongAnswer = $.i18n("msg_vmtable_wrong_evicted_valid");
                     return;
                 }
                 if ( "0" != response_dirty2 ) {
-                    this.feedbackWrongAnswer = $.i18n("msg_vmtable_wrong_dirty");
+                    this.feedbackWrongAnswer = $.i18n("msg_vmtable_wrong_evicted_dirty");
                     return;
                 }
             } 
