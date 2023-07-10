@@ -8,6 +8,14 @@ input.input-validation-error {
    border: 1px solid #e80c4d;
 }
 
+input {
+   padding:1px;
+   color:#222;
+   font-family:corbel,sans-serif;
+   font-size: 14px;
+   margin: 1px;
+}
+
 .tagclass {
    color: MistyRose;
    background-color: Tomato;
@@ -72,6 +80,7 @@ table, td, tr, th {
 
 th, td {
    height: 20px;
+   text-align: center;
 }
 
 table {

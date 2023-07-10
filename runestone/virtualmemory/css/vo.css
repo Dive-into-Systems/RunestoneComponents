@@ -8,14 +8,6 @@ input.input-validation-error {
    border: 1px solid #e80c4d;
 }
 
-input {
-   padding:5px;
-   color:#222;
-   font-family:corbel,sans-serif;
-   font-size: 14px;
-   margin: 10px;
-}
-
 input[type="radio"] {
    margin-top: -1px;
    margin-left: 2px;
