@@ -1,4 +1,5 @@
 import random
+from collections import deque
 '''
 This function represents values in binary form with certain number of bits (length)
 '''
@@ -10,6 +11,12 @@ def toBinary(num, length):
             leading_zeros += "0"
         toStr = leading_zeros + toStr
     return toStr
+
+def binary2decimal(str):
+    ans = 0
+    for i in str:
+        ans = (ans*2 + int(i))
+    return ans
 
 '''
 '''
@@ -27,27 +34,28 @@ the RandAlgo class keeps track of four dimensions of an address-generating algor
 4. address variety (number of unique addresses over the size of one address list)
 '''
 class vmAlgo:
-    def __init__(self):
+    def __init__(self, name, addresses, indexBits, numPages, numFrames, rangeFrames, startFrame, numRefs):
         
-        self.name = "" # name of algorithm
-        self.addresses = [] # list of generated addresses in one run
-        self.num_refs = None # length of the list of generated addresses in one run
-        self.index_bits = None # number of bits for index
-        self.num_pages = None # number of entries in cache structure
-        self.num_frames = None
+        self.name = name # name of algorithm
+        self.addresses = addresses # list of generated addresses in one run
+        self.num_refs = numRefs # length of the list of generated addresses in one run
+        self.index_bits = indexBits # number of bits for index
+        self.num_pages = numPages # number of entries in cache structure
+        self.num_frames = numFrames
         
         self.hit_miss_list = [] # store hit/miss history
-        self.num_entries = None
-        self.setAssoc = 1
 
-        self.cold_start_miss = 0
-        self.conflict_miss = 0
-        self.hit_miss_ratio = None
+        self.pf_noEvict = None
+        self.pf_evict = None
+        self.hit_count = None
         self.indices_coverage = None
         self.address_variety = None
         
-        self.range_frames = None
+        self.range_frames = rangeFrames
+        self.start_frame = startFrame
         
+        self.invalid = set()
+        self.replacementStruct = deque()
         self.currentVmTable = []
         for i in range(self.num_pages):
             self.currentVmTable.append([0, -1])
@@ -58,61 +66,63 @@ class vmAlgo:
         toString += ("There are in total " + str(len(self.addresses)) + " addresses: \n")
         for i in range(len(self.addresses)):
             toString += (str(self.addresses[i]) + "\n")
-        toString += ("Hit miss ratio " + str(self.hit_miss_ratio) + "\n")
-        toString += ("Address variety" + str(self.address_variety) + "\n")
-        toString += ("Indices coverage" + str(self.indices_coverage) + "\n")
-        toString += ("Number of conflict miss is " + str(self.conflict_miss) + "\n")
-        toString += ("Number of non conflict miss is " + str(self.cold_start_miss) + "\n")
+        toString += ("Hit " + str(self.hit_count) + "\n")
+        toString += ("Page Fault w/o evict " + str(self.pf_noEvict) + "\n")
+        toString += ("Page Fault w/ evict " + str(self.pf_evict) + "\n")
+        toString += ("Indices coverage " + str(self.indices_coverage) + "\n")
         return toString        
                 
 
     # fill in the cache with the list of addresses, update hit_miss_list and record miss type step-wise
     def updateHitPageFaultList_missType(self):
-        for currPage in self.addresses:
-            currPage_binary = toBinary(currPage, self.index_bits)
-            currFrame, evictedPage, curr_hm = self.replacementFIFO(currPage)
+        self.pf_noEvict = 0
+        self.pf_evict = 0
+        self.hit_count = 0
+        self.invalid.clear()
+        for i in range(self.range_frames):
+            self.invalid.add(i + self.start_frame)
+        for currPage, offset in self.addresses:
+            currFrame, evictedPage, curr_hm, curr_evict = self.replacementFIFO(currPage)
 
             if (evictedPage != -1):
-                self.currentVmTable[evictedPage][0] = 0
-                self.currentVmTable[evictedPage][1] = -1
-        self.currentVmTable[currPage][0] = 1
-        self.currentVmTable[currPage][1] = currFrame
+                self.currentVmTable[binary2decimal(evictedPage)][0] = 0
+                self.currentVmTable[binary2decimal(evictedPage)][1] = -1
+            self.currentVmTable[binary2decimal(currPage)][0] = 1
+            self.currentVmTable[binary2decimal(currPage)][1] = currFrame
 
-        self.hit_miss_list.push(curr_hm);
+            self.hit_miss_list.append(curr_hm)
+        
+            if curr_hm:
+                self.hit_count += 1
+                
+            if curr_evict:
+                self.pf_evict += 1
+            else:
+                self.pf_noEvict += 1
 
     
-    def findPage(self, currPage) {
-        for (let i = 0; i < this.replacementStruct.length; i++) {
-            if (currPage == this.replacementStruct[i][1]) {
-                return i;
-            }
-        }
-        return -1;
-    }
+    def findPage(self, currPage):
+        for i in range(len(self.replacementStruct)):
+            if currPage == self.replacementStruct[i][1]:
+                return i
+        return -1
     
-    def replacementFIFO(self, currPage) {
-        idx = this.findPage(currPage);
-        let ret;
-        if (idx == -1) {
-            if (this.replacementStruct.length < this.numFrames) {
-                this.replacementStruct.push([this.replacementStruct.length, currPage]);
-                this.invalid.remove(this.binary2decimal(currPage));
-                ret = [this.replacementStruct.length - 1, -1, false];
-            } else {
-                let curr = this.replacementStruct.shift();
-                let currFrame = curr[0];
-                let evictedPage = curr[1];
-                this.invalid.add(this.binary2decimal(evictedPage));
-                this.invalid.remove(this.binary2decimal(currPage));
-                this.replacementStruct.push([currFrame, currPage]);
-                ret = [currFrame, evictedPage, false];
-            }   
-        } else {
-            ret = [this.replacementStruct[idx][0], -1, true];
-        }
-        // console.log(this.replacementStruct);
-        return ret;
-    }
+    def replacementFIFO(self, currPage):
+        idx = self.findPage(currPage)
+        if (idx == -1):
+            if (len(self.replacementStruct) < self.num_frames):
+                self.replacementStruct.append([len(self.replacementStruct), currPage])
+                self.invalid.remove(binary2decimal(currPage))
+                return [len(self.replacementStruct) - 1, -1, False, False]
+            else:
+                currFrame, evictedPage = self.replacementStruct.popleft()
+                self.invalid.add(binary2decimal(evictedPage))
+                self.invalid.remove(binary2decimal(currPage))
+                self.replacementStruct.append([currFrame, currPage])
+                return [currFrame, evictedPage, False, True]
+        else:
+            return [self.replacementStruct[idx][0], -1, True, False]
+
     '''
     calculate the hit miss ratio 
     by dividing the number of hit over the total times of accessing the cache
@@ -132,13 +142,8 @@ class vmAlgo:
     def calculateIndicesCoverage(self):
         uniqueIndices = set()
         for address in self.addresses:
-            if address[1] not in uniqueIndices:
-                uniqueIndices.add(address[1])
-        self.indices_coverage = len(uniqueIndices)/self.num_rows
-        if self.address_variety > 1:
-            print(uniqueIndices)
-            print(self.addresses)
-            raise Exception("indice coverage cannot be larger than 1")
+            uniqueIndices.add(address[0])
+        self.indices_coverage = len(uniqueIndices)/self.range_frames
         # print("The coverage of indices (uniqueIndices / numRows) is " + str(self.indices_coverage))
     
     '''
@@ -150,15 +155,13 @@ class vmAlgo:
         for address in self.addresses:
             if (address[0] + address[1]) not in uniqueTagIndex:
                 uniqueTagIndex.add(address[0] + address[1])
-        self.address_variety = len(uniqueTagIndex)/self.num_refs
-        if self.address_variety > 1:
-            print(uniqueTagIndex)
-            print(self.addresses)
-            raise Exception("address variety cannot be larger than 1")
+        self.address_variety = len(uniqueTagIndex)/self.range_frames
+        # if self.address_variety > 1:
+        #     print(uniqueTagIndex)
+        #     print(self.addresses)
+        #     raise Exception("address variety cannot be larger than 1")
         # print("The address variety ratio (uniqueTagIndex / numRefs) is " + str(self.address_variety))
     
     def calcAll(self):
-        self.updateHitMissList_missType()
-        self.calculateHitMissRatio()
-        self.calculateAddressVariety()
+        self.updateHitPageFaultList_missType()
         self.calculateIndicesCoverage()
