@@ -48,17 +48,54 @@ export default class VO extends RunestoneBase {
     }
 
     initParams() {
-        this.memoryAccess_chance = 0.3; // probability of memory-accessing ops in one set
-        this.constantInArthm_chance = 0.5; // probability of having a contant as src
+        this.setDefaultParams();
+        this.setCustomizedParams();
+    }
+
+    // set default parameters
+    setDefaultParams() {
+        this.architecture = "IA32";
         this.num_q_in_group = 4; // number of questions in a group
-        // declare all elements that could appear in the prompt
-        this.arthm_operators = ["addl", "subl", "imull", "sall", "sarl", "shrl", "xorl", "andl", "orl", "leal"];
-        this.registers = ["%eax", "%ecx", "%edx", "%ebx", "%esi", "%edi"];
-        this.constRange = 11; // value range of the constants
+        this.memoryAccess_chance = 0.5; // probability of memory-accessing ops in one set
+        this.constantInArthm_chance = 0.5; // probability of having a contant as src
+
+        this.constRange = 20; // value range of the constants
         this.fieldList = ["Page fault? ", "Cache miss? ", "Dirty bit? "];
         this.fieldID = ["pf", "cm", "db"];
         this.promptList = [];
         this.answerList = [];
+    }
+
+    // load customized parameters
+    setCustomizedParams() {
+        const currentOptions = JSON.parse(this.scriptSelector(this.origElem).html());
+        if (currentOptions["architecture"] != undefined) {
+            this.architecture = currentOptions["architecture"];
+        }
+        if (currentOptions["num_of_question_in_one_group"] != undefined) {
+            this.num_q_in_group = eval(currentOptions["num_of_question_in_one_group"]);
+        }
+        if (currentOptions["mem_access_chance"] != undefined) {
+            this.memoryAccess_chance = eval(currentOptions["mem_access_chance"]);
+        }
+
+        if (this.architecture === "IA32") {
+            // declare all IA32 elements for the prompt
+            this.arthm_operators = ["addl", "subl", "imull", "sall", "sarl", "shrl", "xorl", "andl", "orl"];
+            this.registers = ["%eax", "%ecx", "%edx", "%ebx", "%esi", "%edi"];
+            this.prefixes = ["-0x8", "0x8", "8", "4", "-0x4", "0x4"];
+        } else if (this.architecture === "ARM64") {
+            // declare all ARM64 elements for the prompt
+            this.arthm_operators = ["mov", "add", "sub", "neg", "mul", "udiv", "sdiv", "lsl", "lsr", "asr", "and", "orr", "eor", "mvn"];
+            this.mem_operators = ["ldr", "ldp", "str", "stp"];
+            this.registers_64bits = [];
+            this.registers_32bits = [];
+            for (let i = 0; i < 29; i++) {
+                this.registers_64bits.push("x" + i.toString());
+                this.registers_32bits.push("w" + i.toString());
+            }
+            this.prefixes = [""]; // pass for now
+        }
     }
 
     renderVOInputField() {
@@ -75,28 +112,28 @@ export default class VO extends RunestoneBase {
         this.statementDiv.append("<br>");
         this.inputBox = document.createElement("div");
         // convert inputBox to a jQuery object
-        this.inputBox = $(this.inputBox);
+        this.inputBox = $(this.inputBox); // contains all prompts and buttons
 
         this.textNodes = []; // create a reference to all current textNodes for future update
-        this.inputNodes = [];
-        var textNode = null;
+        this.inputNodes = []; // create slots for inputs for future updates
+        var textNode = null; 
         
         this.genPromptsNAnswer();
+
         // create and render all input fields in question group
         for (let i = 0; i < this.num_q_in_group; i++) {
             this.divID = "div" + i;
             this.newDiv = $("<div>").attr("id", this.divID);
-            this.newDiv.append(String.fromCharCode(i + 97) + ". "); // bulletin for each question
+            this.newDiv.append(String.fromCharCode((i + 97)) + ". "); // bulletin for each question
             
             textNode = $(document.createElement("code")).text(this.promptList[i]); // create the prompt
             textNode.css("font-size", "large");
             this.textNodes.push(textNode);
+
             this.newDiv.append(textNode);
-
-            this.radioButtons = [];
-
             this.newDiv.append("<br>");
 
+            this.radioButtons = [];
             // create and render page fault, cache miss, dirty bit answer fields
             for (let j = 0; j < 3; j++) {
                 this.newDiv.append(this.fieldList[j]);
@@ -132,8 +169,22 @@ export default class VO extends RunestoneBase {
                     this.newDiv.append(document.createTextNode( '\u00A0' ));
                 }
                 this.radioButtons.push([btnYes, btnNo]);
-                
             }
+            // "check me" button and "generate a number" button
+            this.submitButton = $("<button>")
+                .text($.i18n("msg_VO_check_me"))
+                .attr({
+                    class: "button-check",
+                    name: "answer",
+                    type: "button",
+                    id: "submit" + i
+                })
+                .on("click", function() {
+                    this.checkThisAnswers(i);
+                    this.logCurrentAnswer();
+                }.bind(this));
+
+            this.newDiv.append(this.submitButton);
             this.inputBox.append(this.newDiv);
             this.inputNodes.push(this.radioButtons);
         }
@@ -153,8 +204,8 @@ export default class VO extends RunestoneBase {
 
         // remove the script tag.
         this.scriptSelector(this.containerDiv).remove();
-        // div structure: containerDiv consists of instruction, <br>, inputBox.
-        // inputBox contains four newDiv 
+        // ***div STRUCTURE***: containerDiv consists of instruction, <br>, inputBox.
+        // ***div STRUCTURE***: inputBox contains four newDiv. 
         this.containerDiv.append(this.statementDiv);
     }
 
@@ -162,13 +213,13 @@ export default class VO extends RunestoneBase {
         var arthOps = [
             [["arth", "const", "reg"], [false, false, false]],
             [["arth", "reg", "reg"], [false, false, false]],
-            [["movl", "reg", "reg"],[false, false, false]],
-            [["movl", "const", "reg"],[false, false, false]],
+            [["move", "reg", "reg"],[false, false, false]],
+            [["move", "const", "reg"],[false, false, false]],
         ];
         var memAccess = [
-            [["movl", "mem", "reg"], [true, true, false]],
-            [["movl", "reg", "mem"], [true, true, true]],
-            [["movl", "const", "mem"], [true, true, true]],
+            [["move", "mem", "reg"], [true, true, false]],
+            [["move", "reg", "mem"], [true, true, true]],
+            [["move", "const", "mem"], [true, true, true]],
         ];
         var choice = [];
 
@@ -181,11 +232,61 @@ export default class VO extends RunestoneBase {
             this.promptList[k] = choice[0];
             this.answerList[k] = choice[1];
 
-            this.promptList[k] = this.renderOnePrompt(this.promptList[k]);
+            this.promptList[k] = this.renderPrompt(this.promptList[k]);
         }
     }
 
-    renderOnePrompt(o) {
+    beta_genPromptsNAnswer() { // generates a group of prompts and their answers
+        var memAccess = null, constant = false, dest = null, src = null;
+        var pf = null, cm = null, db = null;
+
+        if (Math.random() < this.memoryAccess_chance) {
+            memAccess = true;
+            pf = true, cm = true;
+            if (Math.random() < 0.5) {
+                dest = "reg"; 
+                db = false;
+            } else {
+                dest = "mem";
+                db = true;
+            }
+        } else {
+            memAccess = false;
+            if (Math.random() < this.constantInArthm_chance) {
+                constant = true;
+            }
+            pf = false, cm = false, db = false;
+        }
+
+        if (this.architecture === "IA32") {
+
+        } else if (this.architecture === "ARM64") {
+
+        }
+
+        for (let k = 0; k < this.num_q_in_group; k++) {
+            if (Math.random() < this.memoryAccess_chance) {
+                memAccess = true;
+                pf = true, cm = true;
+                if (Math.random() < 0.5) {
+                    dest = "reg"; 
+                    db = false;
+                } else {
+                    dest = "mem";
+                    db = true;
+                }
+            } else {
+                memAccess = false;
+                if (Math.random() < this.constantInArthm_chance) {
+                    constant = true;
+                }
+                pf = false, cm = false, db = false;
+            }
+            this.promptList[k] = [pf, cm, db];
+        }
+    }
+
+    renderPrompt(o) {
         var o1 = false;
         var o2 = false;
 
@@ -217,34 +318,19 @@ export default class VO extends RunestoneBase {
                 o[2] = this.pick(this.registers);
             }
 
-            if (o1) {
-                o[1] = "(" + o[1] + ")";
-            }
-            if (o2) {
-                o[2] = "(" + o[2] + ")";
+            if (o1 || o2) { // TODO: render memory access here
+                var prefix = this.pick(this.prefixes);
+                if (o1) {
+                    o[1] = prefix + "(" + o[1] + ")";
+                } else {
+                    o[2] = prefix + "(" + o[2] + ")";
+                }
             }
         }
         return o[0] + " " + o[1] + ", " + o[2];
     }
 
     renderVOButtons() {
-        // "check me" button and "generate a number" button
-        this.submitButton = document.createElement("button");
-        this.submitButton.textContent = $.i18n("msg_VO_check_me");
-        $(this.submitButton).attr({
-            class: "btn btn-success",
-            name: "answer",
-            type: "button",
-        });
-        // check the answer when the conversion is valid
-        this.submitButton.addEventListener("click",
-            function () {
-                this.checkAllAnswers();
-                this.logCurrentAnswer();
-            }.bind(this),
-            false
-        );
-
         this.generateButton = document.createElement("button");
         this.generateButton.textContent = $.i18n("msg_VO_generate_another");
         $(this.generateButton).attr({
@@ -253,84 +339,78 @@ export default class VO extends RunestoneBase {
             type: "button",
         });
         this.generateButton.addEventListener("click", () => {
-            // clear answers in input fields
-            this.clearAllAnswer();
-            // update the inputBox with four more new options
+            this.cleanInputNFeedbackField(); // clear answers, clear prev feedback, and enable all for the input fields
             this.updatePrompts();
           });
-
-        this.redoButton = document.createElement("button");
-        this.redoButton.textContent = $.i18n("msg_VO_redo");
-        $(this.redoButton).attr({
-            class: "btn btn-success",
-            name: "answer",
-            type: "button",
-        });
-        // check the answer when the conversion is valid
-        this.redoButton.addEventListener("click",
-            function () {
-                this.clearAllAnswer();
-                // pass just for now
-            }.bind(this),
-            false
-        );
-
+          
         this.containerDiv.append("<br>");
         this.containerDiv.append(this.generateButton);
-        this.containerDiv.append(this.redoButton);
-        this.containerDiv.append(this.submitButton);
     }
 
-        
-    updatePrompts(){
-        // get new prompts and answers
-        this.genPromptsNAnswer();
+    cleanInputNFeedbackField () {
+        // clear all previous selection
+        $('input[type="radio"]').prop('checked', false);
 
+        // enable all previously disabled element
+        for (let h = 0; h < this.num_q_in_group; h++) {
+            var currID = "div" + h;
+            $("#" + currID).prop("disabled", false).removeClass("prohibited");
+            // Disable all elements within the current item and add the "input[disabled]" class
+            $("#" + currID).find("*").prop("disabled", false).removeClass("input[disabled]");
+            $("#" + currID).find("code").removeClass("disabled-code");
+        }
+
+        // clear feedback field
+        $(this.feedbackDiv).remove();
+    }
+
+    updatePrompts(){
+        this.genPromptsNAnswer();
         // create and render all input fields in question group
         for (let i = 0; i < this.num_q_in_group; i++) {
             this.textNodes[i].text(this.promptList[i]);
         }
     }
 
-    checkAllAnswers() {
+    checkThisAnswers(i) {
         this.feedback_msg = []; // clear feedback_msg
         this.correct = true; // init answer first as true, only update when incorrect choice occurs
         this.wrongPF = false; // init all answer as correct
         this.wrongCM = false; // init all answer as correct
         this.wrongDB = false; // init all answer as correct
         this.incompleteAnswer = false;
+        var checkedAnswerInOneGroup = [];
 
-        for (let i = 0; i < this.num_q_in_group; i++) {
-            const checkedAnswerInOneGroup = []
-            for (let j = 0; j < 3; j++) {
-                if (this.inputNodes[i][j][0].is(":checked")) { // when user chose YES
-                    checkedAnswerInOneGroup.push(true);
-                } else if (this.inputNodes[i][j][1].is(":checked")) { // when user chose NO
-                    checkedAnswerInOneGroup.push(false);
-                } else { // when user chose nothing
-                    checkedAnswerInOneGroup.push("");
-                    this.correct = false;
-                    this.incompleteAnswer = true;
-                    break;
+        for (let j = 0; j < 3; j++) {
+            if (this.inputNodes[i][j][0].is(":checked")) { // when user chose YES
+                checkedAnswerInOneGroup.push(true);
+            } else if (this.inputNodes[i][j][1].is(":checked")) { // when user chose NO
+                checkedAnswerInOneGroup.push(false);
+            } else { // when user chose nothing
+                checkedAnswerInOneGroup.push("");
+                this.correct = false;
+                this.incompleteAnswer = true;
+                break;
+            }
+
+            if ((checkedAnswerInOneGroup[j] !== this.answerList[i][j])) {
+                var btnName = 'YN' + i + this.fieldID[j];
+                $('input[type="radio"][name="' + btnName + '"]').addClass('highlightWrong');
+                this.correct = false;
+                if (j === 0) {
+                    this.wrongPF = true;
                 }
-                if ((checkedAnswerInOneGroup[j] !== this.answerList[i][j])) {
-                    var btnName = 'YN' + i + this.fieldID[j];
-                    $('input[type="radio"][name="' + btnName + '"]').addClass('highlightWrong');
-                    this.correct = false;
-                    if (j === 0) {
-                        this.wrongPF = true;
-                    }
-                    if (j === 1) {
-                        this.wrongCM = true;
-                    } 
-                    if (j === 2) {
-                        this.wrongDB = true;
-                    }
+                if (j === 1) {
+                    this.wrongCM = true;
+                } 
+                if (j === 2) {
+                    this.wrongDB = true;
                 }
             }
         }
-        
+
         if (this.correct === false) {
+            this.feedback_msg.push("&bull;" + " For question <b>" + String.fromCharCode((i + 97)) + "</b>" + ", "); 
             if (this.incompleteAnswer === true) {
                 this.feedback_msg.push($.i18n("msg_VO_imcomplete_answer"));
             } else {
@@ -345,80 +425,11 @@ export default class VO extends RunestoneBase {
                 }
             }
         } else {
+            this.disableThisRow(i);
             this.feedback_msg.push($.i18n("msg_VO_correct"));
         }
 
         this.renderFeedback();
-    }
-
-    /// *** HELPER FUNCTIONS *** ///
-    renderVOFeedbackDiv() {
-        this.containerDiv.append("<br>");
-        this.containerDiv.append(this.feedbackDiv);
-    }
-
-    clearAllAnswer() { // clear all selection
-        $('input[type="radio"]').prop('checked', false);
-    }
-
-    recordAnswered() {
-        this.isAnswered = true;
-    }
-
-    renderConstant() { // generate a value within constRange and prime it for display
-        return "$" + (Math.floor(Math.random() * this.constRange)).toString();
-    }
-
-    pick(myList) { // randomly pick one item in list
-        const randIdx = Math.floor(Math.random() * (myList.length));
-        return myList[randIdx];
-    }
-
-    // log the answer and other info to the server (in the future)
-    async logCurrentAnswer(sid) {
-        let answer = JSON.stringify(this.inputNodes);
-        let feedback = true;
-        // Save the answer locally.
-        this.setLocalStorage({
-            answer: answer,
-            timestamp: new Date(),
-        });
-        let data = {
-            event: "vo",
-            act: answer || "",
-            answer: answer || "",
-            correct: this.correct ? "T" : "F",
-            div_id: this.divid,
-        };
-        if (typeof sid !== "undefined") {
-            data.sid = sid;
-            feedback = false;
-        }
-        // render the feedback
-        this.renderFeedback();
-        return data;
-    }
-
-    /*===================================
-    === Checking/loading from storage ===
-    ===================================*/
-    // Note: they are not needed here
-    restoreAnswers(data) {
-        // pass
-    }
-    checkLocalStorage() {
-        // pass
-    }
-    setLocalStorage(data) {
-        // pass
-    }
-    
-    hideFeedback() {
-        $(this.feedbackDiv).css("visibility", "hidden");
-    }
-
-    displayFeedback() {
-        $(this.feedbackDiv).css("visibility", "visible");;
     }
 
     renderFeedback() {
@@ -444,6 +455,83 @@ export default class VO extends RunestoneBase {
         if (typeof MathJax !== "undefined") {
             this.queueMathJax(document.body);
         }
+    }
+
+    renderVOFeedbackDiv() {
+        this.containerDiv.append("<br>");
+        this.containerDiv.append(this.feedbackDiv);
+    }
+
+    renderConstant() { // generate a value within constRange and prime it for display
+        var myVal = Math.floor(Math.random() * this.constRange).toString();
+        if (this.architecture === "IA32") {
+            return "$" + myVal;
+        } else if (this.architecture === "ARM64") {
+            if (Math.random() < 0.5) {return "#" + myVal.toString(16);}
+            else {return "#" + myVal;}
+        }
+    }
+
+    pick(myList) { // randomly pick one item in list
+        const randIdx = Math.floor(Math.random() * (myList.length));
+        return myList[randIdx];
+    }
+
+    disableThisRow(i) { // disable elements of correct row
+        var currID = "div" + i;
+        $("#" + currID).prop("disabled", true).addClass("prohibited");
+        // Disable all elements within the current item and add the "input[disabled]" class
+        $("#" + currID).find("*").prop("disabled", true).addClass("input[disabled]");
+        $("#" + currID).find("code").addClass("disabled-code");
+    }
+
+    /*===================================
+    === Checking/loading from storage ===
+    ===================================*/
+    // Note: they are not needed here
+    restoreAnswers(data) {
+        // pass
+    }
+    checkLocalStorage() {
+        // pass
+    }
+    setLocalStorage(data) {
+        // pass
+    }
+    recordAnswered() {
+        this.isAnswered = true;
+    }
+    
+    hideFeedback() {
+        $(this.feedbackDiv).css("visibility", "hidden");
+    }
+
+    displayFeedback() {
+        $(this.feedbackDiv).css("visibility", "visible");;
+    }
+        // log the answer and other info to the server (in the future)
+    async logCurrentAnswer(sid) {
+        let answer = JSON.stringify(this.inputNodes);
+        let feedback = true;
+        // Save the answer locally.
+        this.setLocalStorage({
+            answer: answer,
+            timestamp: new Date(),
+        });
+        let data = {
+            event: "vo",
+            act: answer || "",
+            answer: answer || "",
+            correct: this.correct ? "T" : "F",
+            div_id: this.divid,
+        };
+        if (typeof sid !== "undefined") {
+            data.sid = sid;
+            feedback = false;
+        }
+        // render the feedback
+        this.renderFeedback();
+        return data;
     }
 }
 
