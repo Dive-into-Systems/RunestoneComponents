@@ -13,7 +13,7 @@
     <!-- BEGIN LINKED FILES -->
     <link rel="stylesheet" type="text/css" href="../runestone/dist/vendors-node_modules_bootstrap_dist_js_bootstrap_js-node_modules_jquery-ui_jquery-ui_js-node_-72cd89.cd688d1623c9932e.css" />
     <link rel="stylesheet" type="text/css" href="../runestone/dist/runestone.8cc3d7e65ac22823.css" />
-    <script src="../runestone/dist/runtime.08dbfb1696e5e088.bundle.js"></script>
+    <script src="../runestone/dist/runtime.65a697b750992ac3.bundle.js"></script>
     <script src="../runestone/dist/vendors-node_modules_bootstrap_dist_js_bootstrap_js-node_modules_jquery-ui_jquery-ui_js-node_-72cd89.51d9dde4e5162190.bundle.js"></script>
     <script src="../runestone/dist/runestone.a2b4edffdb160672.bundle.js"></script>
     <!-- END LINKED FILES -->
@@ -82,14 +82,6 @@
         </div>
 </section>
 
-<section id="virtual memory operations">
-  <h1>Virtual Memory Operations<a class="headerlink" href="#number-conversion" title="Permalink to this heading">¶</a></h1>
-            <p>Test 8 - test the vm operations.</p>
-        <div class="runestone ">
-        <div data-component="vo" data-question_label="2" id="test_vm_operations"  style="visibility: hidden;"></div>
-        </div>
-</section>
-
 <section id="caching partition">
   <h1>Cache Partition<a class="headerlink" href="#number-conversion" title="Permalink to this heading">¶</a></h1>
             <p>Test 3 - test the cache partition component.</p>
@@ -99,7 +91,7 @@
 </section>
 
 <section id="cache table">
-  <h1>Cache Table<a class="headerlink" href="#cache-table" title="Permalink to this heading">¶</a></h1>
+  <h1>Direct Mapping Cache Table<a class="headerlink" href="#cache-table" title="Permalink to this heading">¶</a></h1>
             <p>Test 4 - test the cache table component.</p>
 
         <div class="runestone ">
@@ -117,7 +109,7 @@
 </section>
 
 <section id="cache table">
-  <h1>Cache Table<a class="headerlink" href="#cache-table" title="Permalink to this heading">¶</a></h1>
+  <h1>2-way SA Cache Table<a class="headerlink" href="#cache-table" title="Permalink to this heading">¶</a></h1>
             <p>Test 5 - test the cache table component (set associative).</p>
 
         <div class="runestone ">
@@ -136,7 +128,7 @@
 </section>
 
 <section id="cache table">
-  <h1>Cache Table<a class="headerlink" href="#cache-table" title="Permalink to this heading">¶</a></h1>
+  <h1>Direct Mapped Cache Table (Prepopulated)<a class="headerlink" href="#cache-table" title="Permalink to this heading">¶</a></h1>
             <p>Test 6 - test the cache table component (fixed table 1).</p>
 
         <div class="runestone ">
@@ -165,8 +157,8 @@
 </section>
 
 <section id="cache table">
-  <h1>Cache Table<a class="headerlink" href="#cache-table" title="Permalink to this heading">¶</a></h1>
-            <p>Test 7 - test the cache table component (fixed table 2).</p>
+  <h1>2-way SA Cache Table (Prepopulated)<a class="headerlink" href="#cache-table" title="Permalink to this heading">¶</a></h1>
+            <p>Test 8 - test the cache table component (fixed table 2).</p>
 
         <div class="runestone ">
         <div data-component="cachetable" data-question_label="7" id="test_caching_table_4"  style="visibility: hidden;">
@@ -213,6 +205,73 @@
         </div>
         </div>
 </section>
+
+<section id="virtual memory operations">
+    <h1>Virtual Memory Operations<a class="headerlink" href="#number-conversion" title="Permalink to this heading">¶</a></h1>
+              <p>Test 8 - test the vm operations.</p>
+          <div class="runestone ">
+          <div data-component="vo" data-question_label="2" id="test_vm_operations"  style="visibility: hidden;"></div>
+          </div>
+</section>
+
+<section id="virtual memory table">
+  <h1>Virtual Memory Table<a class="headerlink" href="#vm-table" title="Permalink to this heading">¶</a></h1>
+            <p>Test 9 - test the virtual memory table component.</p>
+
+        <div class="runestone ">
+        <div data-component="vmtable" data-question_label="8" id="test_virtual_memory_table_1"  style="visibility: hidden;">
+          <script type="application/json">
+            {
+              "offset": 2,
+              "frames": 3,
+              "displayed-pages": 5,
+              "min-index": 47,
+              "redo": true
+            }
+          </script>   
+        </div>
+        </div>
+</section>
+
+<section id="virtual memory table">
+  <h1>Virtual Memory Table (Prepopulated)<a class="headerlink" href="#vm-table" title="Permalink to this heading">¶</a></h1>
+            <p>Test 10 - test the virtual memory table component. (Prepopulated)</p>
+
+        <div class="runestone ">
+        <div data-component="vmtable" data-question_label="9" id="test_virtual_memory_table_2"  style="visibility: hidden;">
+          <script type="application/json">
+            {
+              "offset": 2,
+              "frames": 4,
+              "displayed-pages": 6,
+              "min-index": 17,
+              "redo": true,
+              "fixed": true,
+              "reference-list":
+              [
+                ["01000101","W"],
+                ["01000101","R"],
+                ["01001100","W"],
+                ["01001101","R"],
+                ["01001000","W"],
+                ["01001101","R"],
+                ["01000101","W"],
+                ["01000101","R"]
+              ],
+              "init-page-table": 
+              [
+                {
+                  "page": 20,
+                  "valid": 1,
+                  "frame": 0
+                } 
+              ]
+            }
+          </script>   
+        </div>
+        </div>
+</section>
+
 
 <script>
   window.addEventListener('load', (event) => {

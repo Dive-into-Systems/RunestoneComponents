@@ -1,7 +1,7 @@
 import random
-from randAlgoStats import generateBinaryStr
-from randAlgoStats import toBinary
-from randAlgoStats import vmAlgo
+from vmAlgoStats import generateBinaryStr
+from vmAlgoStats import toBinary
+from vmAlgoStats import vmAlgo
 
 def generateIndex(indexBits):
     return generateBinaryStr(indexBits)
@@ -20,15 +20,7 @@ def main_vm_bound(indexBits, offsetBits, numRefs, numFrames=4, rangeFrames = 5):
     lb = random.randint(0, numPages - rangeFrames)
     ub = lb + rangeFrames - 1
     
-    vmBound = vmAlgo()
-    vmBound.name = "vmBound"
-    vmBound.addresses = generateRef(indexBits, offsetBits, numRefs, lb, ub)
-    
-    vmBound.index_bits = indexBits
-    vmBound.num_pages = numPages
-    vmBound.num_refs = numRefs
-    vmBound.range_frames = rangeFrames
-    vmBound.num_frames = numFrames
+    vmBound = vmAlgo("vmBound", generateRef(indexBits, offsetBits, numRefs, lb, ub), indexBits, numPages, numFrames, rangeFrames, lb, numRefs)
     
     vmBound.calcAll()
     
