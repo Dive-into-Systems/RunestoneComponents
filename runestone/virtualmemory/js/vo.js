@@ -40,6 +40,7 @@ export default class VO extends RunestoneBase {
     // Create the VO Element
     createVOElement() {
         this.initParams(); // init all 
+
         this.renderVOInputField();
         this.renderVOButtons();
         this.renderVOFeedbackDiv();
@@ -82,29 +83,31 @@ export default class VO extends RunestoneBase {
         if (this.architecture === "IA32") {
             // declare all IA32 elements for the prompt
             this.arthm_operators = ["addl", "subl", "imull", "sall", "sarl", "shrl", "xorl", "andl", "orl"];
+            this.mem_operators = ["movl"];
             this.registers = ["%eax", "%ecx", "%edx", "%ebx", "%esi", "%edi"];
-            this.prefixes = ["-0x8", "0x8", "8", "4", "-0x4", "0x4"];
         } else if (this.architecture === "ARM64") {
             // declare all ARM64 elements for the prompt
-            this.arthm_operators = ["mov", "add", "sub", "neg", "mul", "udiv", "sdiv", "lsl", "lsr", "asr", "and", "orr", "eor", "mvn"];
+            this.arthm_operators = ["mov", "add", "sub", "mul", "udiv", "sdiv", "and", "orr", "eor"];
             this.mem_operators = ["ldr", "ldp", "str", "stp"];
+            this.registers = [];
             this.registers_64bits = [];
             this.registers_32bits = [];
             for (let i = 0; i < 29; i++) {
                 this.registers_64bits.push("x" + i.toString());
                 this.registers_32bits.push("w" + i.toString());
             }
-            this.prefixes = [""]; // pass for now
         }
     }
 
-    renderVOInputField() {
+    renderVOInputField() {  
         this.feedbackDiv = document.createElement("div");
         this.feedbackDiv = $("<div>").attr("id", this.divid + "_feedback");
 
         this.containerDiv = $("<div>").attr("id", this.divid);
         this.instruction = $("<div>").html(
-            "For each of the following IA32 instructions, indicate whether the instruction " + 
+            "For each of the following " + 
+            this.architecture + 
+            " instructions, indicate whether the instruction " + 
             "<b>could</b> cause a page fault, whether it <b>could</b> cause a cache miss, and " + 
             "whether it <b>could</b> cause the dirty bit in the cache to be set to 1."
         );
@@ -122,10 +125,9 @@ export default class VO extends RunestoneBase {
 
         // create and render all input fields in question group
         for (let i = 0; i < this.num_q_in_group; i++) {
-            this.divID = "div" + i;
-            this.newDiv = $("<div>").attr("id", this.divID);
+            this.newdivID = "div" + i;
+            this.newDiv = $("<div>").attr("id", this.divid + this.newdivID);
             this.newDiv.append(String.fromCharCode((i + 97)) + ". "); // bulletin for each question
-            
             textNode = $(document.createElement("code")).text(this.promptList[i]); // create the prompt
             textNode.css("font-size", "large");
             this.textNodes.push(textNode);
@@ -210,124 +212,104 @@ export default class VO extends RunestoneBase {
     }
 
     genPromptsNAnswer() { // generates a group of prompts and their answers
-        var arthOps = [
-            [["arth", "const", "reg"], [false, false, false]],
-            [["arth", "reg", "reg"], [false, false, false]],
-            [["move", "reg", "reg"],[false, false, false]],
-            [["move", "const", "reg"],[false, false, false]],
-        ];
-        var memAccess = [
-            [["move", "mem", "reg"], [true, true, false]],
-            [["move", "reg", "mem"], [true, true, true]],
-            [["move", "const", "mem"], [true, true, true]],
-        ];
-        var choice = [];
-
-        for (let k = 0; k < this.num_q_in_group; k++) {
-            if (Math.random() < this.memoryAccess_chance) {
-                choice = this.pick(memAccess);
-            } else {
-                choice = this.pick(arthOps);
-            }
-            this.promptList[k] = choice[0];
-            this.answerList[k] = choice[1];
-
-            this.promptList[k] = this.renderPrompt(this.promptList[k]);
-        }
-    }
-
-    beta_genPromptsNAnswer() { // generates a group of prompts and their answers
-        var memAccess = null, constant = false, dest = null, src = null;
+        this.memAccess = null;
+        this.dest = null;
+        this.src = null;
+        this.constant = false;
         var pf = null, cm = null, db = null;
 
-        if (Math.random() < this.memoryAccess_chance) {
-            memAccess = true;
-            pf = true, cm = true;
-            if (Math.random() < 0.5) {
-                dest = "reg"; 
-                db = false;
-            } else {
-                dest = "mem";
-                db = true;
-            }
-        } else {
-            memAccess = false;
-            if (Math.random() < this.constantInArthm_chance) {
-                constant = true;
-            }
-            pf = false, cm = false, db = false;
-        }
-
-        if (this.architecture === "IA32") {
-
-        } else if (this.architecture === "ARM64") {
-
-        }
-
         for (let k = 0; k < this.num_q_in_group; k++) {
-            if (Math.random() < this.memoryAccess_chance) {
-                memAccess = true;
+            if (Math.random() < this.memoryAccess_chance) { // determine whether mem access at all, yes case
+                this.memAccess = true;
                 pf = true, cm = true;
-                if (Math.random() < 0.5) {
-                    dest = "reg"; 
+                if (Math.random() < 0.5) { // mem access is on src
+                    this.dest = "reg";
+                    this.src = "mem";
                     db = false;
-                } else {
-                    dest = "mem";
+                } else {  // mem access is on this.dest
+                    this.dest = "mem";
+                    this.src = "reg";
                     db = true;
                 }
-            } else {
-                memAccess = false;
+            } else { // no mem access case
+                this.memAccess = false;
+                this.dest = "reg"; // this.dest must be a register
                 if (Math.random() < this.constantInArthm_chance) {
-                    constant = true;
+                    this.constant = true;
+                    this.src = "const";
+                } else {
+                    this.constant = false;
+                    this.src = "reg";
                 }
                 pf = false, cm = false, db = false;
             }
-            this.promptList[k] = [pf, cm, db];
+
+            this.answerList[k] = [pf, cm, db];
+            this.promptList[k] = [this.memAccess, this.src, this.dest]
+            // console.log("the answer is " + this.answerList[k]);
+            // console.log("it's corresponding source prompt is: " + this.promptList[k])
+            this.promptList[k] = this.renderOnePrompt();
+            // console.log("it's corresponding rendered prompt is: " + this.promptList[k])
         }
     }
 
-    renderPrompt(o) {
-        var o1 = false;
-        var o2 = false;
-
-        if (o[0] === "arth") {
-            o[0] = this.pick(this.arthm_operators);
-            o[1] = (Math.random() < this.constantInArthm_chance) ? this.renderConstant() : this.pick(this.registers);
-            
-            o[2] = this.pick(this.registers);
-            while (o[2] === o[1]) {
-                o[2] = this.pick(this.registers);
-            }
+    renderOnePrompt() { // render one prompt based on source prompt (return: string)
+        this.ret = [];
+        this.pair = false;
+        
+        if (this.memAccess === false) {
+            this.ret[0] = this.pick(this.arthm_operators);
+        } else {
+            this.ret[0] = this.pick(this.mem_operators);
         }
-        else {
-            o[0] = "movl";
-            if (o[1] === "const") {
-                o[1] = this.renderConstant();
-            } else if (o[1] === "mem") {
-                o1 = true;
-                o[1] = this.pick(this.registers);
-            } else {
-                o[1] = this.pick(this.registers);
-            }
 
-            if (o[2] === "mem") {
-                o2 = true;
+        if (this.architecture === "IA32") {
+            if (this.src === "reg") { // this.src is register
+                this.src = this.renderRegister();
+            } else if (this.src === "mem") { // this.src is memory
+                this.src = this.renderMemAccess();
+            } else { // this.src is constant
+                this.src = this.renderConstant();
             }
-            o[2] = this.pick(this.registers);
-            while (o[2] === o[1]) {
-                o[2] = this.pick(this.registers);
+            if (this.dest === "reg") { // this.dest is register 
+                this.dest = this.renderRegister();
+            } else { // this.dest is memory
+                this.dest = this.renderMemAccess();
             }
+            return this.ret[0] + " " + this.src + ", " + this.dest;
+        }
+        else if (this.architecture === "ARM64") {
+            // determine the number of accessed bits in register, 32 bits or 64 bits
+            if (Math.random() < 0.5) {this.registers = this.registers_32bits;} 
+            else {this.registers = this.registers_64bits;}
 
-            if (o1 || o2) { // TODO: render memory access here
-                var prefix = this.pick(this.prefixes);
-                if (o1) {
-                    o[1] = prefix + "(" + o[1] + ")";
+            if (this.memAccess === false) {
+                if (this.ret[0] === "mov") {
+                    this.src = this.renderRegister();
+                    this.dest = this.renderRegister();
                 } else {
-                    o[2] = prefix + "(" + o[2] + ")";
+                    if (Math.random() < 0.5) {
+                        this.op1 = this.renderRegister();
+                        this.op2 = this.renderRegister();
+                    } else {
+                        this.op1 = this.renderConstant();
+                        this.op2 = this.renderRegister();
+                    }
+                    this.src = this.op1 + ", " + this.op2;
+                    this.dest = this.renderRegister();
                 }
+            } else {
+                if (this.ret[0] === "ldp" || this.ret[0] == "stp") {
+                    this.pair = true;
+                    this.dest = this.renderRegister();
+                    this.src = this.renderMemAccess();
+                } else {
+                    this.dest = this.renderRegister();
+                    this.src = this.renderMemAccess();
+                }   
             }
+            return this.ret[0] + " " + this.dest + ", " + this.src;
         }
-        return o[0] + " " + o[1] + ", " + o[2];
     }
 
     renderVOButtons() {
@@ -354,10 +336,10 @@ export default class VO extends RunestoneBase {
         // enable all previously disabled element
         for (let h = 0; h < this.num_q_in_group; h++) {
             var currID = "div" + h;
-            $("#" + currID).prop("disabled", false).removeClass("prohibited");
+            $("#" + this.divid + currID).prop("disabled", false).removeClass("prohibited");
             // Disable all elements within the current item and add the "input[disabled]" class
-            $("#" + currID).find("*").prop("disabled", false).removeClass("input[disabled]");
-            $("#" + currID).find("code").removeClass("disabled-code");
+            $("#" + this.divid + currID).find("*").prop("disabled", false).removeClass("input[disabled]");
+            $("#" + this.divid + currID).find("code").removeClass("disabled-code");
         }
 
         // clear feedback field
@@ -428,7 +410,6 @@ export default class VO extends RunestoneBase {
             this.disableThisRow(i);
             this.feedback_msg.push($.i18n("msg_VO_correct"));
         }
-
         this.renderFeedback();
     }
 
@@ -472,13 +453,49 @@ export default class VO extends RunestoneBase {
         }
     }
 
+    renderMemAccess() {
+        var IA32_offsets = ["-0x8", "0x8", "8", "4", "-0x4", "0x4"];
+        var ARM64_offsets = ["#8", "#16", "#32"];
+        if (this.architecture === "IA32") {
+            return this.pick(IA32_offsets) + "(" + this.pick(this.registers) + ")";
+        } else if (this.architecture === "ARM64") {
+            if (this.pair === true) {
+                return "[" + this.pick(this.registers) + "]";
+            } else {
+                if (Math.random() < 0.5) {
+                    return "[sp, " + this.pick(ARM64_offsets) + "]";
+                } else {
+                    return "[" + this.pick(this.registers)  + ", " + this.pick(ARM64_offsets) + "]";
+                }
+            }
+        }
+    }
+
+    renderRegister() {
+        var reg1 = null, reg2 = null;
+        if (this.architecture === "IA32") {
+            return this.pick(this.registers);
+        }
+        else if (this.architecture === "ARM64") {
+            if (this.pair === true) {
+                reg1 = this.pick(this.registers);
+                do {
+                    reg2 = this.pick(this.registers);
+                } while (reg1 === reg2);
+                return reg1 + ", " + reg2;
+            } else {
+                return this.pick(this.registers);
+            }
+        }
+    }
+
     pick(myList) { // randomly pick one item in list
         const randIdx = Math.floor(Math.random() * (myList.length));
         return myList[randIdx];
     }
 
     disableThisRow(i) { // disable elements of correct row
-        var currID = "div" + i;
+        var currID = this.divid + "div" + i;
         $("#" + currID).prop("disabled", true).addClass("prohibited");
         // Disable all elements within the current item and add the "input[disabled]" class
         $("#" + currID).find("*").prop("disabled", true).addClass("input[disabled]");
