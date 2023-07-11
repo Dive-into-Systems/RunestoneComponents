@@ -14,5 +14,11 @@ $.i18n().load({
         msg_VO_wrong_cm: "Cache miss is related to...", 
         msg_VO_wrong_db: "Dirty bit is related to...",
         msg_VO_imcomplete_answer: "Your selection is incomplete",
+        msg_cacheinfo_generate_a_number: "Ask me another",
+        msg_cachepartition_generate_a_number: "Ask me another",
+        msg_cacheinfo_incorrect_0: "Block size is incorrect. Hint: block size has something to do with the offset bits", 
+        msg_cacheinfo_incorrect_1: "Number of sets is incorrect. Hint: number of sets has something to do with the index bits",
+        msg_cacheinfo_incorrect_2: "Number of lines is incorrect. Hint: number of lines has something to do with the index bits and set associatives",
+        msg_cacheinfo_correct: "Correct. Good job!",
     },
 });

@@ -1077,6 +1077,7 @@ export default class vmtable extends RunestoneBase {
         this.curr_ref = 0;
         this.pf_chance_base = 1/2;
         this.pf_chance_boost = 1/4;
+        this.pf_chance_reduce = 1/4;
         this.curr_pf_chance = this.pf_chance_base;
 
         for (let i = 0; i < this.numFrames; i++) {
@@ -1111,7 +1112,7 @@ export default class vmtable extends RunestoneBase {
             return currIndex;
         } else {
             if (Math.random() < this.curr_pf_chance) {
-                this.curr_pf_chance = this.pf_chance_base;
+                this.curr_pf_chance -= this.pf_chance_reduce;
                 const items = Array.from(this.invalid);
                 return items[Math.floor(Math.random() * items.length)];
             } else {

@@ -34,10 +34,10 @@ the RandAlgo class keeps track of four dimensions of an address-generating algor
 4. address variety (number of unique addresses over the size of one address list)
 '''
 class vmAlgo:
-    def __init__(self, name, addresses, indexBits, numPages, numFrames, rangeFrames, startFrame, numRefs):
+    def __init__(self, name, occupancy, indexBits, numPages, numFrames, rangePages, startFrame, numRefs):
         
         self.name = name # name of algorithm
-        self.addresses = addresses # list of generated addresses in one run
+        self.addresses = None # list of generated addresses in one run
         self.num_refs = numRefs # length of the list of generated addresses in one run
         self.index_bits = indexBits # number of bits for index
         self.num_pages = numPages # number of entries in cache structure
@@ -51,8 +51,9 @@ class vmAlgo:
         self.indices_coverage = None
         self.address_variety = None
         
-        self.range_frames = rangeFrames
+        self.range_pages = rangePages
         self.start_frame = startFrame
+        self.occupancy = occupancy
         
         self.invalid = set()
         self.replacementStruct = deque()
@@ -63,7 +64,7 @@ class vmAlgo:
     # print out all info in current test run
     def __str__(self):
         toString = ""
-        toString += ("There are in total " + str(len(self.addresses)) + " addresses: \n")
+        toString += ("There are in total " + str(len(self.addresses)) + " addresses including " + str(self.occupancy) + " occupancies:\n")
         for i in range(len(self.addresses)):
             toString += (str(self.addresses[i]) + "\n")
         toString += ("Hit " + str(self.hit_count) + "\n")
@@ -79,8 +80,10 @@ class vmAlgo:
         self.pf_evict = 0
         self.hit_count = 0
         self.invalid.clear()
-        for i in range(self.range_frames):
+        for i in range(self.range_pages):
             self.invalid.add(i + self.start_frame)
+            
+        count = 0
         for currPage, offset in self.addresses:
             currFrame, evictedPage, curr_hm, curr_evict = self.replacementFIFO(currPage)
 
@@ -89,13 +92,16 @@ class vmAlgo:
                 self.currentVmTable[binary2decimal(evictedPage)][1] = -1
             self.currentVmTable[binary2decimal(currPage)][0] = 1
             self.currentVmTable[binary2decimal(currPage)][1] = currFrame
+            
+            if count < self.occupancy:
+                count += 1
+                continue
 
             self.hit_miss_list.append(curr_hm)
         
             if curr_hm:
                 self.hit_count += 1
-                
-            if curr_evict:
+            elif curr_evict:
                 self.pf_evict += 1
             else:
                 self.pf_noEvict += 1
@@ -143,7 +149,7 @@ class vmAlgo:
         uniqueIndices = set()
         for address in self.addresses:
             uniqueIndices.add(address[0])
-        self.indices_coverage = len(uniqueIndices)/self.range_frames
+        self.indices_coverage = len(uniqueIndices)/self.range_pages
         # print("The coverage of indices (uniqueIndices / numRows) is " + str(self.indices_coverage))
     
     '''
@@ -155,7 +161,7 @@ class vmAlgo:
         for address in self.addresses:
             if (address[0] + address[1]) not in uniqueTagIndex:
                 uniqueTagIndex.add(address[0] + address[1])
-        self.address_variety = len(uniqueTagIndex)/self.range_frames
+        self.address_variety = len(uniqueTagIndex)/self.range_pages
         # if self.address_variety > 1:
         #     print(uniqueTagIndex)
         #     print(self.addresses)
