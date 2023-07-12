@@ -73,6 +73,7 @@ const module_map = {
     vo: () => import("./runestone/virtualmemory/js/vo.js"),
     vmtable: () => import("./runestone/virtualmemory/js/vmtable.js"),
     vminfo: () => import("./runestone/virtualmemory/js/vminfo.js"),
+    vmpartition: () => import("./runestone/virtualmemory/js/vmpartition.js"),
     groupsub: () => import("./runestone/groupsub/js/groupsub.js"),
     khanex: () => import("./runestone/khanex/js/khanex.js"),
     lp_build: () => import("./runestone/lp/js/lp.js"),
