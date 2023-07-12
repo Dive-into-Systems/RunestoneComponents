@@ -39,8 +39,7 @@ export default class VO extends RunestoneBase {
     ===========================================*/
     // Create the VO Element
     createVOElement() {
-        this.initParams(); // init all 
-
+        this.initParams(); // init all
         this.renderVOInputField();
         this.renderVOButtons();
         this.renderVOFeedbackDiv();
@@ -85,6 +84,7 @@ export default class VO extends RunestoneBase {
             this.arthm_operators = ["addl", "subl", "imull", "sall", "sarl", "shrl", "xorl", "andl", "orl"];
             this.mem_operators = ["movl"];
             this.registers = ["%eax", "%ecx", "%edx", "%ebx", "%esi", "%edi"];
+            this.offsets = ["-0x8", "0x8", "8", "4", "-0x4", "0x4", ""];
         } else if (this.architecture === "ARM64") {
             // declare all ARM64 elements for the prompt
             this.arthm_operators = ["mov", "add", "sub", "mul", "udiv", "sdiv", "and", "orr", "eor"];
@@ -96,13 +96,11 @@ export default class VO extends RunestoneBase {
                 this.registers_64bits.push("x" + i.toString());
                 this.registers_32bits.push("w" + i.toString());
             }
+            this.offsets = ["#8", "#16", "#32"];
         }
     }
 
     renderVOInputField() {  
-        this.feedbackDiv = document.createElement("div");
-        this.feedbackDiv = $("<div>").attr("id", this.divid + "_feedback");
-
         this.containerDiv = $("<div>").attr("id", this.divid);
         this.instruction = $("<div>").html(
             "For each of the following " + 
@@ -116,7 +114,7 @@ export default class VO extends RunestoneBase {
         this.inputBox = document.createElement("div");
         // convert inputBox to a jQuery object
         this.inputBox = $(this.inputBox); // contains all prompts and buttons
-
+        
         this.textNodes = []; // create a reference to all current textNodes for future update
         this.inputNodes = []; // create slots for inputs for future updates
         var textNode = null; 
@@ -144,7 +142,7 @@ export default class VO extends RunestoneBase {
                 var btnYes = $("<input>").attr({
                     type: "radio",
                     value: true,
-                    name: "YN" + i + this.fieldID[j],
+                    name: this.divid + "YN" + i + this.fieldID[j],
                     id: "Yes" + i + this.fieldID[j]
                 });
                 btnYes.on('change', function () {
@@ -155,7 +153,7 @@ export default class VO extends RunestoneBase {
                 var btnNo = $("<input>").attr({
                     type: "radio",
                     value: false,
-                    name: "YN" + i + this.fieldID[j],
+                    name: this.divid + "YN" + i + this.fieldID[j],
                     id: "No" + i + this.fieldID[j]
                 });
                 btnNo.on('change', function () {
@@ -179,7 +177,7 @@ export default class VO extends RunestoneBase {
                     class: "button-check",
                     name: "answer",
                     type: "button",
-                    id: "submit" + i
+                    id: this.divid + "submit" + i
                 })
                 .on("click", function() {
                     this.checkThisAnswers(i);
@@ -203,6 +201,8 @@ export default class VO extends RunestoneBase {
             backgroundColor: "white",
             padding: "8px"
         });
+
+        this.feedbackDiv = $("<div>").attr("id", this.divid + "_feedback");
 
         // remove the script tag.
         this.scriptSelector(this.containerDiv).remove();
@@ -246,10 +246,7 @@ export default class VO extends RunestoneBase {
 
             this.answerList[k] = [pf, cm, db];
             this.promptList[k] = [this.memAccess, this.src, this.dest]
-            // console.log("the answer is " + this.answerList[k]);
-            // console.log("it's corresponding source prompt is: " + this.promptList[k])
             this.promptList[k] = this.renderOnePrompt();
-            // console.log("it's corresponding rendered prompt is: " + this.promptList[k])
         }
     }
 
@@ -319,12 +316,12 @@ export default class VO extends RunestoneBase {
             class: "btn btn-success",
             name: "generate a number",
             type: "button",
+            id: this.divid + "submit",
         });
         this.generateButton.addEventListener("click", () => {
             this.cleanInputNFeedbackField(); // clear answers, clear prev feedback, and enable all for the input fields
             this.updatePrompts();
-          });
-          
+        });
         this.containerDiv.append("<br>");
         this.containerDiv.append(this.generateButton);
     }
@@ -335,20 +332,21 @@ export default class VO extends RunestoneBase {
 
         // enable all previously disabled element
         for (let h = 0; h < this.num_q_in_group; h++) {
-            var currID = "div" + h;
-            $("#" + this.divid + currID).prop("disabled", false).removeClass("prohibited");
-            // Disable all elements within the current item and add the "input[disabled]" class
-            $("#" + this.divid + currID).find("*").prop("disabled", false).removeClass("input[disabled]");
-            $("#" + this.divid + currID).find("code").removeClass("disabled-code");
-        }
+            var currDivID = this.divid + "div" + h; // index into the current div
+            var currSubmitID = this.divid + "submit" + h; // index into the submit button in the current divid
 
+            $("#" + currDivID).prop("disabled", false).removeClass("prohibited");
+            $("#" + currDivID).find("*").prop("disabled", false).removeClass("input[disabled]");
+            $("#" + currDivID).find("code").removeClass("disabled-code");
+            $(currSubmitID).prop("disabled", false);
+        }
         // clear feedback field
         $(this.feedbackDiv).remove();
     }
 
     updatePrompts(){
-        this.genPromptsNAnswer();
         // create and render all input fields in question group
+        this.genPromptsNAnswer();
         for (let i = 0; i < this.num_q_in_group; i++) {
             this.textNodes[i].text(this.promptList[i]);
         }
@@ -376,7 +374,7 @@ export default class VO extends RunestoneBase {
             }
 
             if ((checkedAnswerInOneGroup[j] !== this.answerList[i][j])) {
-                var btnName = 'YN' + i + this.fieldID[j];
+                var btnName = this.divid + 'YN' + i + this.fieldID[j];
                 $('input[type="radio"][name="' + btnName + '"]').addClass('highlightWrong');
                 this.correct = false;
                 if (j === 0) {
@@ -416,14 +414,14 @@ export default class VO extends RunestoneBase {
     renderFeedback() {
         var l = this.feedback_msg.length;
         var feedback_html = "";
-
+        // format the feedback div w/ line break 
         for (let i = 0; i < l; i++) {
             feedback_html += "<dev>" + this.feedback_msg[i] + "</dev>";
             if (i < (this.feedback_msg.length - 1)) {
                 feedback_html += "<br/>";
             }
         }
-
+        // set the background color of feedback divid
         if (this.correct === true) {
             $(this.feedbackDiv).attr("class", "alert alert-info");
         } else {
@@ -443,7 +441,8 @@ export default class VO extends RunestoneBase {
         this.containerDiv.append(this.feedbackDiv);
     }
 
-    renderConstant() { // generate a value within constRange and prime it for display
+    // render presentation of a constant based on language
+    renderConstant() {
         var myVal = Math.floor(Math.random() * this.constRange).toString();
         if (this.architecture === "IA32") {
             return "$" + myVal;
@@ -453,39 +452,37 @@ export default class VO extends RunestoneBase {
         }
     }
 
+    // render presentation of memory access based on language
     renderMemAccess() {
-        var IA32_offsets = ["-0x8", "0x8", "8", "4", "-0x4", "0x4"];
-        var ARM64_offsets = ["#8", "#16", "#32"];
         if (this.architecture === "IA32") {
-            return this.pick(IA32_offsets) + "(" + this.pick(this.registers) + ")";
+            return this.pick(this.offsets) + "(" + this.pick(this.registers) + ")";
         } else if (this.architecture === "ARM64") {
             if (this.pair === true) {
                 return "[" + this.pick(this.registers) + "]";
             } else {
-                if (Math.random() < 0.5) {
-                    return "[sp, " + this.pick(ARM64_offsets) + "]";
+                var randVal = Math.random();
+                if (randVal < (1/3)) {
+                    return "[sp, " + this.pick(this.offsets) + "]";
+                } else if (randVal < (2/3)) {
+                    return "[" + this.pick(this.registers)  + ", " + this.pick(this.offsets) + "]";
                 } else {
-                    return "[" + this.pick(this.registers)  + ", " + this.pick(ARM64_offsets) + "]";
+                    return "[" + this.pick(this.registers) + "]";
                 }
             }
         }
     }
 
+    // render presentation of registers based on language
     renderRegister() {
         var reg1 = null, reg2 = null;
-        if (this.architecture === "IA32") {
+        if (this.pair === true) {
+            reg1 = this.pick(this.registers);
+            do {
+                reg2 = this.pick(this.registers);
+            } while (reg1 === reg2);
+            return reg1 + ", " + reg2;
+        } else {
             return this.pick(this.registers);
-        }
-        else if (this.architecture === "ARM64") {
-            if (this.pair === true) {
-                reg1 = this.pick(this.registers);
-                do {
-                    reg2 = this.pick(this.registers);
-                } while (reg1 === reg2);
-                return reg1 + ", " + reg2;
-            } else {
-                return this.pick(this.registers);
-            }
         }
     }
 
@@ -495,11 +492,13 @@ export default class VO extends RunestoneBase {
     }
 
     disableThisRow(i) { // disable elements of correct row
-        var currID = this.divid + "div" + i;
-        $("#" + currID).prop("disabled", true).addClass("prohibited");
-        // Disable all elements within the current item and add the "input[disabled]" class
-        $("#" + currID).find("*").prop("disabled", true).addClass("input[disabled]");
-        $("#" + currID).find("code").addClass("disabled-code");
+        var currDivID = this.divid + "div" + i; // index into the current div
+        var currSubmitID = this.divid + "submit" + i; // index into the submit button in the current divid
+
+        $("#" + currDivID).prop("disabled", true).addClass("prohibited");
+        $("#" + currDivID).find("*").prop("disabled", true).addClass("input[disabled]");
+        $("#" + currDivID).find("code").addClass("disabled-code");
+        $(currSubmitID).prop("disabled", true);
     }
 
     /*===================================
@@ -524,7 +523,7 @@ export default class VO extends RunestoneBase {
     }
 
     displayFeedback() {
-        $(this.feedbackDiv).css("visibility", "visible");;
+        $(this.feedbackDiv).css("visibility", "visible");
     }
         // log the answer and other info to the server (in the future)
     async logCurrentAnswer(sid) {
