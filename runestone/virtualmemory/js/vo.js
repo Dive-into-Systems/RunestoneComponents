@@ -8,6 +8,7 @@ import RunestoneBase from "../../common/js/runestonebase.js";
 import "./vo-i18n.en.js";
 import "../css/vo.css";
 import { Pass } from "codemirror";
+import { validLetter } from "jexcel";
 
 export var VOList = {}; // Object containing all instances of VO that aren't a child of a timed assessment.
 
@@ -58,6 +59,7 @@ export default class VO extends RunestoneBase {
         this.num_q_in_group = 4; // number of questions in a group
         this.memoryAccess_chance = 0.5; // probability of memory-accessing ops in one set
         this.constantInArthm_chance = 0.5; // probability of having a contant as src
+        this.leaOperator = false; // whether we want lea operator
 
         this.constRange = 20; // value range of the constants
         this.fieldList = ["Page fault? ", "Cache miss? ", "Dirty bit? "];
@@ -77,6 +79,9 @@ export default class VO extends RunestoneBase {
         }
         if (currentOptions["mem_access_chance"] != undefined) {
             this.memoryAccess_chance = eval(currentOptions["mem_access_chance"]);
+        }
+        if (currentOptions["load_effective_address"] != undefined) {
+            this.leaOperator = eval(currentOptions["load_effective_address"]);
         }
 
         if (this.architecture === "IA32") {
@@ -100,7 +105,7 @@ export default class VO extends RunestoneBase {
         }
     }
 
-    renderVOInputField() {  
+    renderVOInputField() {
         this.containerDiv = $("<div>").attr("id", this.divid);
         this.instruction = $("<div>").html(
             "For each of the following " + 
@@ -201,7 +206,8 @@ export default class VO extends RunestoneBase {
             backgroundColor: "white",
             padding: "8px"
         });
-
+        
+        // create a feedback div, will be removed in clear and added back when generate another question
         this.feedbackDiv = $("<div>").attr("id", this.divid + "_feedback");
 
         // remove the script tag.
@@ -211,11 +217,11 @@ export default class VO extends RunestoneBase {
         this.containerDiv.append(this.statementDiv);
     }
 
-    genPromptsNAnswer() { // generates a group of prompts and their answers
+    genPromptsNAnswer() { // generates a group of prompts and their answers, sets answers with this.memAccess, this.src, this.dest
         this.memAccess = null;
         this.dest = null;
         this.src = null;
-        this.constant = false;
+        this.leal = false;
         var pf = null, cm = null, db = null;
 
         for (let k = 0; k < this.num_q_in_group; k++) {
@@ -231,35 +237,43 @@ export default class VO extends RunestoneBase {
                     this.src = "reg";
                     db = true;
                 }
-            } else { // no mem access case
-                this.memAccess = false;
-                this.dest = "reg"; // this.dest must be a register
-                if (Math.random() < this.constantInArthm_chance) {
-                    this.constant = true;
-                    this.src = "const";
-                } else {
-                    this.constant = false;
-                    this.src = "reg";
-                }
-                pf = false, cm = false, db = false;
             }
-
+            else { // no mem access case
+                this.memAccess = false;
+                this.dest = "reg";
+                pf = false, cm = false, db = false;
+                if ((this.leaOperator === true) && (Math.random() < 0.1)) {
+                    this.leal = true;
+                    this.src = "mem"; // not an actual memory access
+                } else { 
+                    if (Math.random() < this.constantInArthm_chance) {
+                        this.src = "const";
+                    } else {
+                        this.src = "reg";
+                    }
+                }
+            }
             this.answerList[k] = [pf, cm, db];
-            this.promptList[k] = [this.memAccess, this.src, this.dest]
-            this.promptList[k] = this.renderOnePrompt();
+            this.promptList[k] = this.renderOnePrompt(); 
         }
     }
 
-    renderOnePrompt() { // render one prompt based on source prompt (return: string)
-        this.ret = [];
+    renderOnePrompt() { // render one prompt based on source prompt, which is this.memAccess, this.src, and this.dest
+        this.operator = null;
         this.pair = false;
         
+        // render the operator
         if (this.memAccess === false) {
-            this.ret[0] = this.pick(this.arthm_operators);
+            if (this.leal === true) {
+                this.operator = "leal"; 
+            } else {
+                this.operator = this.pick(this.arthm_operators);
+            }
         } else {
-            this.ret[0] = this.pick(this.mem_operators);
+            this.operator = this.pick(this.mem_operators);
         }
 
+        // render all other
         if (this.architecture === "IA32") {
             if (this.src === "reg") { // this.src is register
                 this.src = this.renderRegister();
@@ -273,7 +287,7 @@ export default class VO extends RunestoneBase {
             } else { // this.dest is memory
                 this.dest = this.renderMemAccess();
             }
-            return this.ret[0] + " " + this.src + ", " + this.dest;
+            return this.operator + " " + this.src + ", " + this.dest;
         }
         else if (this.architecture === "ARM64") {
             // determine the number of accessed bits in register, 32 bits or 64 bits
@@ -281,31 +295,27 @@ export default class VO extends RunestoneBase {
             else {this.registers = this.registers_64bits;}
 
             if (this.memAccess === false) {
-                if (this.ret[0] === "mov") {
+                if (this.operator === "mov") {
                     this.src = this.renderRegister();
                     this.dest = this.renderRegister();
                 } else {
                     if (Math.random() < 0.5) {
                         this.op1 = this.renderRegister();
-                        this.op2 = this.renderRegister();
                     } else {
                         this.op1 = this.renderConstant();
-                        this.op2 = this.renderRegister();
                     }
+                    this.op2 = this.renderRegister();
                     this.src = this.op1 + ", " + this.op2;
                     this.dest = this.renderRegister();
                 }
             } else {
-                if (this.ret[0] === "ldp" || this.ret[0] == "stp") {
+                if (this.operator === "ldp" || this.operator == "stp") {
                     this.pair = true;
-                    this.dest = this.renderRegister();
-                    this.src = this.renderMemAccess();
-                } else {
-                    this.dest = this.renderRegister();
-                    this.src = this.renderMemAccess();
-                }   
+                }
+                this.dest = this.renderRegister();
+                this.src = this.renderMemAccess();   
             }
-            return this.ret[0] + " " + this.dest + ", " + this.src;
+            return this.operator + " " + this.dest + ", " + this.src;
         }
     }
 
@@ -350,6 +360,9 @@ export default class VO extends RunestoneBase {
         for (let i = 0; i < this.num_q_in_group; i++) {
             this.textNodes[i].text(this.promptList[i]);
         }
+        // create another feedback div
+        this.feedbackDiv = $("<div>").attr("id", this.divid + "_feedback");
+        this.containerDiv.append(this.feedbackDiv);
     }
 
     checkThisAnswers(i) {
@@ -359,21 +372,21 @@ export default class VO extends RunestoneBase {
         this.wrongCM = false; // init all answer as correct
         this.wrongDB = false; // init all answer as correct
         this.incompleteAnswer = false;
-        var checkedAnswerInOneGroup = [];
+        var currAnswer = null;
 
         for (let j = 0; j < 3; j++) {
             if (this.inputNodes[i][j][0].is(":checked")) { // when user chose YES
-                checkedAnswerInOneGroup.push(true);
+                currAnswer = true;
             } else if (this.inputNodes[i][j][1].is(":checked")) { // when user chose NO
-                checkedAnswerInOneGroup.push(false);
+                currAnswer = false;
             } else { // when user chose nothing
-                checkedAnswerInOneGroup.push("");
+                currAnswer = "";
                 this.correct = false;
                 this.incompleteAnswer = true;
                 break;
             }
 
-            if ((checkedAnswerInOneGroup[j] !== this.answerList[i][j])) {
+            if ((currAnswer !== this.answerList[i][j])) {
                 var btnName = this.divid + 'YN' + i + this.fieldID[j];
                 $('input[type="radio"][name="' + btnName + '"]').addClass('highlightWrong');
                 this.correct = false;
@@ -454,8 +467,30 @@ export default class VO extends RunestoneBase {
 
     // render presentation of memory access based on language
     renderMemAccess() {
+        var reg1 = null, reg2 = null;
         if (this.architecture === "IA32") {
-            return this.pick(this.offsets) + "(" + this.pick(this.registers) + ")";
+            if (this.operator == "leal") {
+                var randVal = Math.random();
+                if (randVal < (1/4)) {
+                    return this.pick(this.offsets) + "(" + this.pick(this.registers) + ")";
+                } else if (randVal < (1/2)) {
+                    reg1 = this.pick(this.registers);
+                    do {
+                        reg2 = this.pick(this.registers);
+                    } while (reg1 === reg2);
+                    return "(" + reg1 + ", " +  reg2 + ")";
+                } else if (randVal < (3/4)) {
+                    reg1 = this.pick(this.registers);
+                    do {
+                        reg2 = this.pick(this.registers);
+                    } while (reg1 === reg2);
+                    return "(" + reg1 + ", " + reg2 + ", " + this.pick(["2", "4", "8"]) + ")";
+                } else {
+                    return this.pick(["0x20", "0x40", "0x80"]) + "(, " + this.pick(this.registers) + ", " + this.pick(["2", "4", "8"]) + ")";
+                }
+            } else {
+                return this.pick(this.offsets) + "(" + this.pick(this.registers) + ")";
+            }
         } else if (this.architecture === "ARM64") {
             if (this.pair === true) {
                 return "[" + this.pick(this.registers) + "]";
@@ -517,11 +552,9 @@ export default class VO extends RunestoneBase {
     recordAnswered() {
         this.isAnswered = true;
     }
-    
     hideFeedback() {
         $(this.feedbackDiv).css("visibility", "hidden");
     }
-
     displayFeedback() {
         $(this.feedbackDiv).css("visibility", "visible");
     }
