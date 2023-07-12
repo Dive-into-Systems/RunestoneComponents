@@ -85,10 +85,9 @@ export default class vmtable extends RunestoneBase {
         this.pageTableInit = null;
         this.referenceList = null;
 
-        this.chance_hit = 1/3;
-        this.hit_incr = 1/3;
-        this.chance_conf = 0.5;
-        this.conf_incr = 0.25
+        this.pf_chance_base = 2/3;
+        this.pf_chance_boost = 1/3;
+        this.pf_chance_reduce = 1/6;
     }
 
     // load customized parameters
@@ -100,9 +99,6 @@ export default class vmtable extends RunestoneBase {
             if (currentOptions["bits"] != undefined) {
                 this.numBits = eval(currentOptions["bits"]);
             }
-            // if (currentOptions["cache-org"] != undefined) {
-            //     this.cacheOrg = currentOptions["cache-org"];
-            // }
             if (currentOptions["offset"] != undefined) {
                 this.offsetBits = eval(currentOptions["offset"]);
                 this.blockSize = 1 << this.offsetBits;
@@ -119,23 +115,7 @@ export default class vmtable extends RunestoneBase {
             }            
             if (currentOptions["redo"] != undefined) {
                 this.redo = eval(currentOptions["redo"]);
-            }            
-            // if (currentOptions["index"] != undefined) {
-            //     this.indexBits = eval(currentOptions["index"]);
-            //     this.numRows = 1 << this.indexBits;
-            // }
-            // if (currentOptions["num-references"] != undefined) {
-            //     this.numRefs = eval(currentOptions["num-references"]);
-            // }
-            // if (currentOptions["init-valid-rate"] != undefined) {
-            //     this.initValidRate = eval(currentOptions["init-valid-rate"]);
-            // }
-            // if (currentOptions["debug"] != undefined) {
-            //     this.debug = eval(currentOptions["debug"]);
-            // }
-            // if (currentOptions["algorithm"] != undefined) {
-            //     this.algorithm = currentOptions["algorithm"];
-            // }
+            }         
             if (currentOptions["fixed"] != undefined) {
                 this.fixed = eval(currentOptions["fixed"]);
                 if ( this.fixed ) {
@@ -146,7 +126,6 @@ export default class vmtable extends RunestoneBase {
                     }
                 } 
             }
-
             this.indexBits = this.numBits - this.offsetBits;
             this.numRows = 1 << this.indexBits;
         } catch (error) {
@@ -386,7 +365,6 @@ export default class vmtable extends RunestoneBase {
             "<td></td>";
             tableRow.style.backgroundColor = "white";
             this.displayedTableBody.appendChild(tableRow);
-
             this.currentVmTable.push([0, 0, ""]);
         }
     }
@@ -470,12 +448,9 @@ export default class vmtable extends RunestoneBase {
 
     // update a row of the body of the displayed cache table
     updateDisplayedTableBodyRow(index) {
-        // if ( this.cacheOrg === directMapped ) {
-            // update the valid bit, dirty bit, frame number
         this.displayedTableBody.rows[index].cells[1].textContent = this.currentVmTable[index][0].toString();
         this.displayedTableBody.rows[index].cells[2].textContent = this.currentVmTable[index][1].toString();
         this.displayedTableBody.rows[index].cells[3].textContent = this.currentVmTable[index][2];
-        // } 
     }
 
     setCellsToDefault(table) {
@@ -488,14 +463,9 @@ export default class vmtable extends RunestoneBase {
     }
 
     highlightChanges(row) {
-        // this.displayedTableBody.rows[index].cells[0].style.backgroundColor = "yellow";
-            // highlight the valid bit, dirty bit, frame number
         for ( let cell of row.cells ) {
             cell.style.backgroundColor = "yellow";
         } 
-        // this.displayedTableBody.rows[index].cells[1].style.backgroundColor = "yellow";
-        // this.displayedTableBody.rows[index].cells[2].style.backgroundColor = "yellow";
-        // this.displayedTableBody.rows[index].cells[3].style.backgroundColor = "yellow";
     }
 
     // add a new row to the reference table
@@ -966,7 +936,6 @@ export default class vmtable extends RunestoneBase {
         // initialize hit miss list
         this.hit_miss_list = [];
 
-
         this.curr_ref = 0;
 
         if ( !this.fixedMinIndex ) {
@@ -1028,6 +997,7 @@ export default class vmtable extends RunestoneBase {
 
     generateAnswerNext() {
         let currPage, curr_rw, curr_offset;
+        // 
         if ( this.fixed ) {
             const curr_ref = this.curr_ref;
             const memRef = this.referenceList[ curr_ref ][ 0 ];
@@ -1040,7 +1010,6 @@ export default class vmtable extends RunestoneBase {
             curr_offset = this.generateOffset();
         }
 
-
         const currPage_binary = this.toBinary(currPage, this.indexBits);
         const curr = this.replacementFIFO(currPage);
         const currFrame = curr[0];
@@ -1048,8 +1017,6 @@ export default class vmtable extends RunestoneBase {
         const curr_hm = curr[2];
         const currPageIndex = this.getRealRowIndex(currPage);
 
-        // console.log(this.invalid);
-        // console.log(currPageIndex);
         const curr_dirty = this.calculateDirtyBit(this.currentVmTable[currPageIndex][0], 
             curr_rw, curr_hm, this.currentVmTable[currPageIndex][1]);
 
@@ -1075,9 +1042,6 @@ export default class vmtable extends RunestoneBase {
 
     genBoostInit() {
         this.curr_ref = 0;
-        this.pf_chance_base = 1/2;
-        this.pf_chance_boost = 1/4;
-        this.pf_chance_reduce = 1/4;
         this.curr_pf_chance = this.pf_chance_base;
 
         for (let i = 0; i < this.numFrames; i++) {
@@ -1099,14 +1063,8 @@ export default class vmtable extends RunestoneBase {
         // console.log(this.replacementStruct);
     }
 
-    loadNextAnswer() {
-        // pass
-
-        // const 
-    }
-
     genBoostNext() {
-        if (this.curr_ref == 0) {
+        if (this.replacementStruct.length == 0) {
             const currIndex =  this.generateRandomIndex();
             this.curr_pf_chance = this.pf_chance_base;
             return currIndex;
@@ -1129,11 +1087,6 @@ export default class vmtable extends RunestoneBase {
             }
         }
         return -1;
-    }
-
-    replacementReference(currPage) {
-        let idx = this.findPage(currPage);
-        let ret;
     }
 
     // returns [frame to put in, page to evict, hit or miss]
@@ -1425,14 +1378,14 @@ $(document).on("runestone:login-complete", function () {
         };
         if ($(this).closest("[data-component=timedAssessment]").length == 0) {
             // If this element exists within a timed component, don't render it here
-            // try {
+            try {
                 vmtableList[this.id] = new vmtable(opts);
-            // } catch (err) {
-            //     console.log(
-            //         `Error rendering Cache Information Problem ${this.id}
-            //          Details: ${err}` 
-            //     );
-            // }
+            } catch (err) {
+                console.log(
+                    `Error rendering Cache Information Problem ${this.id}
+                     Details: ${err}` 
+                );
+            }
         }
     });
 });

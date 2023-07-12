@@ -42,10 +42,7 @@ def setOccupancy(occupancy, indexBits, offsetBits, numFrames, addresses, replace
         addresses.append((currPage, generateOffset(offsetBits)))
     
 
-def generateRef(indexBits, offsetBits, numRefs, numFrames, addresses, replacementStruct, invalid):
-    pf_chance_curr = 3/4
-    pf_chance_boost = 1/4
-    pf_chance_reduce = 1/8
+def generateRef(indexBits, offsetBits, numRefs, numFrames, pf_chance_curr, pf_chance_boost, pf_chance_reduce, addresses, replacementStruct, invalid):
     
     for i in range(numRefs):
         if len(replacementStruct) == 0 or (random.random() < pf_chance_curr):
@@ -60,7 +57,7 @@ def generateRef(indexBits, offsetBits, numRefs, numFrames, addresses, replacemen
             pf_chance_curr += pf_chance_boost
             
 
-def main_vm_bound(indexBits, offsetBits, numRefs, numFrames=4, rangePages = 5, occupancy = 0):
+def main_vm_boost(indexBits, offsetBits, numRefs, pf_chance_base, pf_chance_boost, pf_chance_reduce, numFrames=4, rangePages = 5, occupancy = 0):
     numPages = 1 << indexBits
     lb = random.randint(0, numPages - rangePages)
     ub = lb + rangePages - 1
@@ -71,16 +68,16 @@ def main_vm_bound(indexBits, offsetBits, numRefs, numFrames=4, rangePages = 5, o
     for i in range(lb, ub+1):
         invalid.add(i)
     
-    vmBound = vmAlgo("vmBoost", occupancy, indexBits, numPages, numFrames, rangePages, lb, numRefs)
+    vmBoost = vmAlgo("vmBoost", occupancy, indexBits, numPages, numFrames, rangePages, lb, numRefs)
     addresses = []
     setOccupancy(occupancy, indexBits, offsetBits, numFrames, addresses, replacementStruct, invalid)
-    generateRef(indexBits, offsetBits, numRefs, numFrames, addresses, replacementStruct, invalid)
-    vmBound.addresses = addresses
+    generateRef(indexBits, offsetBits, numRefs, numFrames, pf_chance_base, pf_chance_boost, pf_chance_reduce, addresses, replacementStruct, invalid)
+    vmBoost.addresses = addresses
     
-    vmBound.calcAll()
+    vmBoost.calcAll()
     
-    return vmBound
+    return vmBoost
 
 if __name__ == '__main__':
-    vmBound = main_vm_bound(4, 4, 8, 4, 8, 2)
-    print(vmBound)
+    vmBoost = main_vm_boost(4, 4, 8, 2/3, 1/3, 1/6, 4, 8, 2)
+    print(vmBoost)
