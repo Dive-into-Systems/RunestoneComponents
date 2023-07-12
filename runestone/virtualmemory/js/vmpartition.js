@@ -20,11 +20,6 @@ export default class vmpartition extends RunestoneBase {
         this.origElem = orig;
         this.divid = orig.id;
         this.correct = null;
-        // default number of bits = 4
-        // this.num_bits = 4;
-        // keep track of the last generated cache combination and ensure
-        // each time it generates a different combination
-        this.last_rand_choice = [0,0,0];
 
         this.createCachePartitionElement();
         this.caption = "Cache Partition";
@@ -56,9 +51,6 @@ export default class vmpartition extends RunestoneBase {
         // this.questionDiv = document.createElement("div");
         this.containerDiv.id = this.divid;
 
-        // Generate the drop-down menu for address length
-        this.bitsLengthArray = ["4 bits", "8 bits", "16 bits"];
-
         // create the section that prompts question
         // create question prompt (address)
         this.addressNode = document.createElement("div");
@@ -75,6 +67,7 @@ export default class vmpartition extends RunestoneBase {
         this.helperDiv.appendChild(document.createElement("br"));
         this.usageText = document.createTextNode("Usage: click and drag through the address bits and highlight them with the button below.");
         this.helperDiv.appendChild(this.usageText);
+
         // create question prompt (block size, total number of lines)
         this.partitionNode = document.createElement("div");
         this.bitNodeText = document.createTextNode("-bit virtual address");
@@ -89,11 +82,9 @@ export default class vmpartition extends RunestoneBase {
         this.partitionNode.appendChild(this.bitNodeBit);
         this.partitionNode.appendChild(this.bitNodeText);
         this.partitionNode.appendChild(document.createElement("br"));
-
         this.partitionNode.appendChild(this.frameNodeFrame);
         this.partitionNode.appendChild(this.frameNodeText);
         this.partitionNode.appendChild(document.createElement("br"));
-
         this.partitionNode.appendChild(this.blockNodeBlock);
         this.partitionNode.appendChild(this.blockNodeText);
         this.partitionNode.style.textAlign = "center";
@@ -103,13 +94,6 @@ export default class vmpartition extends RunestoneBase {
         this.statementDiv = document.createElement("div");
         this.statementDiv.appendChild(this.helperDiv);
         this.statementDiv.appendChild(document.createElement("br"));
-        // this.statementDiv.appendChild(document.createElement("br"));
-        // this.statementDiv.append("Cache Organization: ");
-        // this.statementDiv.appendChild(this.orgMenuNode);
-        // this.statementDiv.append("Address Length: ");
-        // this.statementDiv.appendChild(this.addrMenuNode);
-        // this.statementDiv.appendChild(document.createElement("br"));
-        // this.statementDiv.appendChild(document.createElement("br"));
         this.statementDiv.appendChild(this.partitionNode);
         this.statementDiv.appendChild(document.createElement("br"));
         
@@ -142,8 +126,6 @@ export default class vmpartition extends RunestoneBase {
         this.containerDiv.appendChild(this.addressNode);
         this.containerDiv.appendChild(document.createElement("br"));
         this.containerDiv.appendChild(this.inputBitsDiv);
-        // this.containerDiv.appendChild(document.createElement("br"));
-
 
         // Copy the original elements to the container holding what the user will see.
         $(this.origElem).children().clone().appendTo(this.containerDiv);
@@ -213,7 +195,7 @@ export default class vmpartition extends RunestoneBase {
             false)
         ;
         
-        // render the "set tag", "set index", "set offset", "reset" buttons
+        // render "set offset" and "reset" buttons
         this.questionButtionDiv = document.createElement("div");
         
         this.offsetButton = document.createElement("button");
@@ -287,7 +269,6 @@ export default class vmpartition extends RunestoneBase {
                 this.address_node_list.push(codeNode);
             }
         }
-        
     }
     
     // set the selected bits in the memory address into corresponding colors of index
@@ -299,6 +280,7 @@ export default class vmpartition extends RunestoneBase {
             }
         }
     }
+
     // set the selected bits in the memory address into corresponding colors of offset
     highlightSelectedOffset() {
         let selection = window.getSelection();
@@ -308,20 +290,20 @@ export default class vmpartition extends RunestoneBase {
             }
         }
     }
+
     //reset all selection, clear all colors
     resetHighlight() {
         this.address_node_list.forEach(
             element => element.className = "notselected"
         );
     }
+
     // generate the answer as a string based on the randomly generated number
     generateAnswer() {
-
         this.hidefeedback();
-        // this.block_size_ans = this.block_size;
-        // this.entries_ans = this.page_entry;
         this.num_bits = 1 << this.generateRandomInt(2, 5);
         this.num_frames = 1 << this.generateRandomInt(2,4);
+        // the number of offset bits is always smaller than the total number of bits
         this.num_offset = this.generateRandomInt(1, this.num_bits);
         this.block_size = 1 << this.num_offset;
         this.index_bits = this.num_bits - this.num_offset;
@@ -433,6 +415,7 @@ export default class vmpartition extends RunestoneBase {
         this.feedbackDiv.style.visibility = "visible";
     }
 
+    // generate a random integer in [lower, upper)
     generateRandomInt(lower, upper) {
         return lower + Math.floor((upper - lower) * Math.random());
     }
