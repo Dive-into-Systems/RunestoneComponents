@@ -58,6 +58,11 @@ with open(html_path, 'w') as html_file:
             for js in json_contents['js']:
                 html_file.write(f'    <script src="{json_dirname}/{js}"></script>\n')
             
+            # add script for MathJax
+            
+            # html_file.write('    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>')
+            # html_file.write('    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>\n')
+            # html_file.write("    <script>MathJax = {tex: {inlineMath: [['$', '$'], ['\\(', '\\)']]}}; </script>\n")
             html_file.write('    <!-- END LINKED FILES -->\n')
         elif not found_begin:
             # We're before the linked files section -- write the line as-is

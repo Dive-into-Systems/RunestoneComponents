@@ -61,6 +61,9 @@ and requires the user to answer:
 - physical memory size (in bytes)
 - virtual memory size (in bytes)
 
+There is one configurable option:
+- ```num-bits-list```: list of possible number of bits of the virtual memory address. Should be an array of integers. Default is ```[8, 12, 16]```.
+
 ### **Example**
 <section id="virtual memory information">
   <h1>Virtual Memory Info<a class="headerlink" href="#vm-info" title="Permalink to this heading">¶</a></h1>
@@ -78,6 +81,9 @@ The question provides users with:
 - number of frames in physical address
 - page/frame size (in bytes)
 and requires the user to select and highlight the offsets in a given address. (Note: we default the non-offset part of the address as page)
+
+There is one configurable option:
+- ```num-bits-list```: list of possible number of bits of the virtual memory address. Should be an array of integers. Default is ```[8, 12, 16]```.
 
 ### **Example**
 ```html

@@ -38,12 +38,35 @@ export default class vmInfo extends RunestoneBase {
     ===========================================*/
     createvmInfoElement() {
         this.feedbackDiv = document.createElement("div");
+        this.initParams();
         this.rendervmInfoInput();
         this.rendervmInfoButtons();
         this.rendervmInfofeedbackDiv();
         // replaces the intermediate HTML for this component with the rendered HTML of this component
         $(this.origElem).replaceWith(this.containerDiv);
         
+    }
+
+    initParams() {
+        this.setDefaultParams();
+        this.loadParams();
+    }
+
+    setDefaultParams() {
+        this.num_bits_list = [8, 12, 16];
+    }
+
+    loadParams() {
+        try {
+            const currentOptions = JSON.parse(
+                this.scriptSelector(this.origElem).html()
+            );
+            if (currentOptions["num-bits-list"] != undefined) {
+                this.num_bits_list = currentOptions["num-bits-list"];
+            }
+        } catch (error) {
+            // pass
+        }
     }
 
     rendervmInfoInput() {
@@ -103,7 +126,7 @@ export default class vmInfo extends RunestoneBase {
         this.question1.appendChild(this.inputNode1);
 
         this.question2 = document.createElement("div");
-        this.question2Prompt = document.createTextNode($.i18n("virtual_memory") + "\t=\t");
+        this.question2Prompt = document.createTextNode($.i18n("virtual_memory") + "\t=\t" );
         this.inputNode2 = document.createElement("input");
         this.question2.appendChild(this.question2Prompt);
         this.question2.appendChild(this.inputNode2);
@@ -124,7 +147,11 @@ export default class vmInfo extends RunestoneBase {
         // Append both the statement div and question div to the main containerDiv
         this.containerDiv.appendChild(this.statementDiv);
         this.containerDiv.appendChild(document.createElement("br"));
-        this.containerDiv.appendChild(this.questionDiv);
+        this.bodyDiv = document.createElement("div");
+        this.bodyDiv.appendChild(this.questionDiv);
+        this.bodyDiv.setAttribute("class", "aligned-tables");
+        this.createExpTable();
+        this.containerDiv.appendChild(this.bodyDiv);
         this.containerDiv.appendChild(document.createElement("br"));
 
         // Copy the original elements to the container holding what the user will see.
@@ -215,9 +242,36 @@ export default class vmInfo extends RunestoneBase {
     // generate a question
     generateQuestion() {
         // randomly generate the number of bits, number of frames, and block size
-        this.num_bits = 1 << this.generateRandomInt(2,5);
+        this.num_bits = this.num_bits_list[ this.generateRandomInt(0, this.num_bits_list.length ) ];
         this.num_frames = 1 << this.generateRandomInt(1,5);
-        this.block_size = 1 << this.generateRandomInt(1,5);
+        this.block_size = 1 << this.generateRandomInt(1, this.num_bits);
+    }
+
+    createExpTable() {
+        this.expTable = document.createElement("table");
+        this.expTable.setAttribute("width", "37%");
+        this.expTableHead = document.createElement("thead");
+        this.expTableHead.innerHTML = 
+        "<tr><th colspan=\"8\">2 Exponential Table</th></tr>";
+        this.expTable.appendChild(this.expTableHead);
+        this.expTableBody = document.createElement("tbody");
+        this.expTable.appendChild(this.expTableBody);
+
+        for ( let i = 1; i <= 4; i ++ ) {
+            var expTableRow = document.createElement("tr");
+            expTableRow.innerHTML = 
+            "<td width=\"8%\">2<sup>" + i.toString()+ "</sup></td>" + 
+            "<td width=\"17%\">" + (1 << i).toString() +"</td>" + 
+            "<td width=\"8%\">2<sup>" + (i+4).toString()+ "</sup></td>" + 
+            "<td width=\"17%\">" + (1 << (i+4)).toString() +"</td>" +
+            "<td width=\"8%\">2<sup>" + (i+8).toString()+ "</sup></td>" + 
+            "<td width=\"17%\">" + (1 << (i+8)).toString() +"</td>" + 
+            "<td width=\"8%\">2<sup>" + (i+12).toString()+ "</sup></td>" + 
+            "<td width=\"17%\">" + (1 << (i+12)).toString() +"</td>";
+            this.expTableBody.appendChild(expTableRow);
+        }
+
+        this.bodyDiv.appendChild(this.expTable);
     }
 
     // generate the answer as a string based on the randomly generated number

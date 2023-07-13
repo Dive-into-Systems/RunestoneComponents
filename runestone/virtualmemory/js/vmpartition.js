@@ -38,13 +38,36 @@ export default class vmpartition extends RunestoneBase {
     ===========================================*/
     createCachePartitionElement() {
         this.feedbackDiv = document.createElement("div");
+        this.initParams();
         this.renderCachePartitionInput();
         this.renderCachePartitionButtons();
         this.renderCachePartitionfeedbackDiv();
         // replaces the intermediate HTML for this component with the rendered HTML of this component
         $(this.origElem).replaceWith(this.containerDiv);
-        
     }
+
+    initParams() {
+        this.setDefaultParams();
+        this.loadParams();
+    }
+
+    setDefaultParams() {
+        this.num_bits_list = [8, 12, 16];
+    }
+
+    loadParams() {
+        try {
+            const currentOptions = JSON.parse(
+                this.scriptSelector(this.origElem).html()
+            );
+            if (currentOptions["num-bits-list"] != undefined) {
+                this.num_bits_list = currentOptions["num-bits-list"];
+            }
+        } catch (error) {
+            // pass
+        }
+    }
+
     renderCachePartitionInput() {
         // Generate the drop-down menu for cache organization
         this.containerDiv = document.createElement("div");
@@ -108,7 +131,7 @@ export default class vmpartition extends RunestoneBase {
         // create selected bits display section
         var spaceNode = document.createTextNode("  ");
         this.inputBitsDiv = document.createElement("div");
-        this.input_index_text = document.createTextNode("Your current index bits: ");
+        this.input_index_text = document.createTextNode("Your current page bits: ");
         this.input_index_count = document.createElement("code");
         this.input_index_count.textContent = "0";
         this.input_offset_text = document.createTextNode("Your current offset bits: ");
@@ -195,27 +218,27 @@ export default class vmpartition extends RunestoneBase {
             false)
         ;
         
-        // render "set offset" and "reset" buttons
+        // render "set page" and "reset" buttons
         this.questionButtionDiv = document.createElement("div");
         
         this.offsetButton = document.createElement("button");
-        this.offsetButton.textContent = $.i18n("Set to Offset");
+        this.offsetButton.textContent = "Set to Page Number";
         $(this.offsetButton).attr({
-            class: "btn btn-warning",
-            name: "Select Offset",
+            class: "btn btn-primary",
+            name: "Select Page Number",
             type: "button",
         });
         this.offsetButton.addEventListener(
             "click",
             function () {
-                this.highlightSelectedOffset();
+                this.highlightSelectedIndex();
                 this.currInputBits();
                 this.hidefeedback();
             }.bind(this),
             false);
         
         this.resetButton = document.createElement("button");
-        this.resetButton.textContent = $.i18n("Reset selection");
+        this.resetButton.textContent = "Reset selection";
         $(this.resetButton).attr({
             class: "btn",
             name: "reset selection",
@@ -301,7 +324,7 @@ export default class vmpartition extends RunestoneBase {
     // generate the answer as a string based on the randomly generated number
     generateAnswer() {
         this.hidefeedback();
-        this.num_bits = 1 << this.generateRandomInt(2, 5);
+        this.num_bits = this.num_bits_list[ this.generateRandomInt(0, this.num_bits_list.length) ];
         this.num_frames = 1 << this.generateRandomInt(2,4);
         // the number of offset bits is always smaller than the total number of bits
         this.num_offset = this.generateRandomInt(1, this.num_bits);
@@ -331,14 +354,14 @@ export default class vmpartition extends RunestoneBase {
         // the answer is correct if each of the input field is the same as its corresponding value in this.answers
         this.correct = true
         for (let i = 0; i < (this.index_bits); i++) {
-            if (this.address_node_list[i].className == "offsetclass") {
+            if (this.address_node_list[i].className != "indexclass") {
                 this.correct = false;
                 console.log(i);
                 return;
             }
         }
         for (let i = (this.index_bits); i < this.num_bits; i++) {
-            if (this.address_node_list[i].className != "offsetclass") {
+            if (this.address_node_list[i].className == "indexclass") {
                 this.correct = false;
                 console.log(i);
                 return;
