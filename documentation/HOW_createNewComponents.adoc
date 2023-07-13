@@ -1,0 +1,110 @@
+= How to create new Runestone Components
+
+This documentation is a discriptive guide on how to create new components for Runestone. Known limitations include:
+
+* [ ] Pretext not YET supported, still need to implement in HTML
+* [ ] Server-side not YET explored: all answer checking managed on front-end; no functionality for sending data to our server
+* [ ] Question timing is not YET explored
+
+== Step 1: Setting up your repository
+. Make sure that you have forked and cloned the repository
++
+[source, console]
+git clone git@github.com:Dive-into-Systems/RunestoneComponents.git
+cd RunestoneComponents/
+. Set up the virtual environment and install the dependencies
++
+[source, console]
+----
+mkvirtualenv runestone-build
+
+pip install nodeenv
+nodeenv -p
+
+npm install
+----
+
+== Step 2: Create new components
+. Name your component
+.. Have a full name discriptive for its function
+.. Have an acronym as ```keyword``` for this component
+. Create a component directory inside ```../runestone``` (Note: the suggestions below are not required but good as a convention)
+.. *Recommended: Duplicate a most relevant component*
+.. Name the directory as the keyword of the component ```../runestone/keyword```
+.. It's good to have a subdirectory ```../runestone/keyword/css```
+.. It's good to have a subdirectory ```../runestone/keyword/js```
+.. Inside the ```../runestone/keyword/js``` subdirectory, it's good to have a JavaScript file for this component ```keyword.js```
+. Add your component into keyword mapping
+.. In ```../webpack.index.js``` file, add a keyword-source statement into ```module_map``` with syntax:
++
+[source, javascript]
+keyword: () => import("./runestone/keyword/js/keyword.js"),
++
+Again, you do not need to match the names for folder, file, and keyword. To make the program knows how to map the keyword to corresponding implementation is the only goal.
+.. In ```./runestone/keyword/js/keyword.js``` file, look for a code block with title "*Find the custom HTML tags and execute our code on them*" at the end of the file.
++
+Set ```data-component``` to your ```keyword``` in the following line:
++
+[source, javascript]
+$("[data-component=keyword]").each(function (index) {
++
+======
+**Remarks:**
+
+* Leave the following line unchanged for now (unless you are now comfortable working on exercise timing)
+[source, javascript]
+if ($(this).closest("[data-component=timedAssessment]").length == 0) {
+* You must match your ```keyword``` in _3.a_ and _3.b_
+======
+
+== Step 3: Compile your component
+. Build the component with ```npm```, run from console:
+[source, console]
+npm run build
+It will create ```webpack_static_imports.json``` in ```/runestone/dist``` directory. 
+. Create an HTML file in ```../HTML_example```
+.. *Recommended*: duplicate an existing HTML file
+. In the body of the HTML file, create a ```<section>``` that contains a ```<div>``` with the component being tested, as the example shown below:
++
+[source, html]
+----
+<section id="exercise name">
+  <h1>Exercise Name<a class="headerlink" href="#component-abbreviation" title="Permalink to this heading">¶</a></h1>
+            <p>Exercise Title </p>
+
+        <div class="runestone ">
+        <div data-component="keyword" data-question_label="a number" id="a unique id"  style="visibility: hidden;">
+        </div>
+        </div>
+</section>
+----
++
+====
+*Remark:*
+
+The most important goal is to set ```data-component``` as your ```keyword``` such that Runestone knows to compile your component here.
+
+Moreover, make sure question has a different ```id```. 
+====
+. Go into the ```../HTML_example``` folder and link required .js and .css files using the `link-runestone-js.py` script. 
++
+[source, console]
+----
+cd HTML_example
+./link-runestone-js.py ../runestone/dist/webpack_static_imports.json <name of your html file>
+----
++
+.. For the `link-runestone-js.py` script to work, it *must* find the following block
+in the HTML file you passed it:
++
+----
+<!-- BEGIN LINKED FILES -->
+...
+<!-- END LINKED FILES -->
+----
++
+.. Anything in between those two markers (the `...` above) will be overwritten by
+the script to include the runestone files you built.  All other lines will be
+passed through without changes.
+
+. Open the html file in a browser to check whether the component is rendered correctly or not. 
