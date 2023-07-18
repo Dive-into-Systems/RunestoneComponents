@@ -52,19 +52,6 @@ export default class NC extends RunestoneBase {
     }
 
     renderNCPromptAndInput() {
-        // Generate the two dropdown menus for number conversion
-        this.containerDiv = document.createElement("div");
-        this.containerDiv.id = this.divid;
-
-        this.statementDiv = document.createElement("div");
-
-        this.statementNode1 = document.createTextNode("Convert from ");
-        // default menu options
-        this.menuArray1 = ["binary", "decimal-unsigned", "decimal-signed", "hexadecimal"];
-
-        this.fromOpt = this.menuArray1;
-        this.toOpt = this.menuArray1;
-        
         // parse options from the JSON script inside
         var currOption = JSON.parse(
             this.scriptSelector(this.origElem).html()
@@ -83,6 +70,25 @@ export default class NC extends RunestoneBase {
             alert($.i18n("msg_NC_too_many_bits"));
             return;
         }
+
+        // Generate the two dropdown menus for number conversion
+        this.containerDiv = document.createElement("div");
+        this.containerDiv.id = this.divid;
+
+        this.statementDiv = document.createElement("div");
+
+        // specify the number of bits in the statement
+        this.statementNode0 = document.createTextNode(
+            "In this question, you will be provided a number of " + this.num_bits.toString() + "-bits in binary.");
+        this.statementNode05 = document.createTextNode("Please convert it from your selected number system to another selected number system.");
+
+        this.statementNode1 = document.createTextNode("Convert from ");
+        // default menu options
+        this.menuArray1 = ["binary", "decimal-unsigned", "decimal-signed", "hexadecimal"];
+
+        this.fromOpt = this.menuArray1;
+        this.toOpt = this.menuArray1;
+
         // read from-options as an array
         if (currOption["from-options"] === undefined) {
             this.fromOpt = this.menuArray1;
@@ -148,17 +154,24 @@ export default class NC extends RunestoneBase {
             }.bind(this),
             false);
         
-        // specify the number of bits in the statement
-        this.statementNode3 = document.createTextNode(" (" + this.num_bits.toString() + "bits)");
-
         // render the statement
+        this.statementDiv.appendChild(this.statementNode0);
+        this.statementDiv.appendChild(document.createElement("br"));
+        this.statementDiv.appendChild(this.statementNode05);
+        this.statementDiv.appendChild(document.createElement("br"));
         this.statementDiv.appendChild(this.statementNode1);
         this.statementDiv.appendChild(this.menuNode1);
         this.statementDiv.appendChild(this.statementNode2);
         this.statementDiv.appendChild(this.menuNode2);
-        this.statementDiv.appendChild(this.statementNode3);
         this.containerDiv.appendChild(this.statementDiv);
         this.containerDiv.appendChild(document.createElement("br"));
+
+        this.statementDiv.style.borderWidth = "1px";
+        this.statementDiv.style.borderRadius = "5px";
+        this.statementDiv.style.borderBlockStyle = "solid";
+        this.statementDiv.style.borderBlockColor = "white";
+        this.statementDiv.style.backgroundColor = "white";
+        this.statementDiv.style.padding = "8px";
 
         // create the node for the prompt
         this.promptDiv = document.createElement("div");
@@ -437,6 +450,16 @@ export default class NC extends RunestoneBase {
             this.correct = false;
         } else if ( input_value != this.target_num_string ) {
             this.feedback_msg = ($.i18n("msg_NC_incorrect"));
+            if (this.menuNode1.value == "decimal-signed" || this.menuNode2.value == "decimal-signed") {
+                this.feedback_msg += ("\n" + $.i18n("msg_hint_sign"));
+            } else if (this.menuNode1.value == "decimal-unsigned" || this.menuNode2.value == "decimal-unsigned") {
+                this.feedback_msg += ("\n" + $.i18n("msg_hint_dec"));
+                if (this.menuNode2.value == "binary") {
+                    this.feedback_msg += ("\n" + $.i18n("msg_hint_bi"));
+                }
+            } else {
+                this.feedback_msg += ("\n" + $.i18n("msg_hint_b2hex"));
+            }
             this.correct = false;            
         } else {
             this.feedback_msg = ($.i18n("msg_NC_correct"));

@@ -13,7 +13,7 @@
     <!-- BEGIN LINKED FILES -->
     <link rel="stylesheet" type="text/css" href="../runestone/dist/vendors-node_modules_bootstrap_dist_js_bootstrap_js-node_modules_jquery-ui_jquery-ui_js-node_-72cd89.cd688d1623c9932e.css" />
     <link rel="stylesheet" type="text/css" href="../runestone/dist/runestone.8cc3d7e65ac22823.css" />
-    <script src="../runestone/dist/runtime.0300ac7d53519775.bundle.js"></script>
+    <script src="../runestone/dist/runtime.a178f25d601d98fe.bundle.js"></script>
     <script src="../runestone/dist/vendors-node_modules_bootstrap_dist_js_bootstrap_js-node_modules_jquery-ui_jquery-ui_js-node_-72cd89.51d9dde4e5162190.bundle.js"></script>
     <script src="../runestone/dist/runestone.6d09414d9cd3a359.bundle.js"></script>
     <!-- END LINKED FILES -->
@@ -206,12 +206,37 @@
         </div>
 </section>
 
-<section id="virtual memory operations">
-    <h1>Virtual Memory Operations<a class="headerlink" href="#number-conversion" title="Permalink to this heading">¶</a></h1>
-              <p>Test 8 - test the vm operations.</p>
-          <div class="runestone ">
-          <div data-component="vo" data-question_label="2" id="test_vm_operations"  style="visibility: hidden;"></div>
-          </div>
+<section id="virtual memory operations (IA32)">
+  <h1>Virtual Memory Operations (IA32)<a class="headerlink" href="#number-conversion" title="Permalink to this heading">¶</a></h1>
+            <p>Test 8 - test the vm operations.</p>
+        <div class="runestone ">
+        <div data-component="vo" data-question_label="2" id="test_vm_operations_IA32"  style="visibility: hidden;">
+          <script type="application/json">
+            {
+              "architecture": "IA32",
+              "num_of_question_in_one_group": 4,
+              "mem_access_chance": 0.5,
+              "load_effective_address": true
+            }
+          </script>
+        </div>
+        </div>
+</section>
+
+<section id="virtual memory operations (ARM64)">
+  <h1>Virtual Memory Operations (ARM64)<a class="headerlink" href="#number-conversion" title="Permalink to this heading">¶</a></h1>
+            <p>Test 9 - test the vm operations.</p>
+        <div class="runestone ">
+        <div data-component="vo" data-question_label="4" id="test_vm_operations_ARM64"  style="visibility: hidden;">
+          <script type="application/json">
+            {
+              "architecture": "ARM64",
+              "num_of_question_in_one_group": 3,
+              "mem_access_chance": 0.5
+            }
+          </script>
+        </div>
+        </div>
 </section>
 
 <section id="virtual memory table">

@@ -10,9 +10,10 @@ $.i18n().load({
         msg_cachepartition_generate_a_number: "Ask me another",
         msg_cachepartition_correct: "Correct. Good job!",
         msg_cachepartition_incorrect: "Emm...please think more about it?",
-        msg_cachepartition_tag_incorrect: "Think more about what tag is?",
-        msg_cachepartition_index_incorrect: "Think more about what index is?",
-        msg_cachepartition_offset_incorrect: "Think more about what offset is?",
+        msg_cachepartition_tag_incorrect: "Tag bits are incorrect. They are used to determine if the desired memory subset is in the cache.",
+        msg_cachepartition_index_incorrect: "Index bits are incorrect. They are used to index into a cache line.",
+        msg_cachepartition_offset_incorrect: "Offset bits are incorrect. They are used to index into a cache data block.",
+        msg_cachepartition_clear_selection: "Clear all selection" ,
         
         msg_cacheinfo_generate_a_number: "Ask me another",
         msg_cacheinfo_incorrect_0: "Block size is incorrect. Hint: block size has something to do with the offset bits", 

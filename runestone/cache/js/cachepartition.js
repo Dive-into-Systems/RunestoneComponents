@@ -301,7 +301,7 @@ export default class cachepartition extends RunestoneBase {
             false);
         
         this.resetButton = document.createElement("button");
-        this.resetButton.textContent = $.i18n("Reset selection");
+        this.resetButton.textContent = $.i18n("msg_cachepartition_clear_selection");
         $(this.resetButton).attr({
             class: "btn",
             name: "reset selection",

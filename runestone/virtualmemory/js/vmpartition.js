@@ -134,9 +134,11 @@ export default class vmpartition extends RunestoneBase {
         this.input_index_text = document.createTextNode("Your current page bits: ");
         this.input_index_count = document.createElement("code");
         this.input_index_count.textContent = "0";
+        this.input_index_count.id = "index_count";
         this.input_offset_text = document.createTextNode("Your current offset bits: ");
         this.input_offset_count = document.createElement("code");
         this.input_offset_count.textContent = "0";
+        this.input_offset_count.id = "offset_count";
         this.inputBitsDiv.appendChild(this.input_index_text);
         this.inputBitsDiv.appendChild(this.input_index_count);
         this.inputBitsDiv.appendChild(spaceNode);
@@ -154,10 +156,11 @@ export default class vmpartition extends RunestoneBase {
         $(this.origElem).children().clone().appendTo(this.containerDiv);
         
         
+        
         this.generateAnswer();
         this.generateAddress();
         this.generatePrompt();
-
+        
         // Remove the script tag.
         this.scriptSelector(this.containerDiv).remove();
         // Set the class for the text inputs, then store references to them.
@@ -196,6 +199,7 @@ export default class vmpartition extends RunestoneBase {
             function () {
                 this.checkCurrentAnswer();
                 this.logCurrentAnswer();
+                this.currInputBits();
             }.bind(this),
             false
         );
@@ -213,53 +217,12 @@ export default class vmpartition extends RunestoneBase {
                 this.generateAnswer();
                 this.generateAddress();
                 this.generatePrompt();
-                this.resetHighlight();
+                // this.resetHighlight();
             }.bind(this),
             false)
         ;
         
-        // render "set page" and "reset" buttons
-        this.questionButtionDiv = document.createElement("div");
-        
-        this.offsetButton = document.createElement("button");
-        this.offsetButton.textContent = "Set to Page Number";
-        $(this.offsetButton).attr({
-            class: "btn btn-primary",
-            name: "Select Page Number",
-            type: "button",
-        });
-        this.offsetButton.addEventListener(
-            "click",
-            function () {
-                this.highlightSelectedIndex();
-                this.currInputBits();
-                this.hidefeedback();
-            }.bind(this),
-            false);
-        
-        this.resetButton = document.createElement("button");
-        this.resetButton.textContent = "Reset selection";
-        $(this.resetButton).attr({
-            class: "btn",
-            name: "reset selection",
-            type: "button",
-        });
-        this.resetButton.addEventListener(
-            "click",
-            function () {
-                this.resetHighlight();
-                this.currInputBits();
-                this.hidefeedback(); 
-            }.bind(this),
-            false);
-        // this.questionButtionDiv.appendChild(this.indexButton);
-        this.questionButtionDiv.appendChild(this.offsetButton);
-        this.questionButtionDiv.appendChild(this.resetButton);
-        this.questionButtionDiv.style.textAlign = "center";
-        
         // put all buttons together
-        this.containerDiv.appendChild(document.createElement("br"));
-        this.containerDiv.appendChild(this.questionButtionDiv);
         this.containerDiv.appendChild(document.createElement("br"));
         this.containerDiv.appendChild(this.generateButton);
         this.containerDiv.appendChild(this.submitButton);
@@ -280,28 +243,17 @@ export default class vmpartition extends RunestoneBase {
         var codeNode = null;
         for (let i = 0; i < this.num_bits; i++) {
             let curr_rand = Math.random();
-            if (curr_rand < 0.5) {
-                codeNode = document.createElement("code");
-                codeNode.textContent = "0";
-                codeNode.className = "notselected";
-                this.address_node_list.push(codeNode);
-            } else {
-                codeNode = document.createElement("code");
-                codeNode.textContent = "1";
-                codeNode.className = "notselected";
-                this.address_node_list.push(codeNode);
-            }
+            codeNode = document.createElement("li");
+            $(codeNode).attr("class", "notselected");
+            codeNode.textContent = curr_rand < 0.5 ? "0" : "1";
+            this.address_node_list.push(codeNode);
         }
     }
     
     // set the selected bits in the memory address into corresponding colors of index
     highlightSelectedIndex() {
-        let selection = window.getSelection();
-        for ( var i = 0 ; i < this.num_bits; i ++ ) {
-            if (selection.containsNode( this.address_node_list[ i ], true ) ) {
-                (this.address_node_list[ i ]).className = "indexclass";
-            }
-        }
+        // let selection = window.getSelection();
+        $(".ui-selected").attr("class", "indexclass");
     }
 
     // set the selected bits in the memory address into corresponding colors of offset
@@ -352,18 +304,16 @@ export default class vmpartition extends RunestoneBase {
     // check if the answer is correct
     checkCurrentAnswer() {
         // the answer is correct if each of the input field is the same as its corresponding value in this.answers
-        this.correct = true
+        this.correct = true;
         for (let i = 0; i < (this.index_bits); i++) {
-            if (this.address_node_list[i].className != "indexclass") {
+            if (!$(this.address_node_list[i]).hasClass("ui-selected")) {
                 this.correct = false;
-                console.log(i);
                 return;
             }
         }
         for (let i = (this.index_bits); i < this.num_bits; i++) {
-            if (this.address_node_list[i].className == "indexclass") {
+            if ($(this.address_node_list[i]).hasClass("ui-selected")) {
                 this.correct = false;
-                console.log(i);
                 return;
             }
         }
@@ -399,31 +349,32 @@ export default class vmpartition extends RunestoneBase {
         this.input_index_bits = 0;
         this.input_offset_bits = 0;
         for (let i = 0; i < this.num_bits; i++) {
-            if (this.address_node_list[i].className == "offsetclass") {
-                this.input_offset_bits += 1;
+            if ($(this.address_node_list[i]).hasClass("ui-selected") || $(this.address_node_list[i]).hasClass("ui-selecting")) {
+                this.input_index_bits += 1;
             }
         }
-        this.input_index_bits = this.num_bits - this.input_offset_bits;
+        this.input_offset_bits = this.num_bits - this.input_index_bits;
+        console.log("i" + this.input_index_bits);
+        console.log("o" + this.input_offset_bits);
+        console.log(this.num_bits);
         this.input_index_count.textContent = this.input_index_bits.toString();
         this.input_offset_count.textContent = this.input_offset_bits.toString();
     }
 
     // update the address to display
     updateDisplayedAddress() {
-        var breakNode = null;
+        
         this.addressNodeAddress.innerHTML = "";
         this.addressNodeAddress.appendChild(this.addressNodeText);
+        this.theAddress = document.createElement("ul");
+        this.theAddress.id = "selectable";
         for ( var i = 0 ; i < this.num_bits ; i ++ ) {
             this.address_node_list[ i ].style.fontSize = "x-large";
-            this.addressNodeAddress.appendChild(this.address_node_list[ i ]);
-            // insert an empty node between neighboring two bit nodes
-            if ( i != this.num_bits - 1 ) {
-                breakNode = document.createElement("code");
-                breakNode.setAttribute("class", "prevent-select");
-                breakNode.style.fontSize = "x-large";
-                this.addressNodeAddress.appendChild(breakNode);
-            }
+            this.theAddress.appendChild(this.address_node_list[ i ]);
         }
+        this.addressNodeAddress.appendChild(this.theAddress);
+        this.selectScript = document.createElement('script');
+        $(this.theAddress).selectable();
     }
     // update the prompt
     generatePrompt() {

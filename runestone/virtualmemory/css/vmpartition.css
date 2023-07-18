@@ -8,24 +8,24 @@ input.input-validation-error {
    border: 1px solid #e80c4d;
 }
 
-.tagclass {
-   color: MistyRose;
-   background-color: Tomato;
-}
+#selectable .ui-selecting {background: #ffcccb;}
+#selectable .ui-selected {background: #ff7f7f; color: white;}
+#selectable {list-style-type: none; margin: 0; padding: 0; display: inline;}
+#selectable li {margin: 3px; padding: 3px; display: inline;}
 
 .indexclass {
    color: ghostwhite;
-   background-color: CornflowerBlue; 
+   background: CornflowerBlue; 
 }
 
 .offsetclass {
    color: Grey; 
-   background-color: #ffef96;
+   background: #ffef96;
 }
 
 .notselected {
    color: DimGray;
-   background-color: Gainsboro;
+   background: Gainsboro;
 }
 
 .button {
@@ -86,4 +86,3 @@ table {
    flex-direction: row;
    justify-content: space-between;
 }
-
