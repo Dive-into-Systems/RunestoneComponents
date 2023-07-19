@@ -42,6 +42,7 @@ export default class vmpartition extends RunestoneBase {
         this.renderCachePartitionInput();
         this.renderCachePartitionButtons();
         this.renderCachePartitionfeedbackDiv();
+        // this.createHelpStatement();
         // replaces the intermediate HTML for this component with the rendered HTML of this component
         $(this.origElem).replaceWith(this.containerDiv);
     }
@@ -323,7 +324,12 @@ export default class vmpartition extends RunestoneBase {
     }
 
     async logCurrentAnswer(sid) {
-        let answer = JSON.stringify(this.inputNodes);
+        let answer = JSON.stringify([]);
+        let question = JSON.stringify({
+            "num-bits"  : this.num_bits,
+            "num-frames": this.num_frames,
+            "block-size": this.block_size
+        });
         // Save the answer locally.
         let feedback = true;
         this.setLocalStorage({
@@ -383,6 +389,35 @@ export default class vmpartition extends RunestoneBase {
     generatePrompt() {
         this.updateDisplayedAddress();
     }
+
+    // createHelpStatement() {
+    //     this.helpDiv = document.createElement("div");
+    //     this.helpStatement = document.createElement("div");
+    //     this.helpimage = new Image();
+    //     this.helpimage.src = "../resources/vmPartition_demo.gif";
+    //     this.helpStatement.appendChild(this.helpimage);
+        
+    //     this.helpStatement.style.visibility = "hidden";
+    //     // create the button for display/hide help
+    //     this.helpButton = document.createElement("button");
+    //     this.helpButton.textContent = $.i18n("msg_vmtable_display_help");
+    //     this.helpButton.addEventListener(            
+    //         "click",
+    //         function() {
+    //             if (this.helpStatement.style.visibility == "hidden") {
+    //                 this.helpStatement.style.visibility = "visible";
+    //                 this.helpDiv.appendChild(this.helpStatement);
+    //                 this.helpButton.textContent = $.i18n("msg_vmtable_hide_help");
+    //             } else {
+    //                 this.helpStatement.style.visibility = "hidden";
+    //                 this.helpDiv.removeChild(this.helpStatement);
+    //                 this.helpButton.textContent = $.i18n("msg_vmtable_display_help");
+    //             }
+    //         }.bind(this),
+    //     false); 
+    //     this.helpDiv.appendChild(this.helpButton);
+    //     this.containerDiv.appendChild(this.helpDiv);
+    // }
 
     hidefeedback() {
         this.feedbackDiv.style.visibility = "hidden";

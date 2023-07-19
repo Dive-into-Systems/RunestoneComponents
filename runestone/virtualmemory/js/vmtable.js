@@ -1379,7 +1379,10 @@ export default class vmtable extends RunestoneBase {
     }
 
     async logCurrentAnswer(sid) {
-        let answer = JSON.stringify(this.inputNodes);
+        let answer = JSON.stringify();
+        let qestion = JSON.stringify(
+            [this.currentVmTable, this.referenceList]
+        );
         // Save the answer locally.
         let feedback = true;
         this.setLocalStorage({
