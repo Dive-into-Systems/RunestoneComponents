@@ -32,6 +32,8 @@ export default class NC extends RunestoneBase {
         if (typeof Prism !== "undefined") {
             Prism.highlightAllUnder(this.containerDiv);
         }
+
+        this.contWrong = 0;
     }
     // Find the script tag containing JSON in a given root DOM node.
     scriptSelector(root_node) {
@@ -450,20 +452,26 @@ export default class NC extends RunestoneBase {
             this.correct = false;
         } else if ( input_value != this.target_num_string ) {
             this.feedback_msg = ($.i18n("msg_NC_incorrect"));
-            if (this.menuNode1.value == "decimal-signed" || this.menuNode2.value == "decimal-signed") {
-                this.feedback_msg += ("\n" + $.i18n("msg_hint_sign"));
-            } else if (this.menuNode1.value == "decimal-unsigned" || this.menuNode2.value == "decimal-unsigned") {
-                this.feedback_msg += ("\n" + $.i18n("msg_hint_dec"));
-                if (this.menuNode2.value == "binary") {
-                    this.feedback_msg += ("\n" + $.i18n("msg_hint_bi"));
+            this.contWrong ++;
+            this.correct = false;
+
+            if (this.contWrong >= 3) {
+                if (this.menuNode1.value == "decimal-signed" || this.menuNode2.value == "decimal-signed") {
+                    this.feedback_msg += ("\n" + $.i18n("msg_hint_sign"));
+                } else if (this.menuNode1.value == "decimal-unsigned" || this.menuNode2.value == "decimal-unsigned") {
+                    this.feedback_msg += ("\n" + $.i18n("msg_hint_dec"));
+                    if (this.menuNode2.value == "binary") {
+                        this.feedback_msg += ("\n" + $.i18n("msg_hint_bi"));
+                    }
+                } else {
+                    this.feedback_msg += ("\n" + $.i18n("msg_hint_b2hex"));
                 }
-            } else {
-                this.feedback_msg += ("\n" + $.i18n("msg_hint_b2hex"));
             }
-            this.correct = false;            
+                        
         } else {
             this.feedback_msg = ($.i18n("msg_NC_correct"));
             this.correct = true;
+            this.contWrong = 0;
         }
     }
 

@@ -146,6 +146,8 @@ export default class vmpartition extends RunestoneBase {
         this.inputBitsDiv.appendChild(this.input_offset_count);
         this.inputBitsDiv.style.textAlign = "center";
 
+        this.addressNode.addEventListener("mousemove", this.currInputBits.bind(this));
+
         this.containerDiv.appendChild(this.statementDiv);
         this.containerDiv.appendChild(document.createElement("br"));
         this.containerDiv.appendChild(this.addressNode);
@@ -199,7 +201,6 @@ export default class vmpartition extends RunestoneBase {
             function () {
                 this.checkCurrentAnswer();
                 this.logCurrentAnswer();
-                this.currInputBits();
             }.bind(this),
             false
         );
