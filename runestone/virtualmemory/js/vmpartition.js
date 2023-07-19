@@ -1,7 +1,7 @@
 // *********
 // vmpartition.js
 // *********
-// This file contains the JS for the Runestone vmpartition component. It was created By Luyuan Fan, Zhengfei Li, and Yue Zhang, 06/06/2023. 
+// This file contains the JS for the Runestone vmpartition component. It was created By Luyuan Fan, Zhengfei Li, and Yue Zhang, 07/06/2023. 
 "use strict";
 
 import RunestoneBase from "../../common/js/runestonebase.js";
@@ -146,13 +146,14 @@ export default class vmpartition extends RunestoneBase {
         this.inputBitsDiv.appendChild(this.input_offset_count);
         this.inputBitsDiv.style.textAlign = "center";
 
-        this.addressNode.addEventListener("mousemove", this.currInputBits.bind(this));
 
         this.containerDiv.appendChild(this.statementDiv);
         this.containerDiv.appendChild(document.createElement("br"));
         this.containerDiv.appendChild(this.addressNode);
         this.containerDiv.appendChild(document.createElement("br"));
         this.containerDiv.appendChild(this.inputBitsDiv);
+
+        this.addressNode.addEventListener("mousemove", this.currInputBits.bind(this));
 
         // Copy the original elements to the container holding what the user will see.
         $(this.origElem).children().clone().appendTo(this.containerDiv);
@@ -249,6 +250,7 @@ export default class vmpartition extends RunestoneBase {
             codeNode.textContent = curr_rand < 0.5 ? "0" : "1";
             this.address_node_list.push(codeNode);
         }
+        this.currInputBits();
     }
     
     // set the selected bits in the memory address into corresponding colors of index
