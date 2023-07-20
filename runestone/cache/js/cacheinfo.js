@@ -33,6 +33,8 @@ export default class cacheinfo extends RunestoneBase {
         if (typeof Prism !== "undefined") {
             Prism.highlightAllUnder(this.containerDiv);
         }
+
+        this.contWrong = 0;
     }
     // Find the script tag containing JSON in a given root DOM node.
     scriptSelector(root_node) {
@@ -396,6 +398,7 @@ export default class cacheinfo extends RunestoneBase {
         // the answer is correct if each of the input field is the same as its corresponding value in this.answers
         this.correct = true;
         this.feedback_msg = [];
+        let wrongFlag = false;
         for (var i = 0; i < 3; i ++ ) {
             // skip the question for number of sets when in direct-mapped
             if ( this.orgMenuNode.value === "Direct-Mapped" && i === 1) {
@@ -408,15 +411,30 @@ export default class cacheinfo extends RunestoneBase {
                 // change the style of input field to alert-danger when no answer provided
                 this.inputNodes[i].setAttribute("class", "alert alert-danger");
             } else if ( input_value != this.answers[i] ) {
-                this.feedback_msg.push($.i18n("msg_cacheinfo_incorrect_"+i.toString()));
+                let currMsg = "";
+                currMsg += ($.i18n("msg_cacheinfo_incorrect_0"+i.toString()));
+                console.log($.i18n("msg_cacheinfo_incorrect_0"+i.toString()))
                 this.correct = false;
                 // change the style of input field to alert-danger when the answer is wrong
-                this.inputNodes[i].setAttribute("class", "alert alert-danger");            
+                this.inputNodes[i].setAttribute("class", "alert alert-danger");
+                
+                wrongFlag = true;
+
+                if (this.contWrong >= 2) {
+                    currMsg += ($.i18n("msg_cacheinfo_incorrect_hint" + i.toString()));
+                }
+                this.feedback_msg.push(currMsg);
             } else {
                 this.feedback_msg.push($.i18n("msg_cacheinfo_correct"));
                 // 
                 this.inputNodes[i].setAttribute("class", "alert alert-info");
             }
+        }
+
+        if (wrongFlag) {
+            this.contWrong ++;
+        } else {
+            this.contWrong = 0;
         }
     }
 

@@ -328,7 +328,12 @@ export default class vmInfo extends RunestoneBase {
     }
 
     async logCurrentAnswer(sid) {
-        let answer = JSON.stringify(this.inputNodes);
+        let answer = JSON.stringify([this.inputNodes[0].value, this.inputNodes[1].value]);
+        let question = JSON.stringify({
+            "num-bits"  : this.num_bits,
+            "num-frames": this.num_frames,
+            "block-size": this.block_size
+        });
         // Save the answer locally.
         let feedback = true;
         this.setLocalStorage({

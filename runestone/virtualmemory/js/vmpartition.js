@@ -1,7 +1,7 @@
 // *********
 // vmpartition.js
 // *********
-// This file contains the JS for the Runestone vmpartition component. It was created By Luyuan Fan, Zhengfei Li, and Yue Zhang, 06/06/2023. 
+// This file contains the JS for the Runestone vmpartition component. It was created By Luyuan Fan, Zhengfei Li, and Yue Zhang, 07/06/2023. 
 "use strict";
 
 import RunestoneBase from "../../common/js/runestonebase.js";
@@ -42,6 +42,7 @@ export default class vmpartition extends RunestoneBase {
         this.renderCachePartitionInput();
         this.renderCachePartitionButtons();
         this.renderCachePartitionfeedbackDiv();
+        // this.createHelpStatement();
         // replaces the intermediate HTML for this component with the rendered HTML of this component
         $(this.origElem).replaceWith(this.containerDiv);
     }
@@ -146,11 +147,14 @@ export default class vmpartition extends RunestoneBase {
         this.inputBitsDiv.appendChild(this.input_offset_count);
         this.inputBitsDiv.style.textAlign = "center";
 
+
         this.containerDiv.appendChild(this.statementDiv);
         this.containerDiv.appendChild(document.createElement("br"));
         this.containerDiv.appendChild(this.addressNode);
         this.containerDiv.appendChild(document.createElement("br"));
         this.containerDiv.appendChild(this.inputBitsDiv);
+
+        this.addressNode.addEventListener("mousemove", this.currInputBits.bind(this));
 
         // Copy the original elements to the container holding what the user will see.
         $(this.origElem).children().clone().appendTo(this.containerDiv);
@@ -199,7 +203,6 @@ export default class vmpartition extends RunestoneBase {
             function () {
                 this.checkCurrentAnswer();
                 this.logCurrentAnswer();
-                this.currInputBits();
             }.bind(this),
             false
         );
@@ -248,6 +251,7 @@ export default class vmpartition extends RunestoneBase {
             codeNode.textContent = curr_rand < 0.5 ? "0" : "1";
             this.address_node_list.push(codeNode);
         }
+        this.currInputBits();
     }
     
     // set the selected bits in the memory address into corresponding colors of index
@@ -320,7 +324,12 @@ export default class vmpartition extends RunestoneBase {
     }
 
     async logCurrentAnswer(sid) {
-        let answer = JSON.stringify(this.inputNodes);
+        let answer = JSON.stringify([]);
+        let question = JSON.stringify({
+            "num-bits"  : this.num_bits,
+            "num-frames": this.num_frames,
+            "block-size": this.block_size
+        });
         // Save the answer locally.
         let feedback = true;
         this.setLocalStorage({
@@ -380,6 +389,35 @@ export default class vmpartition extends RunestoneBase {
     generatePrompt() {
         this.updateDisplayedAddress();
     }
+
+    // createHelpStatement() {
+    //     this.helpDiv = document.createElement("div");
+    //     this.helpStatement = document.createElement("div");
+    //     this.helpimage = new Image();
+    //     this.helpimage.src = "../resources/vmPartition_demo.gif";
+    //     this.helpStatement.appendChild(this.helpimage);
+        
+    //     this.helpStatement.style.visibility = "hidden";
+    //     // create the button for display/hide help
+    //     this.helpButton = document.createElement("button");
+    //     this.helpButton.textContent = $.i18n("msg_vmtable_display_help");
+    //     this.helpButton.addEventListener(            
+    //         "click",
+    //         function() {
+    //             if (this.helpStatement.style.visibility == "hidden") {
+    //                 this.helpStatement.style.visibility = "visible";
+    //                 this.helpDiv.appendChild(this.helpStatement);
+    //                 this.helpButton.textContent = $.i18n("msg_vmtable_hide_help");
+    //             } else {
+    //                 this.helpStatement.style.visibility = "hidden";
+    //                 this.helpDiv.removeChild(this.helpStatement);
+    //                 this.helpButton.textContent = $.i18n("msg_vmtable_display_help");
+    //             }
+    //         }.bind(this),
+    //     false); 
+    //     this.helpDiv.appendChild(this.helpButton);
+    //     this.containerDiv.appendChild(this.helpDiv);
+    // }
 
     hidefeedback() {
         this.feedbackDiv.style.visibility = "hidden";
