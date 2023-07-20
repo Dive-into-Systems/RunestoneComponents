@@ -48,7 +48,6 @@ export default class cachepartition extends RunestoneBase {
         this.renderCachePartitionfeedbackDiv();
         // replaces the intermediate HTML for this component with the rendered HTML of this component
         $(this.origElem).replaceWith(this.containerDiv);
-        
     }
     renderCachePartitionInput() {
         // Generate the drop-down menu for cache organization
@@ -179,7 +178,7 @@ export default class cachepartition extends RunestoneBase {
         this.containerDiv.appendChild(this.addressNode);
         this.containerDiv.appendChild(document.createElement("br"));
         this.containerDiv.appendChild(this.inputBitsDiv);
-        // this.containerDiv.appendChild(document.createElement("br"));
+        this.containerDiv.appendChild(document.createElement("br"));
 
 
         // Copy the original elements to the container holding what the user will see.
@@ -358,19 +357,12 @@ export default class cachepartition extends RunestoneBase {
         var codeNode = null;
         for (let i = 0; i < this.num_bits; i++) {
             let curr_rand = Math.random();
-            if (curr_rand < 0.5) {
-                codeNode = document.createElement("code");
-                codeNode.textContent = "0";
-                codeNode.className = "notselected";
-                this.address_node_list.push(codeNode);
-            } else {
-                codeNode = document.createElement("code");
-                codeNode.textContent = "1";
-                codeNode.className = "notselected";
-                this.address_node_list.push(codeNode);
-            }
+            codeNode = document.createElement("li");
+            $(codeNode).attr("class", "notselected");
+            codeNode.textContent = curr_rand < 0.5 ? "0" : "1";
+            this.address_node_list.push(codeNode);
         }
-        
+        this.currInputBits();
         
         this.genRandList();
         while (this.checkSameRandList()) {
@@ -418,30 +410,15 @@ export default class cachepartition extends RunestoneBase {
     
     // set the selected bits in the memory address into corresponding colors of tag
     highlightSelectedTag() {
-        let selection = window.getSelection();
-        for ( var i = 0 ; i < this.num_bits; i ++ ) {
-            if (selection.containsNode( this.address_node_list[ i ], true ) ) {
-                (this.address_node_list[ i ]).className = "tagclass";
-            }
-        }
+        $(".ui-selected").attr("class", "tagclass");
     }
     // set the selected bits in the memory address into corresponding colors of index
     highlightSelectedIndex() {
-        let selection = window.getSelection();
-        for ( var i = 0 ; i < this.num_bits; i ++ ) {
-            if (selection.containsNode( this.address_node_list[ i ], true ) ) {
-                (this.address_node_list[ i ]).className = "indexclass";
-            }
-        }
+        $(".ui-selected").attr("class", "indexclass");
     }
     // set the selected bits in the memory address into corresponding colors of offset
     highlightSelectedOffset() {
-        let selection = window.getSelection();
-        for ( var i = 0 ; i < this.num_bits; i ++ ) {
-            if (selection.containsNode( this.address_node_list[ i ], true ) ) {
-                (this.address_node_list[ i ]).className = "offsetclass";
-            }
-        }
+        $(".ui-selected").attr("class", "offsetclass");
     }
     //reset all selection, clear all colors
     resetHighlight() {
@@ -451,7 +428,6 @@ export default class cachepartition extends RunestoneBase {
     }
     // generate the answer as a string based on the randomly generated number
     generateAnswer() {
-
         this.hidefeedback();
         this.block_size_ans = this.block_size;
         this.entries_ans = this.num_entry;
@@ -557,20 +533,17 @@ export default class cachepartition extends RunestoneBase {
 
     // update the address to display
     updateDisplayedAddress() {
-        var breakNode = null;
         this.addressNodeAddress.innerHTML = "";
         this.addressNodeAddress.appendChild(this.addressNodeText);
+        this.selectableList = document.createElement("ul");
+        this.selectableList.id = "selectableList" + this.divid;
         for ( var i = 0 ; i < this.num_bits ; i ++ ) {
-            this.address_node_list[ i ].style.fontSize = "x-large";
-            this.addressNodeAddress.appendChild(this.address_node_list[ i ]);
-            // insert an empty node between neighboring two bit nodes
-            if ( i != this.num_bits - 1 ) {
-                breakNode = document.createElement("code");
-                breakNode.setAttribute("class", "prevent-select");
-                breakNode.style.fontSize = "x-large";
-                this.addressNodeAddress.appendChild(breakNode);
-            }
+            this.address_node_list[i].style.fontSize = "x-large";
+            this.selectableList.appendChild(this.address_node_list[i]);
         }
+        this.addressNodeAddress.appendChild(this.selectableList);
+        this.selectScript = document.createElement('script');
+        $(this.selectableList).selectable();
     }
     // update the prompt
     generatePrompt() {

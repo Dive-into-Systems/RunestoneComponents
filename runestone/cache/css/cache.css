@@ -87,3 +87,27 @@ table {
    justify-content: space-between;
 }
 
+.statement-box {
+   border-width: 1px;
+   border-radius: 5px;
+   border-style: solid;
+   border-color: White;
+   background-color: White;
+   padding: 8px;
+}
+
+.at-center {
+   text-align: center;
+   font-size: x-large;
+}
+
+.prevent-select {
+   -webkit-user-select: none; /* Safari */
+   -ms-user-select: none; /* IE 10 and IE 11 */
+   user-select: none; /* Standard syntax */
+}
+
+#selectable .ui-selecting {background: red;}
+#selectable .ui-selected {background: green; color: white;}
+#selectable {list-style-type: none; margin: 0; padding: 0; display: inline;}
+#selectable ul {margin: 3px; padding: 3px; display: inline;}

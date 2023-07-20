@@ -59,7 +59,6 @@ export default class VO extends RunestoneBase {
         this.num_q_in_group = 4; // number of questions in a group
         this.memoryAccess_chance = 0.5; // probability of memory-accessing ops in one set
         this.constantInArthm_chance = 0.5; // probability of having a contant as src
-        this.leaOperator = false; // whether we want lea operator
 
         this.constRange = 20; // value range of the constants
         this.fieldList = ["Page fault? ", "Cache miss? ", "Dirty bit? "];
@@ -79,9 +78,6 @@ export default class VO extends RunestoneBase {
         }
         if (currentOptions["mem_access_chance"] != undefined) {
             this.memoryAccess_chance = eval(currentOptions["mem_access_chance"]);
-        }
-        if (currentOptions["load_effective_address"] != undefined) {
-            this.leaOperator = eval(currentOptions["load_effective_address"]);
         }
 
         if (this.architecture === "IA32") {
@@ -198,14 +194,7 @@ export default class VO extends RunestoneBase {
         // copy the original elements to the container holding what the user will see.
         $(this.origElem).children().clone().appendTo(this.containerDiv);
         
-        this.statementDiv.css({ // set style
-            borderWidth: "1px",
-            borderRadius: "5px",
-            borderBlockStyle: "solid",
-            borderBlockColor: "white",
-            backgroundColor: "white",
-            padding: "8px"
-        });
+        this.statementDiv.addClass("statement-box");
         
         // create a feedback div, will be removed in clear and added back when generate another question
         this.feedbackDiv = $("<div>").attr("id", this.divid + "_feedback");
@@ -221,7 +210,6 @@ export default class VO extends RunestoneBase {
         this.memAccess = null;
         this.dest = null;
         this.src = null;
-        this.leal = false;
         var pf = null, cm = null, db = null;
 
         for (let k = 0; k < this.num_q_in_group; k++) {
@@ -242,15 +230,10 @@ export default class VO extends RunestoneBase {
                 this.memAccess = false;
                 this.dest = "reg";
                 pf = false, cm = false, db = false;
-                if ((this.leaOperator === true) && (Math.random() < 0.1)) {
-                    this.leal = true;
-                    this.src = "mem"; // not an actual memory access
-                } else { 
-                    if (Math.random() < this.constantInArthm_chance) {
-                        this.src = "const";
-                    } else {
-                        this.src = "reg";
-                    }
+                if (Math.random() < this.constantInArthm_chance) {
+                    this.src = "const";
+                } else {
+                    this.src = "reg";
                 }
             }
             this.answerList[k] = [pf, cm, db];
@@ -264,11 +247,7 @@ export default class VO extends RunestoneBase {
         
         // render the operator
         if (this.memAccess === false) {
-            if (this.leal === true) {
-                this.operator = "leal"; 
-            } else {
-                this.operator = this.pick(this.arthm_operators);
-            }
+            this.operator = this.pick(this.arthm_operators);
         } else {
             this.operator = this.pick(this.mem_operators);
         }
@@ -469,28 +448,7 @@ export default class VO extends RunestoneBase {
     renderMemAccess() {
         var reg1 = null, reg2 = null;
         if (this.architecture === "IA32") {
-            if (this.operator == "leal") {
-                var randVal = Math.random();
-                if (randVal < (1/4)) {
-                    return this.pick(this.offsets) + "(" + this.pick(this.registers) + ")";
-                } else if (randVal < (1/2)) {
-                    reg1 = this.pick(this.registers);
-                    do {
-                        reg2 = this.pick(this.registers);
-                    } while (reg1 === reg2);
-                    return "(" + reg1 + ", " +  reg2 + ")";
-                } else if (randVal < (3/4)) {
-                    reg1 = this.pick(this.registers);
-                    do {
-                        reg2 = this.pick(this.registers);
-                    } while (reg1 === reg2);
-                    return "(" + reg1 + ", " + reg2 + ", " + this.pick(["2", "4", "8"]) + ")";
-                } else {
-                    return this.pick(["0x20", "0x40", "0x80"]) + "(, " + this.pick(this.registers) + ", " + this.pick(["2", "4", "8"]) + ")";
-                }
-            } else {
-                return this.pick(this.offsets) + "(" + this.pick(this.registers) + ")";
-            }
+            return this.pick(this.offsets) + "(" + this.pick(this.registers) + ")";
         } else if (this.architecture === "ARM64") {
             if (this.pair === true) {
                 return "[" + this.pick(this.registers) + "]";
