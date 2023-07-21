@@ -64,6 +64,7 @@ export default class VO extends RunestoneBase {
         this.constRange = 20; // value range of the constants
         this.fieldList = ["Page fault? ", "Cache miss? ", "Dirty bit? "];
         this.fieldID = ["pf", "cm", "db"];
+        this.operatorList = [];
         this.promptList = [];
         this.answerList = [];
     }
@@ -215,27 +216,27 @@ export default class VO extends RunestoneBase {
         this.dest = null;
         this.src = null;
         var pf = null, cm = null, db = null;
+        this.operatorList = [];
 
         for (let k = 0; k < this.num_q_in_group; k++) {
-            if (Math.random() < 0.2 && this.lea === true && this.architecture === "IA32") {
-                pf = false, cm = false, db = false;
-                this.memAccess = "lea";
-            }
-            else {
-                if (Math.random() < this.memoryAccess_chance) { // determine whether mem access at all, yes case
-                    this.memAccess = true;
-                    pf = true, cm = true;
-                    if (Math.random() < 0.5) { // mem access is on src
-                        this.dest = "reg";
-                        this.src = "mem";
-                        db = false;
-                    } else {  // mem access is on this.dest
-                        this.dest = "mem";
-                        this.src = "reg";
-                        db = true;
-                    }
+            if (Math.random() < this.memoryAccess_chance) { // determine whether mem access at all, yes case
+                this.memAccess = true;
+                pf = true, cm = true;
+                if (Math.random() < 0.5) { // mem access is on src
+                    this.dest = "reg";
+                    this.src = "mem";
+                    db = false;
+                } else {  // mem access is on this.dest
+                    this.dest = "mem";
+                    this.src = "reg";
+                    db = true;
                 }
-                else { // no mem access case
+            }
+            else { // no mem access case
+                if (Math.random() < 0.2 && this.lea === true && this.architecture === "IA32") {
+                    pf = false, cm = false, db = false;
+                    this.memAccess = "lea";
+                } else {
                     this.memAccess = false;
                     this.dest = "reg";
                     pf = false, cm = false, db = false;
@@ -263,6 +264,10 @@ export default class VO extends RunestoneBase {
             // render the operator
             if (this.memAccess === false) {
                 this.operator = this.pick(this.arthm_operators);
+                while (this.has(this.operator)) {
+                    this.operator = this.pick(this.arthm_operators);
+                }
+                this.operatorList.push(this.operator);
             } else {
                 this.operator = this.pick(this.mem_operators);
             }
@@ -312,6 +317,15 @@ export default class VO extends RunestoneBase {
                 return this.operator + " " + this.dest + ", " + this.src;
             }
         }
+    }
+
+    has (o) {
+        for (let i = 0; i < this.operatorList.length; i++) {
+            if (this.operatorList[i] === o) {
+                return true;
+            }
+        }
+        return false;
     }
 
     renderVOButtons() {
