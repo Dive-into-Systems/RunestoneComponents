@@ -59,6 +59,7 @@ export default class VO extends RunestoneBase {
         this.num_q_in_group = 4; // number of questions in a group
         this.memoryAccess_chance = 0.5; // probability of memory-accessing ops in one set
         this.constantInArthm_chance = 0.5; // probability of having a contant as src
+        this.lea = false;
 
         this.constRange = 20; // value range of the constants
         this.fieldList = ["Page fault? ", "Cache miss? ", "Dirty bit? "];
@@ -78,6 +79,9 @@ export default class VO extends RunestoneBase {
         }
         if (currentOptions["mem_access_chance"] != undefined) {
             this.memoryAccess_chance = eval(currentOptions["mem_access_chance"]);
+        }
+        if (currentOptions["load_effective_address"] != undefined) {
+            this.lea = eval(currentOptions["load_effective_address"]);
         }
 
         if (this.architecture === "IA32") {
@@ -213,27 +217,33 @@ export default class VO extends RunestoneBase {
         var pf = null, cm = null, db = null;
 
         for (let k = 0; k < this.num_q_in_group; k++) {
-            if (Math.random() < this.memoryAccess_chance) { // determine whether mem access at all, yes case
-                this.memAccess = true;
-                pf = true, cm = true;
-                if (Math.random() < 0.5) { // mem access is on src
-                    this.dest = "reg";
-                    this.src = "mem";
-                    db = false;
-                } else {  // mem access is on this.dest
-                    this.dest = "mem";
-                    this.src = "reg";
-                    db = true;
-                }
-            }
-            else { // no mem access case
-                this.memAccess = false;
-                this.dest = "reg";
+            if (Math.random() < 0.2 && this.lea === true && this.architecture === "IA32") {
                 pf = false, cm = false, db = false;
-                if (Math.random() < this.constantInArthm_chance) {
-                    this.src = "const";
-                } else {
-                    this.src = "reg";
+                this.memAccess = "lea";
+            }
+            else {
+                if (Math.random() < this.memoryAccess_chance) { // determine whether mem access at all, yes case
+                    this.memAccess = true;
+                    pf = true, cm = true;
+                    if (Math.random() < 0.5) { // mem access is on src
+                        this.dest = "reg";
+                        this.src = "mem";
+                        db = false;
+                    } else {  // mem access is on this.dest
+                        this.dest = "mem";
+                        this.src = "reg";
+                        db = true;
+                    }
+                }
+                else { // no mem access case
+                    this.memAccess = false;
+                    this.dest = "reg";
+                    pf = false, cm = false, db = false;
+                    if (Math.random() < this.constantInArthm_chance) {
+                        this.src = "const";
+                    } else {
+                        this.src = "reg";
+                    }
                 }
             }
             this.answerList[k] = [pf, cm, db];
@@ -245,56 +255,62 @@ export default class VO extends RunestoneBase {
         this.operator = null;
         this.pair = false;
         
-        // render the operator
-        if (this.memAccess === false) {
-            this.operator = this.pick(this.arthm_operators);
-        } else {
-            this.operator = this.pick(this.mem_operators);
+        if (this.memAccess === "lea") {
+            var ret = this.renderLoadEffectiveAddress();
+            return "leal" + " " + ret;
         }
-
-        // render all other
-        if (this.architecture === "IA32") {
-            if (this.src === "reg") { // this.src is register
-                this.src = this.renderRegister();
-            } else if (this.src === "mem") { // this.src is memory
-                this.src = this.renderMemAccess();
-            } else { // this.src is constant
-                this.src = this.renderConstant();
-            }
-            if (this.dest === "reg") { // this.dest is register 
-                this.dest = this.renderRegister();
-            } else { // this.dest is memory
-                this.dest = this.renderMemAccess();
-            }
-            return this.operator + " " + this.src + ", " + this.dest;
-        }
-        else if (this.architecture === "ARM64") {
-            // determine the number of accessed bits in register, 32 bits or 64 bits
-            if (Math.random() < 0.5) {this.registers = this.registers_32bits;} 
-            else {this.registers = this.registers_64bits;}
-
+        else {
+            // render the operator
             if (this.memAccess === false) {
-                if (this.operator === "mov") {
-                    this.src = this.renderRegister();
-                    this.dest = this.renderRegister();
-                } else {
-                    if (Math.random() < 0.5) {
-                        this.op1 = this.renderRegister();
-                    } else {
-                        this.op1 = this.renderConstant();
-                    }
-                    this.op2 = this.renderRegister();
-                    this.src = this.op1 + ", " + this.op2;
-                    this.dest = this.renderRegister();
-                }
+                this.operator = this.pick(this.arthm_operators);
             } else {
-                if (this.operator === "ldp" || this.operator == "stp") {
-                    this.pair = true;
-                }
-                this.dest = this.renderRegister();
-                this.src = this.renderMemAccess();   
+                this.operator = this.pick(this.mem_operators);
             }
-            return this.operator + " " + this.dest + ", " + this.src;
+
+            // render all other
+            if (this.architecture === "IA32") {
+                if (this.src === "reg") { // this.src is register
+                    this.src = this.renderRegister();
+                } else if (this.src === "mem") { // this.src is memory
+                    this.src = this.renderMemAccess();
+                } else { // this.src is constant
+                    this.src = this.renderConstant();
+                }
+                if (this.dest === "reg") { // this.dest is register 
+                    this.dest = this.renderRegister();
+                } else { // this.dest is memory
+                    this.dest = this.renderMemAccess();
+                }
+                return this.operator + " " + this.src + ", " + this.dest;
+            }
+            else if (this.architecture === "ARM64") {
+                // determine the number of accessed bits in register, 32 bits or 64 bits
+                if (Math.random() < 0.5) {this.registers = this.registers_32bits;} 
+                else {this.registers = this.registers_64bits;}
+
+                if (this.memAccess === false) {
+                    if (this.operator === "mov") {
+                        this.src = this.renderRegister();
+                        this.dest = this.renderRegister();
+                    } else {
+                        if (Math.random() < 0.5) {
+                            this.op1 = this.renderRegister();
+                        } else {
+                            this.op1 = this.renderConstant();
+                        }
+                        this.op2 = this.renderRegister();
+                        this.src = this.op1 + ", " + this.op2;
+                        this.dest = this.renderRegister();
+                    }
+                } else {
+                    if (this.operator === "ldp" || this.operator == "stp") {
+                        this.pair = true;
+                    }
+                    this.dest = this.renderRegister();
+                    this.src = this.renderMemAccess();   
+                }
+                return this.operator + " " + this.dest + ", " + this.src;
+            }
         }
     }
 
@@ -425,6 +441,28 @@ export default class VO extends RunestoneBase {
         
         if (typeof MathJax !== "undefined") {
             this.queueMathJax(document.body);
+        }
+    }
+
+    renderLoadEffectiveAddress() {
+        var reg1 = null, reg2 = null;
+        var randVal = Math.random();
+        if (randVal < (1/4)) {
+            return this.pick(this.offsets) + "(" + this.pick(this.registers) + ")";
+        } else if (randVal < (1/2)) {
+            reg1 = this.pick(this.registers);
+            do {
+                reg2 = this.pick(this.registers);
+            } while (reg1 === reg2);
+            return "(" + reg1 + ", " +  reg2 + ")";
+        } else if (randVal < (3/4)) {
+            reg1 = this.pick(this.registers);
+            do {
+                reg2 = this.pick(this.registers);
+            } while (reg1 === reg2);
+            return "(" + reg1 + ", " + reg2 + ", " + this.pick(["2", "4", "8"]) + ")";
+        } else {
+            return this.pick(["0x20", "0x40", "0x80"]) + "(, " + this.pick(this.registers) + ", " + this.pick(["2", "4", "8"]) + ")";
         }
     }
 
