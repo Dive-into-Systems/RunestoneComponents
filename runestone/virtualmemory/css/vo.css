@@ -36,12 +36,10 @@ button[disabled] {
  accent-color: brown;
 }
 
-.button-check {
-  /* background-color: rgba(51, 51, 51, 0.05); */
+.button-check.checkingbutton {
   background-color: HoneyDew;
   border-radius: 8px;
   border-width: 0;
-  /* color: #333333; */
   color: seagreen;
   cursor: pointer;
   display: inline-block;

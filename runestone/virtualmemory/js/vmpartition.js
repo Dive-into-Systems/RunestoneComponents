@@ -86,10 +86,10 @@ export default class vmpartition extends RunestoneBase {
 
         // create help text
         this.helperDiv = document.createElement("div");
-        this.instructionText = document.createTextNode("Select the offset bits of the memory address.");
+        this.instructionText = document.createTextNode("Select the page bits of this memory address.");
         this.helperDiv.appendChild(this.instructionText);
         this.helperDiv.appendChild(document.createElement("br"));
-        this.usageText = document.createTextNode("Usage: click and drag through the address bits and highlight them with the button below.");
+        this.usageText = document.createTextNode("Usage: drag through some address bits and highlight them.");
         this.helperDiv.appendChild(this.usageText);
 
         // create question prompt (block size, total number of lines)

@@ -107,9 +107,9 @@ export default class cachepartition extends RunestoneBase {
         this.addressNode = document.createElement("div");
         this.addressNodeText = document.createElement("span");
         this.addressNodeText.textContent = "Address: 0b ";
-        this.addressNodeText.style.fontFamily = "Courier";
+        this.addressNodeText.style.fontFamily = "Courier New";
         this.addressNodeText.style.color = "#28282B";
-        this.addressNodeText.style.fontWeight = "800";
+        this.addressNodeText.style.fontWeight = "500";
         this.addressNodeAddress = document.createElement("div");
         this.addressNode.style.display = "inline";
         this.addressNodeText.style.display = "inline";
@@ -123,7 +123,7 @@ export default class cachepartition extends RunestoneBase {
 
         // create help text
         this.helperDiv = document.createElement("div");
-        this.instructionText = document.createTextNode("Divide the following address bits into the tag, index, and offset.");
+        this.instructionText = document.createTextNode("Divide this address into the tag, index, and offset.");
         this.helperDiv.appendChild(this.instructionText);
         this.helperDiv.appendChild(document.createElement("br"));
         this.usageText = document.createTextNode("Usage: Click on a button then drag through some address bits to highlight.");

@@ -189,7 +189,7 @@ export default class VO extends RunestoneBase {
                     this.checkThisAnswers(i);
                     this.logCurrentAnswer();
                 }.bind(this));
-
+            this.submitButton.addClass("button-check checkingbutton");
             this.newDiv.append(this.submitButton);
             this.inputBox.append(this.newDiv);
             this.inputNodes.push(this.radioButtons);
