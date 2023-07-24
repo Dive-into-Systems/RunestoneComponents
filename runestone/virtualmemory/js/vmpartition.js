@@ -78,10 +78,17 @@ export default class vmpartition extends RunestoneBase {
         // create the section that prompts question
         // create question prompt (address)
         this.addressNode = document.createElement("div");
-        this.addressNodeText = document.createTextNode("address: 0b ");
+        this.addressNodeText = document.createElement("span");
+        this.addressNodeText.textContent = "Address: 0b ";
+        this.addressNodeText.style.fontFamily = "Courier New";
+        this.addressNodeText.style.color = "#28282B";
+        this.addressNodeText.style.fontWeight = "500";
         this.addressNodeAddress = document.createElement("div");
+        this.addressNode.style.display = "inline";
+        this.addressNodeText.style.display = "inline";
+        this.addressNode.appendChild(this.addressNodeText);
         this.addressNode.appendChild(this.addressNodeAddress);
-        this.addressNode.style.textAlign = "center";
+        this.addressNode.style.textAlign = "center"; 
         this.addressNode.style.fontSize = "x-large";
 
         // create help text
@@ -146,6 +153,7 @@ export default class vmpartition extends RunestoneBase {
         this.inputBitsDiv.appendChild(this.input_offset_text);
         this.inputBitsDiv.appendChild(this.input_offset_count);
         this.inputBitsDiv.style.textAlign = "center";
+        this.inputBitsDiv.style.fontSize = "medium";
 
 
         this.containerDiv.appendChild(this.statementDiv);
@@ -257,7 +265,7 @@ export default class vmpartition extends RunestoneBase {
     // set the selected bits in the memory address into corresponding colors of index
     highlightSelectedIndex() {
         // let selection = window.getSelection();
-        $(".ui-selected").attr("class", "indexclass");
+        $(".ui-selected").addClass("indexclass");
     }
 
     // set the selected bits in the memory address into corresponding colors of offset
@@ -363,9 +371,6 @@ export default class vmpartition extends RunestoneBase {
             }
         }
         this.input_offset_bits = this.num_bits - this.input_index_bits;
-        console.log("i" + this.input_index_bits);
-        console.log("o" + this.input_offset_bits);
-        console.log(this.num_bits);
         this.input_index_count.textContent = this.input_index_bits.toString();
         this.input_offset_count.textContent = this.input_offset_bits.toString();
     }
@@ -379,6 +384,7 @@ export default class vmpartition extends RunestoneBase {
         this.theAddress.id = "selectable";
         for ( var i = 0 ; i < this.num_bits ; i ++ ) {
             this.address_node_list[ i ].style.fontSize = "x-large";
+            $(this.address_node_list[i]).addClass("vm");
             this.theAddress.appendChild(this.address_node_list[ i ]);
         }
         this.addressNodeAddress.appendChild(this.theAddress);
@@ -389,35 +395,6 @@ export default class vmpartition extends RunestoneBase {
     generatePrompt() {
         this.updateDisplayedAddress();
     }
-
-    // createHelpStatement() {
-    //     this.helpDiv = document.createElement("div");
-    //     this.helpStatement = document.createElement("div");
-    //     this.helpimage = new Image();
-    //     this.helpimage.src = "../resources/vmPartition_demo.gif";
-    //     this.helpStatement.appendChild(this.helpimage);
-        
-    //     this.helpStatement.style.visibility = "hidden";
-    //     // create the button for display/hide help
-    //     this.helpButton = document.createElement("button");
-    //     this.helpButton.textContent = $.i18n("msg_vmtable_display_help");
-    //     this.helpButton.addEventListener(            
-    //         "click",
-    //         function() {
-    //             if (this.helpStatement.style.visibility == "hidden") {
-    //                 this.helpStatement.style.visibility = "visible";
-    //                 this.helpDiv.appendChild(this.helpStatement);
-    //                 this.helpButton.textContent = $.i18n("msg_vmtable_hide_help");
-    //             } else {
-    //                 this.helpStatement.style.visibility = "hidden";
-    //                 this.helpDiv.removeChild(this.helpStatement);
-    //                 this.helpButton.textContent = $.i18n("msg_vmtable_display_help");
-    //             }
-    //         }.bind(this),
-    //     false); 
-    //     this.helpDiv.appendChild(this.helpButton);
-    //     this.containerDiv.appendChild(this.helpDiv);
-    // }
 
     hidefeedback() {
         this.feedbackDiv.style.visibility = "hidden";

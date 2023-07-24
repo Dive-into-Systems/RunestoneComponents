@@ -8,8 +8,9 @@ input.input-validation-error {
    border: 1px solid #e80c4d;
 }
 
-#selectable .ui-selecting {background: #ffcccb;}
-#selectable .ui-selected {background: #ff7f7f; color: white;}
+.vm.ui-selecting {background: #ffcccb;}
+.vm.ui-selected {background: #ff7f7f; color: white;}
+
 #selectable {list-style-type: none; margin: 0; padding: 0; display: inline;}
 #selectable li {margin: 2px; padding: 4px; display: inline; font-family: 'Courier New', Courier, monospace;  border-radius: 8px; overflow: auto; }
 
