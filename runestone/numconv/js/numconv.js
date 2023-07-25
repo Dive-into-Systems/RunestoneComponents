@@ -49,8 +49,6 @@ export default class NC extends RunestoneBase {
         this.renderNCFeedbackDiv();
         // replaces the intermediate HTML for this component with the rendered HTML of this component
         $(this.origElem).replaceWith(this.containerDiv);
-
-        // alert(this.num_bits);
     }
 
     renderNCPromptAndInput() {
@@ -80,9 +78,7 @@ export default class NC extends RunestoneBase {
         this.statementDiv = document.createElement("div");
 
         // specify the number of bits in the statement
-        this.statementNode0 = document.createTextNode(
-            "In this question, you will be provided a number of " + this.num_bits.toString() + "-bits in binary.");
-        this.statementNode05 = document.createTextNode("Please convert it from your selected number system to another selected number system.");
+        this.statementNode05 = document.createTextNode("Please convert a value from one selected number system to another selected number system.");
 
         this.statementNode1 = document.createTextNode("Convert from ");
         // default menu options
@@ -157,9 +153,8 @@ export default class NC extends RunestoneBase {
             false);
         
         // render the statement
-        this.statementDiv.appendChild(this.statementNode0);
-        this.statementDiv.appendChild(document.createElement("br"));
         this.statementDiv.appendChild(this.statementNode05);
+        this.statementDiv.appendChild(document.createElement("br"));
         this.statementDiv.appendChild(document.createElement("br"));
         this.statementDiv.appendChild(this.statementNode1);
         this.statementDiv.appendChild(this.menuNode1);
@@ -193,6 +188,9 @@ export default class NC extends RunestoneBase {
 
         // prompt is invisible by default
         this.promptDiv.style.visibility = "hidden"; 
+
+        this.feedbackDiv = document.createElement("div");
+        this.feedbackDiv.setAttribute("id", this.divid + "_feedback");
 
         // Copy the original elements to the container holding what the user will see.
         $(this.origElem).children().clone().appendTo(this.containerDiv);
@@ -276,15 +274,13 @@ export default class NC extends RunestoneBase {
     }
 
     renderNCFeedbackDiv() {
-        this.feedBackDiv = document.createElement("div");
-        this.feedBackDiv.id = this.divid + "_feedback";
-        this.containerDiv.appendChild(document.createElement("br"));
-        this.containerDiv.appendChild(this.feedBackDiv);
+        this.containerDiv.appendChild(this.feedbackDiv);
     }
 
     // clear the input field
     clearAnswer() {
         this.inputNode.value = "";
+        this.feedbackDiv.remove();
     }
 
     // Convert an integer to its binary expression with leading zeros as a string.
@@ -345,7 +341,8 @@ export default class NC extends RunestoneBase {
 
     // generate the answer as a string based on the randomly generated number
     generateAnswer() {
-
+        this.hideFeedback();
+        this.feedback_msg = "";
         this.inputNode.style.visibility = 'visible';
         switch (this.menuNode2.value) {
             case "binary" : 
@@ -410,11 +407,11 @@ export default class NC extends RunestoneBase {
         this.inputNode.setAttribute("placeholder", placeholder);
         this.inputNode.setAttribute("size", placeholder.length);
         this.inputNode.setAttribute("maxlength", 1+this.num_bits);
-        this.hideFeedback();
     }
 
     // check if the conversion is valid  
     checkValidConversion() {
+        this.hideFeedback();
         this.valid_conversion = true;
         // a conversion is valid when two types are different
         if (this.menuNode1.value === this.menuNode2.value) {
@@ -514,23 +511,27 @@ export default class NC extends RunestoneBase {
     }
     
     hideFeedback() {
-        this.feedBackDiv.style.visibility = "hidden";
+        this.feedbackDiv.remove();
     }
 
     displayFeedback() {
-        this.feedBackDiv.style.visibility = "visible";
+        this.feedbackDiv.style.visibility = "visible";
     }
 
     renderFeedback() {
+        this.feedbackDiv = document.createElement("div");
+        this.feedbackDiv.setAttribute("id", this.divid + "_feedback");
+        this.containerDiv.appendChild(this.feedbackDiv);
+
         // only the feedback message needs to display
         var feedback_html = "<dev>" + this.feedback_msg + "</dev>";
         if (this.correct) {
-            $(this.feedBackDiv).attr("class", "alert alert-info");
+            $(this.feedbackDiv).attr("class", "alert alert-info");
         } else {
-            $(this.feedBackDiv).attr("class", "alert alert-danger");
+            $(this.feedbackDiv).attr("class", "alert alert-danger");
         }
         
-        this.feedBackDiv.innerHTML = feedback_html;
+        this.feedbackDiv.innerHTML = feedback_html;
         this.displayFeedback();
         if (typeof MathJax !== "undefined") {
             this.queueMathJax(document.body);
