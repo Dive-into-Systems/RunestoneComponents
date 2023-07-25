@@ -247,27 +247,40 @@ export default class vmInfo extends RunestoneBase {
         this.block_size = 1 << this.generateRandomInt(1, this.num_bits);
     }
 
+    // parse exponential input, take string return int
+    exponentialParser(input) {  
+        var slice = input.split('^');
+        if (slice.length === 2) {
+            var base = parseFloat(slice[0]);
+            var exponent = parseFloat(slice[1]);
+            if (!isNaN(base) && !isNaN(exponent)) {
+                return Math.pow(base, exponent);
+            }
+        }
+        return input;
+    }
+
     createExpTable() {
         this.expTable = document.createElement("table");
         this.expTable.setAttribute("width", "37%");
         this.expTableHead = document.createElement("thead");
         this.expTableHead.innerHTML = 
-        "<tr><th colspan=\"8\">2 Exponential Table</th></tr>";
+            "<tr><th style=\"border:1px solid rgb(90, 171, 127); background-color: rgb(250, 255, 250);\" colspan=\"8\">2 Exponential Table</th></tr>";
         this.expTable.appendChild(this.expTableHead);
         this.expTableBody = document.createElement("tbody");
         this.expTable.appendChild(this.expTableBody);
 
-        for ( let i = 1; i <= 4; i ++ ) {
+        for (let i = 1; i <= 4; i++) {
             var expTableRow = document.createElement("tr");
-            expTableRow.innerHTML = 
-            "<td width=\"8%\">2<sup>" + i.toString()+ "</sup></td>" + 
-            "<td width=\"17%\">" + (1 << i).toString() +"</td>" + 
-            "<td width=\"8%\">2<sup>" + (i+4).toString()+ "</sup></td>" + 
-            "<td width=\"17%\">" + (1 << (i+4)).toString() +"</td>" +
-            "<td width=\"8%\">2<sup>" + (i+8).toString()+ "</sup></td>" + 
-            "<td width=\"17%\">" + (1 << (i+8)).toString() +"</td>" + 
-            "<td width=\"8%\">2<sup>" + (i+12).toString()+ "</sup></td>" + 
-            "<td width=\"17%\">" + (1 << (i+12)).toString() +"</td>";
+            expTableRow.innerHTML =
+                "<td style=\"border:1px solid rgb(90, 171, 127); background-color: rgb(250, 255, 250); width:8%;\">2<sup>" + i.toString() + "</sup></td>" +
+                "<td style=\"border:1px solid rgb(90, 171, 127); background-color: rgb(255, 255, 255); width:17%;\">" + (1 << i).toString() + "</td>" +
+                "<td style=\"border:1px solid rgb(90, 171, 127); background-color: rgb(250, 255, 250); width:8%;\">2<sup>" + (i + 4).toString() + "</sup></td>" +
+                "<td style=\"border:1px solid rgb(90, 171, 127); background-color: rgb(255, 255, 255); width:17%;\">" + (1 << (i + 4)).toString() + "</td>" +
+                "<td style=\"border:1px solid rgb(90, 171, 127); background-color: rgb(250, 255, 250); width:8%;\">2<sup>" + (i + 8).toString() + "</sup></td>" +
+                "<td style=\"border:1px solid rgb(90, 171, 127); background-color: rgb(255, 255, 255); width:17%;\">" + (1 << (i + 8)).toString() + "</td>" +
+                "<td style=\"border:1px solid rgb(90, 171, 127); background-color: rgb(250, 255, 250); width:8%;\">2<sup>" + (i + 12).toString() + "</sup></td>" +
+                "<td style=\"border:1px solid rgb(90, 171, 127); background-color: rgb(255, 255, 255); width:17%;\">" + (1 << (i + 12)).toString() + "</td>";
             this.expTableBody.appendChild(expTableRow);
         }
 
@@ -309,6 +322,7 @@ export default class vmInfo extends RunestoneBase {
         this.feedback_msg = [];
         for (var i = 0; i < 2; i ++ ) {
             var input_value = this.inputNodes[i].value;
+            input_value = this.exponentialParser(input_value);
             if ( input_value === "" ) {
                 this.feedback_msg.push($.i18n("msg_no_answer"));
                 this.correct = false;
@@ -364,11 +378,11 @@ export default class vmInfo extends RunestoneBase {
     }
 
     hidefeedback() {
-        this.feedbackDiv.style.visibility = "hidden";
+        this.feedbackDiv.style.display = 'none';
     }
 
     displayfeedback() {
-        this.feedbackDiv.style.visibility = "visible";
+        this.feedbackDiv.style.display = 'block';
     }
 
     // generate a random integer in [lower, upper)

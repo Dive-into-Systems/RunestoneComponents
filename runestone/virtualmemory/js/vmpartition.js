@@ -397,12 +397,13 @@ export default class vmpartition extends RunestoneBase {
     }
 
     hidefeedback() {
-        this.feedbackDiv.style.visibility = "hidden";
+        this.feedbackDiv.style.display = 'none';
     }
 
     displayfeedback() {
-        this.feedbackDiv.style.visibility = "visible";
+        this.feedbackDiv.style.display = 'block';
     }
+
 
     // generate a random integer in [lower, upper)
     generateRandomInt(lower, upper) {

@@ -750,6 +750,7 @@ export default class vmtable extends RunestoneBase {
             "click",
             function () {
                 this.fixed = false;
+                this.fixedMinIndex = false;
                 this.resetGeneration();
                 this.hidefeedback();
             }.bind(this),
@@ -775,12 +776,13 @@ export default class vmtable extends RunestoneBase {
         );
 
         // put all buttons together
-        if ( this.redo ) {
-            this.buttonDiv.appendChild(this.redoButton);
-        }
         if ( this.generateAnother ) {
             this.buttonDiv.appendChild(this.generateButton);
         }
+        if ( this.redo ) {
+            this.buttonDiv.appendChild(this.redoButton);
+        }
+
         this.buttonDiv.appendChild(this.submitButton);
         this.buttonDiv.setAttribute("class", "aligned-tables");
         this.containerDiv.appendChild(document.createElement("br"));
@@ -964,6 +966,7 @@ export default class vmtable extends RunestoneBase {
 
         if ( !this.fixedMinIndex ) {
             this.minIndex = Math.floor( Math.random() * (this.numRows - this.numDisplayedPages) );
+            this.fixedMinIndex = true;
         }
         
         this.replacementStruct = [];
@@ -1405,11 +1408,11 @@ export default class vmtable extends RunestoneBase {
     }
 
     hidefeedback() {
-        this.feedbackDiv.style.visibility = "hidden";
+        this.feedbackDiv.style.display = 'none';
     }
 
     displayfeedback() {
-        this.feedbackDiv.style.visibility = "visible";
+        this.feedbackDiv.style.display = 'block';
     }
 
     renderfeedback() {

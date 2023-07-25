@@ -180,7 +180,7 @@ export default class cachetable extends RunestoneBase {
     createStatement1() {
         this.statementDiv1 = document.createElement("div");
         this.statementDiv1.textContent = 
-            "Fill in the results of each memory operation (listed in the reference " + 
+            "Fill in the results of each memory operation (listed in the memory operations " + 
             "table) in the table located at the lower-right corner. The effects of each memory operation " +
             "will be reflected in your current cache content table below.";
         this.containerDiv.appendChild(this.statementDiv1);
@@ -192,12 +192,12 @@ export default class cachetable extends RunestoneBase {
         this.helpStatement = document.createElement("div");
         if ( this.cacheOrg == directMapped ) {
             this.helpStatement.innerHTML = 
-                "<div>'H' stands for hit, and 'M' stands for miss. You should choose one from them. </div>" +
+                "<div>You should choose one from 'Hit' and 'Miss'. </div>" +
                 "<div>Index should be a decimal number. 'V' stands for Valid Bit. </div> " +
                 "<div>'D' stands for Dirty Bit. Tag should be a binary string. </div>";
         } else {
             this.helpStatement.innerHTML = 
-                "<div>'H' stands for hit, and 'M' stands for miss. You should choose one from them. </div>" +
+                "<div>You should choose one from 'Hit' and 'Miss'. </div>" +
                 "<div>Index should be a decimal number. 'V' stands for Valid Bit. </div>" +
                 "<div>'D' stands for Dirty Bit. Tag should be a binary string. </div>" + 
                 "<div>'LRU' stands for Least Recent Used Bit. LRU=0 means the left line is the least recent used line, and vice versa. </div>";
@@ -335,8 +335,8 @@ export default class cachetable extends RunestoneBase {
             this.answerTableHead.innerHTML = 
             "<tr><th colspan=\"6\">Enter Effects from Memory Reference</th></tr>" + 
             "<tr>" +
-            "<th title=\"Hit?\" >H</th>"+
-            "<th title=\"Miss?\" >M</th>"+
+            "<th title=\"Hit?\" >Hit</th>"+
+            "<th title=\"Miss?\" >Miss</th>"+
             "<th title=\"Index\" >Index</th>"+
             "<th title=\"Valid Bit\" >V</th>"+
             "<th title=\"Dirty Bit\" >D</th>"+
@@ -346,8 +346,8 @@ export default class cachetable extends RunestoneBase {
             this.answerTableHead.innerHTML = 
             "<tr><th colspan=\"10\">Effects from Memory Reference (only fill in the line being affected)</th></tr>" + 
             "<tr>" +
-            "<th title=\"Hit?\" >H</th>"+
-            "<th title=\"Miss?\" >M</th>"+
+            "<th title=\"Hit?\" >Hit</th>"+
+            "<th title=\"Miss?\" >Miss</th>"+
             "<th title=\"Index\" >Index</th>"+
             "<th title=\"Least Recent Used bit\" >LRU</th>"+
             "<th title=\"Valid Bit\" >V</th>"+
@@ -881,11 +881,11 @@ export default class cachetable extends RunestoneBase {
         );
 
         // put all buttons together
-        if ( this.redo ) {
-            this.buttonDiv.appendChild(this.redoButton);
-        }
         if ( this.generateAnother ) {
             this.buttonDiv.appendChild(this.generateButton);
+        }
+        if ( this.redo ) {
+            this.buttonDiv.appendChild(this.redoButton);
         }
         this.buttonDiv.appendChild(this.submitButton);
         this.buttonDiv.setAttribute("class", "aligned-tables");
@@ -1681,11 +1681,11 @@ export default class cachetable extends RunestoneBase {
     }
 
     hidefeedback() {
-        this.feedbackDiv.style.visibility = "hidden";
+        this.feedbackDiv.style.display = 'none';
     }
 
     displayfeedback() {
-        this.feedbackDiv.style.visibility = "visible";
+        this.feedbackDiv.style.display = 'block';
     }
 
     renderfeedback() {

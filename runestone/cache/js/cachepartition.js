@@ -139,6 +139,8 @@ export default class cachepartition extends RunestoneBase {
         this.lineNodeLine.textContent = this.num_line_ans;
         this.promptNode.appendChild(this.blockNodeText);
         this.promptNode.appendChild(this.blockNodeBlock);
+        let breakNode = document.createElement("br");
+        this.promptNode.appendChild(breakNode);
         this.promptNode.appendChild(this.lineNodeText);
         this.promptNode.appendChild(this.lineNodeLine);
         this.promptNode.style.textAlign = "center";

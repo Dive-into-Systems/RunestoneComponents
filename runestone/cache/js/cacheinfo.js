@@ -21,7 +21,7 @@ export default class cacheinfo extends RunestoneBase {
         this.divid = orig.id;
         this.correct = null;
         // default number of bits = 4
-        this.num_bits = 4;
+        this.num_bits = 8;
         // keep track of the last generated cache combination and ensure
         // each time it generates a different combination
         this.last_rand_choice = [0,0,0];
@@ -88,6 +88,7 @@ export default class cacheinfo extends RunestoneBase {
             option.text = this.bitsLengthArray[i];
             this.addrMenuNode.appendChild(option);
         }
+        this.addrMenuNode.options[1].setAttribute('selected','selected'); // make 8 bits the default
         this.addrMenuNode.setAttribute("class", "form form-control selectwidthauto");
         // When the option fo addrMenuNode is changed, 
         this.addrMenuNode.addEventListener("change",
@@ -107,10 +108,13 @@ export default class cacheinfo extends RunestoneBase {
 
             // create the address in the question prompt
         this.addressNode = document.createElement("div");
-        this.addressNodeText = document.createTextNode("address: ");
+        var addressNodeTextSpan = document.createElement("span");
+        addressNodeTextSpan.style.fontFamily = "Courier, monospace";
+        this.addressNodeText = document.createTextNode("Address: ");
+        addressNodeTextSpan.appendChild(this.addressNodeText);
         this.addressNodeAddress = document.createElement("code");
         this.addressNodeAddress.textContent = this.address_eg;
-        this.addressNode.appendChild(this.addressNodeText);
+        this.addressNode.appendChild(addressNodeTextSpan);
         this.addressNode.appendChild(this.addressNodeAddress);
         this.addressNode.style.textAlign = "center";
         this.addressNode.style.fontSize = "x-large";
@@ -155,7 +159,7 @@ export default class cacheinfo extends RunestoneBase {
         this.statementDiv.style.borderBlockStyle = "solid";
         this.statementDiv.style.borderBlockColor = "white";
         this.statementDiv.style.backgroundColor = "white";
-        this.statementDiv.style.padding = "8px";
+        this.statementDiv.style.padding = "9px";
 
         this.containerDiv.appendChild(this.statementDiv);
         this.containerDiv.appendChild(document.createElement("br"));
@@ -193,8 +197,7 @@ export default class cacheinfo extends RunestoneBase {
         this.questionDiv.appendChild(this.question2);
         this.containerDiv.appendChild(this.questionDiv);
         this.containerDiv.appendChild(document.createElement("br"));
-
-
+        
         // Copy the original elements to the container holding what the user will see.
         $(this.origElem).children().clone().appendTo(this.containerDiv);
         
@@ -259,8 +262,6 @@ export default class cacheinfo extends RunestoneBase {
             }.bind(this),
             false)
         ;
-
-        this.containerDiv.appendChild(document.createElement("br"));
         this.containerDiv.appendChild(this.generateButton);
         this.containerDiv.appendChild(this.submitButton);
     }
@@ -354,7 +355,6 @@ export default class cacheinfo extends RunestoneBase {
     // generate the answer as a string based on the randomly generated number
     generateAnswer() {
         this.hidefeedback();
-        // this.newInputNode.style.visibility = 'visible';
         this.questionDiv.style.visibility = "visible";
         this.displayFeed = [];
         
@@ -364,16 +364,16 @@ export default class cacheinfo extends RunestoneBase {
         // number of lines have something to do with the set associatives
         switch (this.orgMenuNode.value) {
             case "Direct-Mapped" : 
-                this.num_line_ans = this.entries_ans;
-                this.question2.style.visibility = "hidden";
+                this.num_line_ans = this.entries_ans;           
+                this.question2.style.display = 'none';
                 break;
             case "2-Way Set Associative" : 
                 this.num_line_ans = (this.entries_ans)*2;
-                this.question2.style.visibility = "visible";
+                this.question2.style.display = 'block';
                 break;
             case "4-Way Set Associative" : 
                 this.num_line_ans = (this.entries_ans)*4;
-                this.question2.style.visibility = "visible";
+                this.question2.style.display = 'block';
                 break;
         }
         this.answers = [this.block_size_ans, this.entries_ans, this.num_line_ans];
@@ -471,11 +471,11 @@ export default class cacheinfo extends RunestoneBase {
     }
 
     hidefeedback() {
-        this.feedbackDiv.style.visibility = "hidden";
+        this.feedbackDiv.style.display = 'none';
     }
 
     displayfeedback() {
-        this.feedbackDiv.style.visibility = "visible";
+        this.feedbackDiv.style.display = 'block';
     }
 
     renderfeedback() {
