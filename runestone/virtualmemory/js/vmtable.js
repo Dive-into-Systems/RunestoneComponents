@@ -88,7 +88,7 @@ export default class vmtable extends RunestoneBase {
 
         // the replacement algorithm.
         this.replacement = algo_FIFO;
-        this.replacementAlgo = this.replacementFIFO
+        this.replacementAlgo = this.replacementFIFO;
 
         // replacement
         this.referenceBits = [];
@@ -1153,25 +1153,28 @@ export default class vmtable extends RunestoneBase {
     // returns [frame to put in, page to evict, hit or miss]
     replacementLikeLRU(currPage) {
         let idx = this.findPage(currPage);
+        let ret;
         if (idx == -1) {
             if (this.replacementStruct.length < this.numFrames) {
                 this.replacementStruct.push([this.replacementStruct.length, currPage]);
-                return [this.replacementStruct.length - 1, -1, false];
+                this.invalid.delete(currPage);
+                ret =  [this.replacementStruct.length - 1, -1, false];
             } else {
                 let curr = this.replacementStruct.shift();
                 let currFrame = curr[0];
                 let evictedPage = curr[1];
+                this.invalid.add(evictedPage);
+                this.invalid.delete(currPage);
                 this.replacementStruct.push([currFrame, currPage]);
-                return [currFrame, evictedPage, false];
+                ret =  [currFrame, evictedPage, false];
             }   
         } else {
-            let currFrame = this.replacementStruct[idx][1];
-            let preHalf = this.replacementStruct.slice(0, idx);
-            let postHalf = this.replacementStruct(idx + 1);
-            this.replacementStruct = preHalf.concat(postHalf);
+            let currFrame = this.replacementStruct[idx][0];
+            this.replacementStruct.splice(idx, 1);
             this.replacementStruct.push([currFrame, currPage]);
-            return [currFrame, -1, true];
+            ret =  [currFrame, -1, true];
         }
+        return ret;
     }
 
     replacementReference(currPage) {
@@ -1188,13 +1191,14 @@ export default class vmtable extends RunestoneBase {
             let idx2 = this.findFrame(currFrame)
             if (idx2 == -1) {
                 this.replacementStruct.push([currFrame, currPage]);
+                this.invalid.delete(currPage);
                 return [currFrame, -1, false];
             } else {
                 let evictedPage = this.replacementStruct[idx2][1];
-                let preHalf = this.replacementStruct.slice(0, idx2);
-                let postHalf = this.replacementStruct(idx2 + 1);
-                this.replacementStruct = preHalf.concat(postHalf);
+                this.replacementStruct.splice(idx2, 1);
                 this.replacementStruct.push([currFrame, currPage]);
+                this.invalid.add(evictedPage);
+                this.invalid.delete(currPage);
                 return [currFrame, evictedPage, false];
             }
         } else {
