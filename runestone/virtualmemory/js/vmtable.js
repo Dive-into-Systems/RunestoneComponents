@@ -12,6 +12,8 @@ import { Pass } from "codemirror";
 export var vmtableList = {}; // Object containing all instances of vmtable that aren't a child of a timed assessment.
 
 const algo_FIFO = "FIFO";
+const algo_LRU = "LRU";
+const algo_reference = "reference";
 
 // vmtable constructor
 export default class vmtable extends RunestoneBase {
@@ -144,7 +146,21 @@ export default class vmtable extends RunestoneBase {
                 this.numRefs = eval(currentOptions["num-references"]);
             }
             if (currentOptions["replacement-algo"] != undefined) {
-                this.replacementAlgo = currentOptions["replacement-algo"];
+                this.replacement = currentOptions["replacement-algo"];
+                switch (this.replacement) {
+                    case algo_FIFO:
+                        this.replacementAlgo = this.replacementFIFO;
+                        break;
+                    case algo_LRU:
+                        this.replacementAlgo = this.replacementLikeLRU;
+                        break;      
+                    case algo_reference:
+                        this.replacementAlgo = this.replacementReference;
+                        break;
+                    default:
+                        this.replacementAlgo = this.replacementFIFO;
+                        break; 
+                }
             }
             if (currentOptions["fixed"] != undefined) {
                 this.fixed = eval(currentOptions["fixed"]);
@@ -159,8 +175,11 @@ export default class vmtable extends RunestoneBase {
             this.indexBits = this.numBits - this.offsetBits;
             this.numRows = 1 << this.indexBits;
 
+            // console.log(this.replacementAlgo);
         } catch (error) {
             // pass
+            // console.log(this.scriptSelector(this.origElem));
+            // console.log(error);
         }
     }
 
