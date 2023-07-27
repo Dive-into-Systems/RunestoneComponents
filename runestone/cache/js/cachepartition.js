@@ -346,6 +346,7 @@ export default class cachepartition extends RunestoneBase {
     }
     
     renderCPFeedbackDiv() {
+        this.containerDiv.appendChild(document.createElement("br"));
         this.containerDiv.appendChild(this.feedbackDiv);
     }
 

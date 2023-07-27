@@ -274,6 +274,7 @@ export default class NC extends RunestoneBase {
     }
 
     renderNCFeedbackDiv() {
+        this.containerDiv.appendChild(document.createElement("br"));
         this.containerDiv.appendChild(this.feedbackDiv);
     }
 

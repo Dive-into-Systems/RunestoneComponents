@@ -184,6 +184,7 @@ export default class cachetable extends RunestoneBase {
             "table) in the table located at the lower-right corner. The effects of each memory operation " +
             "will be reflected in your current cache content table below.";
         this.containerDiv.appendChild(this.statementDiv1);
+        this.containerDiv.appendChild(document.createElement("br"));
     }
     
     // create the div with detailed help
@@ -238,6 +239,8 @@ export default class cachetable extends RunestoneBase {
                 }
             }.bind(this),
         false); 
+
+        this.helpDiv.appendChild(document.createElement("br"));
         this.helpDiv.appendChild(this.helpButton);
         this.containerDiv.appendChild(this.helpDiv);
     }

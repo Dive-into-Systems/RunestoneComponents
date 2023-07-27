@@ -220,6 +220,7 @@ export default class vmtable extends RunestoneBase {
             "table) in the table located at the lower-right corner. The effects of each memory operation " +
             "will be reflected in both your current RAM and page tables below.";
         this.containerDiv.appendChild(this.statementDiv1);
+        this.containerDiv.appendChild(document.createElement("br"));
     }
     
     // create the div with detailed help
@@ -259,6 +260,7 @@ export default class vmtable extends RunestoneBase {
                 }
             }.bind(this),
         false); 
+        this.helpDiv.appendChild(document.createElement("br"));
         this.helpDiv.appendChild(this.helpButton);
         this.containerDiv.appendChild(this.helpDiv);
     }
