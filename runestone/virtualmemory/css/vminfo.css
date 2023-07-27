@@ -57,14 +57,11 @@
   left: 30px;
  }
 
-table, td, tr, th {
-  border: 5px solid;
-}
-
-th, td {
+th, td, tr {
   height: 20px;
   text-align: center;
   padding: 1px;
+  border-collapse: collapse;
 }
 
 table {

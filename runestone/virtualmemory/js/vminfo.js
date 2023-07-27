@@ -324,7 +324,7 @@ export default class vmInfo extends RunestoneBase {
             var input_value = this.inputNodes[i].value;
             input_value = this.exponentialParser(input_value);
             if ( input_value === "" ) {
-                this.feedback_msg.push($.i18n("msg_no_answer"));
+                this.feedback_msg.push($.i18n("msg_vminfo_no_answer"));
                 this.correct = false;
                 // change the style of input field to alert-danger when no answer provided
                 this.inputNodes[i].setAttribute("class", "alert alert-danger");
