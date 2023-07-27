@@ -145,6 +145,7 @@ export default class cacheinfo extends RunestoneBase {
         this.statementDiv.appendChild(document.createElement("br"));
         this.statementDiv.append("Cache Organization: ");
         this.statementDiv.appendChild(this.orgMenuNode);
+        this.statementDiv.appendChild(document.createElement("br"));
         this.statementDiv.append("Address Length: ");
         this.statementDiv.appendChild(this.addrMenuNode);
         this.statementDiv.appendChild(document.createElement("br"));

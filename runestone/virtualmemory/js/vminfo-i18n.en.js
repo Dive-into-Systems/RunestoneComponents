@@ -1,5 +1,6 @@
 $.i18n().load({
     en: {
+        msg_vminfo_no_answer: "Please fill your answer in the blank",
         msg_vminfo_correct: "Correct. Good job!",
         msg_vminfo_generate_a_number: "Ask me another",
         msg_vminfo_check_me: "Check answer",
